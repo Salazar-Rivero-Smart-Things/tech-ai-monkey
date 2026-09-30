@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>My AI Agent</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: #0b0f17; color: #e6edf3; height: 100vh; display: flex; flex-direction: column;
+  }
+  header {
+    padding: 12px 16px; border-bottom: 1px solid #1f2937; display: flex; gap: 8px;
+    align-items: center; flex-wrap: wrap;
+  }
+  header .title { font-weight: 600; margin-right: auto; }
+  input, button {
+    font: inherit; border-radius: 8px; border: 1px solid #30363d; background: #151b26; color: inherit;
+    padding: 8px 10px;
+  }
+  button { cursor: pointer; }
+  button:hover { background: #1c2430; }
+  button.danger:hover { background: #3a1d1d; border-color: #6e2b2b; }
+  main { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 72ch; padding: 10px 12px; border-radius: 12px; white-space: pre-wrap; word-break: break-word; }
+  .user { align-self: flex-end; background: #1f6feb; }
+  .agent { align-self: flex-start; background: #1a2230; border: 1px solid #273244; }
+  .system { align-self: center; color: #8b949e; font-size: 0.85em; }
+  .error { align-self: flex-start; background: #3a1d1d; color: #ffb4b4; }
+  footer {
+    padding: 12px 16px; border-top: 1px solid #1f2937; display: flex; gap: 8px;
+  }
+  footer textarea {
+    flex: 1; resize: none; font: inherit; border-radius: 8px; border: 1px solid #30363d;
+    background: #151b26; color: inherit; padding: 10px; min-height: 44px; max-height: 160px;
+  }
+  .key { width: 260px; }
+  .hint { color: #8b949e; font-size: 0.8em; padding: 4px 16px; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="title">My AI Agent</span>
+    <input id="apiKey" class="key" type="password" placeholder="API key (optional in local dev)" />
+    <button id="saveKey" title="Save API key to this browser">Save key</button>
+    <button id="newChat">New chat</button>
+    <button id="clearHistory" class="danger">Clear history</button>
+    <button id="resetChat" class="danger">Reset chat</button>
+  </header>
+  <div class="hint" id="status">Starting…</div>
+  <main id="log"></main>
+  <footer>
+    <textarea id="input" placeholder="Ask me anything…" rows="1"></textarea>
+    <button id="send">Send</button>
+  </footer>
+
+<script>
+const log = document.getElementById('log');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const apiKeyEl = document.getElementById('apiKey');
+const statusEl = document.getElementById('status');
+
+let sessionId = localStorage.getItem('agentSessionId') || null;
+let continuationToken = null;
+let apiKey = localStorage.getItem('agentApiKey') || '';
+apiKeyEl.value = apiKey;
+
+function authHeaders(extra) {
+  const headers = { ...(extra || {}) };
+  if (apiKey) headers['authorization'] = 'Bearer ' + apiKey;
+  return headers;
+}
+
+function addMsg(text, cls) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + cls;
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  return div;
+}
+
+function setStatus(text) { statusEl.textContent = text; }
+
+function setBusy(busy) {
+  sendBtn.disabled = busy;
+  input.disabled = busy;
+}
+
+async function parseError(res) {
+  let body = null;
+  try { body = await res.json(); } catch (_) { /* ignore */ }
+  return (body && (body.error || body.code)) || (res.status + ' ' + res.statusText);
+}
+
+async function sendMessage() {
+  const text = input.value.trim();
+  if (!text) return;
+  setBusy(true);
+  addMsg(text, 'user');
+  input.value = '';
+  try {
+    let id = sessionId;
+    let res;
+    if (!id) {
+      // First message: create the session and dispatch the turn in one call.
+      // The eve channel requires a JSON body on POST /eve/v1/session.
+      res = await fetch('/eve/v1/session', {
+        method: 'POST',
+        headers: authHeaders({ 'content-type': 'application/json' }),
+        body: JSON.stringify({ message: text }),
+      });
+      if (!res.ok) throw new Error(await parseError(res));
+      const body = await res.json();
+      id = body.sessionId;
+      if (!id) throw new Error('Could not create a chat session.');
+      continuationToken = body.continuationToken || null;
+      sessionId = id;
+      localStorage.setItem('agentSessionId', sessionId);
+    } else {
+      // Follow-up: continue the session with the current continuation token.
+      const payload = { message: text };
+      if (continuationToken) payload.continuationToken = continuationToken;
+      res = await fetch(`/eve/v1/session/${id}`, {
+        method: 'POST',
+        headers: authHeaders({ 'content-type': 'application/json' }),
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error(await parseError(res));
+      const body = await res.json();
+      if (body.continuationToken) continuationToken = body.continuationToken;
+    }
+    await streamReply(id);
+  } catch (err) {
+    addMsg('Error: ' + err.message, 'error');
+  } finally {
+    setBusy(false);
+  }
+}
+
+async function streamReply(id) {
+  const res = await fetch(`/eve/v1/session/${id}/stream`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(await parseError(res));
+
+  const bubble = addMsg('', 'agent');
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let done = false;
+
+  const finish = () => {
+    done = true;
+    setStatus(sessionId ? 'Session ' + sessionId : '');
+    if (!bubble.textContent.trim()) bubble.textContent = '(no response)';
+  };
+
+  while (!done) {
+    const { done: readDone, value } = await reader.read();
+    if (readDone) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      let ev;
+      try { ev = JSON.parse(line); } catch (_) { continue; }
+      switch (ev.type) {
+        case 'message.appended':
+          bubble.textContent += ev.data?.messageDelta ?? '';
+          break;
+        case 'message.completed':
+          if (typeof ev.data?.message === 'string' && ev.data.message) {
+            bubble.textContent = ev.data.message;
+          }
+          break;
+        case 'turn.failed':
+          if (ev.data?.message) addMsg('Turn failed: ' + ev.data.message, 'error');
+          finish();
+          break;
+        case 'session.waiting':
+          if (ev.data?.continuationToken) continuationToken = ev.data.continuationToken;
+          finish();
+          break;
+        case 'turn.completed':
+        case 'session.completed':
+          finish();
+          break;
+        default:
+          break;
+      }
+      log.scrollTop = log.scrollHeight;
+    }
+  }
+}
+
+sendBtn.addEventListener('click', sendMessage);
+input.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+document.getElementById('saveKey').addEventListener('click', () => {
+  apiKey = apiKeyEl.value.trim();
+  localStorage.setItem('agentApiKey', apiKey);
+  setStatus('API key saved to this browser.');
+});
+
+document.getElementById('newChat').addEventListener('click', () => {
+  sessionId = null;
+  continuationToken = null;
+  localStorage.removeItem('agentSessionId');
+  log.innerHTML = '';
+  addMsg('Started a new chat.', 'system');
+  setStatus('');
+});
+
+async function control(action) {
+  if (!sessionId) { addMsg('No active session yet. Send a message first.', 'system'); return; }
+  setBusy(true);
+  try {
+    const res = await fetch(`/eve/v1/session/${sessionId}/${action}`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+    if (!res.ok) throw new Error(await parseError(res));
+    if (action === 'reset') {
+      sessionId = null;
+      localStorage.removeItem('agentSessionId');
+    }
+    addMsg(action === 'clear' ? 'Chat history cleared.' : 'Chat reset.', 'system');
+  } catch (err) {
+    addMsg('Error: ' + err.message, 'error');
+  } finally {
+    setBusy(false);
+  }
+}
+
+document.getElementById('clearHistory').addEventListener('click', () => control('clear'));
+document.getElementById('resetChat').addEventListener('click', () => control('reset'));
+
+setStatus('Ready. In local dev no API key is needed; in production paste a key and click Save.');
+</script>
+</body>
+</html>
