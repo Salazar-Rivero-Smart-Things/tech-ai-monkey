@@ -1,6 +1,9 @@
 # My AI Agent
 
-A durable, self-improving AI agent built on [eve](https://eve.dev) that:
+A durable, self-improving AI agent built on [eve](https://eve.dev), with a full
+Next.js web app (dashboard, authentication, billing) in front of it.
+
+The agent:
 
 - **Searches the whole web** until it finds the issue or fix (`web_search` +
   `web_fetch`, guided by the `deep-web-research` skill).
@@ -8,15 +11,42 @@ A durable, self-improving AI agent built on [eve](https://eve.dev) that:
 - **Has a library** of reusable skills under `agent/skills/`.
 - **Deletes chat history** on request (Clear / Reset).
 - **Issues API keys** so your server can talk to it over HTTP.
-- **Can be asked** in the terminal UI or the built-in web chat.
+
+The web app (`web/`) adds:
+
+- A **dashboard** with chat, notebooks, workflows, artifacts and apps.
+- **Authentication** (Google + email/password) via NextAuth.
+- **Billing** (Stripe, PayPal, crypto) with token-based plans.
+
+## Architecture
+
+```
+Next.js web app (web/)  →  /eve/v1/* proxy  →  eve agent (port 2000)  →  Vercel AI Gateway
+```
+
+The chat in `web/components/chat.tsx` talks to the eve agent over
+`/eve/v1/session`, which `web/app/eve/v1/[...path]/route.ts` proxies to the
+agent with auth + token billing.
+
+## Model
+
+The agent's model is set in `agent/agent.ts`. It currently uses a free model
+through the Vercel AI Gateway (no paid credits required):
+
+```ts
+model: "poolside/laguna-s-2.1-free",
+```
+
+To use a premium model (e.g. `openai/gpt-5.5`), add credits at
+<https://vercel.com/ai-gateway> and change the id.
 
 ## Requirements
 
 - Node.js **24 or newer**
-- A model credential (connect a Vercel account / AI Gateway / OpenAI / Anthropic
-  in the terminal UI on first run)
 
 ## Setup
+
+### 1. The agent (root)
 
 ```bash
 npm install
@@ -29,13 +59,31 @@ cp .env.example .env
 npm run dev
 ```
 
-On first run the terminal UI opens `/login` to connect a model. After that you
-can chat with the agent.
+The agent runs at <http://127.0.0.1:2000>. On first run the terminal UI opens
+`/login` to connect a Vercel account / AI Gateway.
+
+### 2. The web app (`web/`)
+
+```bash
+cd web
+npm install
+
+# Configure .env.local with at least:
+#   EVE_AGENT_URL=http://127.0.0.1:2000
+#   AGENT_API_KEY_SECRET=<same secret as the agent>
+#   NEXT_PUBLIC_APP_URL=http://localhost:3000
+#   plus Google OAuth, Stripe/PayPal and database credentials for auth & billing
+
+npm run dev
+```
+
+Open <http://localhost:3000>.
 
 ## Ask the agent
 
+- Web app: open <http://localhost:3000/dashboard/chat> (sign in first).
+- Built-in web chat: open <http://127.0.0.1:2000/> (no key needed in local dev).
 - Terminal UI: type in the `npm run dev` session.
-- Web chat: open <http://127.0.0.1:2000/> (no key needed in local dev).
 
 Ask it things like:
 
@@ -83,13 +131,17 @@ agent/
   agent.ts                    # model config
   instructions.md             # system prompt / operating rules
   channels/eve.ts             # HTTP API auth (API keys)
-  channels/web.ts             # serves the web chat UI at /
+  channels/home.ts            # serves the web chat UI at /
   tools/issue_api_key.ts      # "give me an API key"
   tools/delete_chat_history.ts# "delete my history"
   memory/knowledge.ts         # cross-session learning
   skills/                     # the reusable skills library
   lib/jwt.ts                  # API-key minting helper
 public/index.html             # web chat UI
+web/
+  app/                        # Next.js pages + API routes
+  components/chat.tsx         # dashboard chat (talks to the agent)
+  lib/                        # auth, billing, db, security
 ```
 
 ## Deploying
