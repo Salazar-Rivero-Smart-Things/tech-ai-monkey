@@ -1,0 +1,25 @@
+# MyAI – web-app (Next.js, port 3000)
+# Kopier til: /etc/systemd/system/myai-web.service
+# Deretter: sudo systemctl daemon-reload && sudo systemctl enable --now myai-web
+#
+# KREVER at web-appen er bygget først:  cd web && npm run build
+# NB: Juster User/Group og stiene hvis du har en annen bruker eller Node-versjon.
+
+[Unit]
+Description=MyAI web-app (Next.js, port 3000)
+After=network-online.target myai-agent.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hesriverp7
+Group=hesriverp7
+WorkingDirectory=/home/hesriverp7/Dokumenter/MyGits/MyAI/web
+Environment=PATH=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin/npm run start
+Restart=always
+RestartSec=5
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target

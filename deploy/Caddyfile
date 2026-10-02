@@ -1,0 +1,14 @@
+# Caddyfile – MyAI
+# Caddy er en web-server/reverse proxy som fikser HTTPS (Let's Encrypt) automatisk.
+#
+# 1) Installer Caddy:  sudo apt-get install -y caddy
+# 2) Kopier denne fila til: /etc/caddy/Caddyfile
+# 3) sudo systemctl reload caddy
+#
+# Caddy henter sertifikat automatisk – pass på at port 80 og 443
+# peker til denne maskinen (port-forward i ruteren) og at domenets
+# A-record peker på din offentlige IP.
+
+tech-ai.tech, www.tech-ai.tech {
+    reverse_proxy 127.0.0.1:3000
+}

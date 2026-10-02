@@ -1,0 +1,236 @@
+import {
+  pgTable,
+  text,
+  integer,
+  timestamp,
+  boolean,
+  jsonb,
+  primaryKey,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+import type { AdapterAccountType } from "next-auth/adapters";
+
+// ---------------------------------------------------------------------------
+// Auth.js core tables (names/columns match @auth/drizzle-adapter's contract)
+// ---------------------------------------------------------------------------
+
+export const users = pgTable("user", {
+  id: text("id").primaryKey(),
+  name: text("name"),
+  email: text("email").notNull(),
+  emailVerified: timestamp("emailVerified", { mode: "date" }),
+  image: text("image"),
+
+  // Additional account/profile fields (non-sensitive identity data)
+  phone: text("phone"),
+  country: text("country"),
+  address: text("address"),
+  postalCode: text("postalCode"),
+  role: text("role").notNull().default("user"),
+  // Argon2id hash, only set for email/password accounts.
+  passwordHash: text("passwordHash"),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+}, (table) => [
+  uniqueIndex("user_email_idx").on(table.email),
+]);
+
+export const accounts = pgTable(
+  "account",
+  {
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").$type<AdapterAccountType>().notNull(),
+    provider: text("provider").notNull(),
+    providerAccountId: text("providerAccountId").notNull(),
+    refresh_token: text("refresh_token"),
+    access_token: text("access_token"),
+    expires_at: integer("expires_at"),
+    token_type: text("token_type"),
+    scope: text("scope"),
+    id_token: text("id_token"),
+    session_state: text("session_state"),
+  },
+  (table) => [
+    primaryKey({ columns: [table.provider, table.providerAccountId] }),
+    index("account_userId_idx").on(table.userId),
+  ],
+);
+
+export const sessions = pgTable(
+  "session",
+  {
+    sessionToken: text("sessionToken").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (table) => [index("session_userId_idx").on(table.userId)],
+);
+
+export const verificationTokens = pgTable(
+  "verificationToken",
+  {
+    identifier: text("identifier").notNull(),
+    token: text("token").notNull(),
+    expires: timestamp("expires", { mode: "date" }).notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.identifier, table.token] })],
+);
+
+// ---------------------------------------------------------------------------
+// Sensitive data (SSN) — kept in its own table so normal user queries never
+// touch it. The value is an opaque, encrypted envelope produced by
+// lib/security/crypto.ts.
+// ---------------------------------------------------------------------------
+
+export const sensitiveData = pgTable(
+  "sensitiveData",
+  {
+    userId: text("userId")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ssnEncrypted: text("ssnEncrypted").notNull(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+);
+
+export const auditLogs = pgTable(
+  "auditLog",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId").references(() => users.id, { onDelete: "set null" }),
+    actorId: text("actorId"),
+    action: text("action").notNull(),
+    resource: text("resource").notNull(),
+    ip: text("ip"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("audit_userId_idx").on(table.userId)],
+);
+
+// ---------------------------------------------------------------------------
+// Billing: subscriptions, prepaid (pay-as-you-go) balance, token ledger.
+// The free plan is represented as a subscription row with plan = "free".
+// ---------------------------------------------------------------------------
+
+export type PlanId = "free" | "pro" | "ultra" | "bomb";
+
+export const subscriptions = pgTable(
+  "subscription",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .unique()
+      .references(() => users.id, { onDelete: "cascade" }),
+    plan: text("plan").$type<PlanId>().notNull().default("free"),
+    status: text("status").notNull().default("active"), // active | canceled | past_due
+    // Token allowance for the current period + usage counter.
+    tokenAllowance: integer("tokenAllowance").notNull().default(0),
+    tokensUsed: integer("tokensUsed").notNull().default(0),
+    currentPeriodStart: timestamp("currentPeriodStart", { mode: "date" }).notNull().defaultNow(),
+    currentPeriodEnd: timestamp("currentPeriodEnd", { mode: "date" }).notNull(),
+    cancelAtPeriodEnd: boolean("cancelAtPeriodEnd").notNull().default(false),
+    // For downgrades: the plan to switch to when the current period ends.
+    pendingPlanId: text("pendingPlanId").$type<PlanId>(),
+    // Free-tier refill bookkeeping (ignored for paid plans).
+    freeRefillAt: timestamp("freeRefillAt", { mode: "date" }),
+    // Gateway references.
+    stripeCustomerId: text("stripeCustomerId"),
+    stripeSubscriptionId: text("stripeSubscriptionId"),
+    paypalSubscriptionId: text("paypalSubscriptionId"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("subscription_userId_idx").on(table.userId)],
+);
+
+export const tokenBalances = pgTable(
+  "tokenBalance",
+  {
+    userId: text("userId")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // Prepaid pay-as-you-go tokens remaining.
+    prepaidTokens: integer("prepaidTokens").notNull().default(0),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+);
+
+export const tokenTransactions = pgTable(
+  "tokenTransaction",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // subscription_grant | topup | usage | refund | free_refill | expiry
+    tokens: integer("tokens").notNull(), // signed delta
+    balanceAfter: integer("balanceAfter"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("tokenTx_userId_idx").on(table.userId)],
+);
+
+// ---------------------------------------------------------------------------
+// Product features: artifacts, notebook (reminders), and integrations.
+// ---------------------------------------------------------------------------
+
+export const artifacts = pgTable(
+  "artifact",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("artifact"), // artifact | workflow | file
+    title: text("title").notNull(),
+    content: text("content"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("artifact_userId_idx").on(table.userId)],
+);
+
+export const notebooks = pgTable(
+  "notebook",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    notes: text("notes"),
+    done: boolean("done").notNull().default(false),
+    remindAt: timestamp("remindAt", { mode: "date" }),
+    doneAt: timestamp("doneAt", { mode: "date" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("notebook_userId_idx").on(table.userId)],
+);
+
+export const integrations = pgTable(
+  "integration",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(), // slack | google_workspace | hubspot | google
+    status: text("status").notNull().default("disconnected"), // disconnected | pending | connected
+    // Permission answer: "yes" | "yes_this_project" | "no", plus optional note.
+    permission: text("permission"),
+    permissionNote: text("permissionNote"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("integration_userId_idx").on(table.userId)],
+);

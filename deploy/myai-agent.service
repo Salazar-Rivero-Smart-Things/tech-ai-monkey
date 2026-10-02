@@ -1,0 +1,26 @@
+# MyAI – eve-agent (port 2000)
+# Kopier til: /etc/systemd/system/myai-agent.service
+# Deretter: sudo systemctl daemon-reload && sudo systemctl enable --now myai-agent
+#
+# NB: Juster User/Group og stiene hvis du har en annen bruker eller Node-versjon.
+
+[Unit]
+Description=MyAI eve-agent (port 2000)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=hesriverp7
+Group=hesriverp7
+WorkingDirectory=/home/hesriverp7/Dokumenter/MyGits/MyAI
+Environment=PATH=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PORT=2000
+EnvironmentFile=/home/hesriverp7/Dokumenter/MyGits/MyAI/.env.agent
+ExecStart=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin/npm run start
+Restart=always
+RestartSec=5
+KillMode=mixed
+
+[Install]
+WantedBy=multi-user.target
