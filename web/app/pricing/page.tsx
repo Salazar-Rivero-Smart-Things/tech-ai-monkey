@@ -79,7 +79,7 @@ export default function PricingPage() {
 
         <h2 className="mt-10 text-xl font-semibold">Payment methods</h2>
         <p className="mt-2 text-sm text-zinc-400">
-          PayPal · Google Pay · Apple Pay · card (Stripe) · cryptocurrency (BTC, ETH, BCH directly to our wallet).
+          Card (Stripe) · PayPal · Google Pay · Apple Pay.
         </p>
       </main>
     </div>
