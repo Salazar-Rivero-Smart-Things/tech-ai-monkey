@@ -92,3 +92,14 @@ export function maskSsn(ssn: string): string {
   if (cleaned.length <= 4) return "••••";
   return `${"•".repeat(cleaned.length - 4)} ${cleaned.slice(-4)}`;
 }
+
+// ---------------------------------------------------------------------------
+// Generic secret envelope — same AES-256-GCM format and the same KEK (SSN_KEK).
+// Used for OAuth access/refresh tokens from connected apps (Slack, Google, ...).
+// ---------------------------------------------------------------------------
+
+/** Encrypt an arbitrary secret (e.g. an OAuth token bundle) into an envelope. */
+export const encryptSecret = encryptSsn;
+
+/** Decrypt an envelope produced by {@link encryptSecret}. */
+export const decryptSecret = decryptSsn;
