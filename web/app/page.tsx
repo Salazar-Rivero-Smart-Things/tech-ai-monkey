@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth } from "@/auth";
 import { siteConfig } from "@/lib/site";
+import SignOutButton from "@/components/sign-out-button";
 
 const FEATURES = [
   { title: "Searches the whole web", body: "Keeps searching and fetching sources until your issue is actually resolved." },
@@ -34,9 +35,12 @@ export default async function HomePage() {
           <Link href="/privacy" className="text-zinc-400 hover:text-white">Privacy</Link>
           <Link href="/copyright" className="text-zinc-400 hover:text-white">Legal</Link>
           {session?.user ? (
-            <Link href="/dashboard" className="rounded-lg bg-blue-600 px-3 py-1.5 font-medium hover:bg-blue-500">
-              Dashboard
-            </Link>
+            <>
+              <Link href="/dashboard" className="rounded-lg bg-blue-600 px-3 py-1.5 font-medium hover:bg-blue-500">
+                Dashboard
+              </Link>
+              <SignOutButton className="rounded-lg border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900" />
+            </>
           ) : (
             <>
               <Link href="/signin" className="rounded-lg border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Sign in</Link>

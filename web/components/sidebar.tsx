@@ -14,8 +14,12 @@ const NAV = [
   { href: "/dashboard/subscription", label: "Subscription" },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ role }: { role?: string }) {
   const pathname = usePathname();
+  const items =
+    role === "admin"
+      ? [NAV[0], { href: "/dashboard/admin", label: "Admin" }, ...NAV.slice(1)]
+      : NAV;
 
   return (
     <aside className="flex w-60 shrink-0 flex-col border-r border-zinc-800 bg-zinc-950">
@@ -27,7 +31,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 space-y-1 p-2">
-        {NAV.map((item) => {
+        {items.map((item) => {
           const active = pathname === item.href;
           return (
             <Link

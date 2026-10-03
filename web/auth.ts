@@ -18,6 +18,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: DrizzleAdapter(db, authSchema),
   session: { strategy: "jwt" },
   trustHost: true,
+  events: {
+    // OAuth users are created by the adapter, not by the signup route. Promote
+    // the very first account created this way to admin as well.
+    async createUser({ user }) {
+      if (!user?.id) return;
+      const all = await db.select({ id: users.id }).from(users);
+      if (all.length === 1) {
+        await db.update(users).set({ role: "admin" }).where(eq(users.id, user.id));
+      }
+    },
+  },
   providers: [
     Google,
     Credentials({

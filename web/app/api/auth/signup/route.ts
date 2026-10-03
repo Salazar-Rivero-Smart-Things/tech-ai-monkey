@@ -12,6 +12,7 @@ import {
 import { hashPassword } from "@/lib/security/password";
 import { encryptSsn } from "@/lib/security/crypto";
 import { PLANS } from "@/lib/billing/plans";
+import { roleForNewUser } from "@/lib/roles";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -67,6 +68,8 @@ export async function POST(request: Request) {
   const id = randomUUID();
   const now = new Date();
   const free = PLANS.free;
+  // First account ever created becomes the admin; everyone else a normal user.
+  const role = await roleForNewUser();
 
   await db.transaction(async (tx) => {
     await tx.insert(users).values({
@@ -78,7 +81,7 @@ export async function POST(request: Request) {
       address: address || null,
       postalCode: postalCode || null,
       passwordHash,
-      role: "user",
+      role,
       createdAt: now,
       updatedAt: now,
     });
