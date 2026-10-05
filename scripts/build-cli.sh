@@ -160,6 +160,71 @@ mkdir -p "$DEB_ROOT/DEBIAN" "$DEB_ROOT/usr/bin" "$DEB_ROOT/usr/share/doc/$PKG"
 
 log "Setter opp .deb-struktur"
 install -m 0755 "$LINUX_BIN" "$DEB_ROOT/usr/bin/tech-ai"
+
+# Menu launcher. Two jobs: pick whichever build we actually installed, and keep
+# the terminal window open when the program exits with an error so a desktop
+# user can read the message instead of watching it flash past.
+cat > "$DEB_ROOT/usr/bin/$PKG-terminal" <<'EOF'
+#!/bin/sh
+# Tech AI monkey — application-menu launcher (installed by the .deb).
+# You do not need this in a terminal; use "tech-ai" directly there.
+#
+# Why this exists: a desktop launcher gets no interactive terminal that can
+# answer "Sign in now? [Y/n]", so the first run signs the user in through the
+# browser itself and only then starts the chat. It also keeps the window open
+# on error, so the message can actually be read instead of flashing past.
+
+TECH_AI=""
+if [ -x /usr/bin/tech-ai ]; then
+  TECH_AI=/usr/bin/tech-ai
+elif [ -x /usr/local/bin/tech-ai ]; then
+  TECH_AI=/usr/local/bin/tech-ai
+fi
+
+run_cli() {
+  if [ -n "$TECH_AI" ]; then
+    "$TECH_AI" "$@"
+  elif [ -f /usr/share/tech-ai-cli/index.js ]; then
+    if command -v node >/dev/null 2>&1; then
+      node /usr/share/tech-ai-cli/index.js "$@"
+    else
+      printf 'Node.js mangler. Installer nodejs (>= 18) og prov igjen.\n' >&2
+      return 127
+    fi
+  else
+    printf 'tech-ai er ikke installert. Installer .deb-pakken pa nytt.\n' >&2
+    return 127
+  fi
+}
+
+have_credentials() {
+  _dir="${TECH_AI_CONFIG_DIR:-$HOME/.config/tech-ai}"
+  [ -f "$_dir/credentials.json" ]
+}
+
+status=0
+if [ "$#" -eq 0 ] && ! have_credentials; then
+  printf '\nForste gang: du ma logge inn for a bruke Tech AI monkey.\n'
+  printf 'Nettleseren din apnes — logg inn med Google eller e-post.\n\n'
+  if run_cli login; then
+    printf '\n'
+    run_cli chat || status=$?
+  else
+    status=$?
+    printf '\nInnloggingen ble ikke fullfort.\n' >&2
+  fi
+else
+  run_cli "$@" || status=$?
+fi
+
+if [ -t 0 ]; then
+  printf '\nTrykk Enter for a lukke dette vinduet... '
+  read -r _ || true
+fi
+
+exit $status
+EOF
+chmod 0755 "$DEB_ROOT/usr/bin/$PKG-terminal"
 if [ "$HAVE_BUN" = "0" ]; then
   mkdir -p "$DEB_ROOT/usr/share/tech-ai-cli"
   cp -r "$CLI_DIR/src/." "$DEB_ROOT/usr/share/tech-ai-cli/"
@@ -206,9 +271,12 @@ Sign in:  tech-ai login
 Ask:      tech-ai ask "hello"
 Chat:     tech-ai chat
 
-This is a command-line program. After installing, open a terminal and run
-"tech-ai". On a desktop Linux it also gets an entry in the application menu
-("Tech AI monkey") which opens a terminal running "tech-ai chat".
+Open a terminal and run "tech-ai". On the first run it offers to sign you in
+through your browser, then drops you straight into the chat.
+
+On a desktop Linux the application menu also gets a "Tech AI monkey" entry
+(right-click for "Sign in"). It opens a terminal and starts the same flow, and
+keeps the window open if something goes wrong.
 
 Docs: https://tech-ai.tech/download
 EOF
@@ -223,13 +291,18 @@ Type=Application
 Version=1.0
 Name=Tech AI monkey
 GenericName=AI assistant
-Comment=Ask the Tech AI monkey agent in a terminal
-Exec=tech-ai chat
+Comment=Ask the Tech AI monkey agent — signs you in on the first run
+Exec=tech-ai-terminal
 Icon=tech-ai
 Terminal=true
 Categories=Utility;
 Keywords=ai;assistant;agent;chat;tech-ai;
 StartupNotify=false
+Actions=SignIn;
+
+[Desktop Action SignIn]
+Name=Sign in to Tech AI monkey
+Exec=tech-ai-terminal login
 EOF
 
 # Same design as the .exe/.app icons — cli/assets/icon.svg is the source of truth.

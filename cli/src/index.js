@@ -38,6 +38,7 @@ const HELP = `${bold("tech-ai")} ${dim("v" + VERSION)} — command line for Tech
 
 ${bold("USAGE")}
   tech-ai <command> [options]
+  tech-ai                Sign in on the first run, then start the chat
 
 ${bold("COMMANDS")}
   login                  Sign in via your browser (Google or e-mail)
@@ -66,13 +67,68 @@ ${bold("FILES")}
   ${dim(configPath())}
 `;
 
-function requireAuth() {
+/**
+ * True only when a human can actually answer a question. Output is also
+ * checked so that `tech-ai whoami | head` in a script never blocks.
+ */
+function canPrompt() {
+  return (
+    Boolean(stdin.isTTY && stdout.isTTY) &&
+    process.env.TERM !== "dumb" &&
+    !process.env.TECH_AI_NO_PROMPT
+  );
+}
+
+/** One-shot readline question; always closes the interface afterwards. */
+async function ask(question) {
+  const rl = createInterface({ input: stdin, output: stdout });
+  try {
+    return (await rl.question(question)).trim().toLowerCase();
+  } finally {
+    rl.close();
+  }
+}
+
+const YES = new Set(["y", "yes", "j", "ja", "ok"]);
+
+function notSignedIn() {
+  fail("You are not signed in. Run " + cyan("tech-ai login") + " first.");
+  process.exit(1);
+}
+
+/**
+ * Returns a usable token. When nobody is signed in we offer to start the
+ * browser sign-in right here, so double-clicking the application-menu entry
+ * (which runs "tech-ai chat") never dead-ends on a bare error message.
+ */
+async function requireAuth(apiBase) {
   const token = storedToken();
-  if (!token) {
-    fail("You are not signed in. Run " + cyan("tech-ai login") + " first.");
+  if (token) return token;
+  if (!canPrompt()) notSignedIn();
+
+  const base = apiBase ?? resolveApiBase(undefined);
+
+  say();
+  say(bold("You are not signed in yet."));
+  say(dim("Signing in opens your browser — Google or e-mail works."));
+  say();
+
+  const answer = await ask(cyan("Sign in now? ") + dim("[Y/n] "));
+  if (answer && !YES.has(answer)) {
+    say();
+    notSignedIn();
+  }
+
+  try {
+    const result = await loginWithBrowser(base);
+    persist(base, result.token, result.user, result.unlimited);
+    say();
+    return result.token;
+  } catch (error) {
+    if (error instanceof ApiError) handleApiError(error);
+    fail(error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
-  return token;
 }
 
 function handleApiError(error) {
@@ -189,7 +245,7 @@ async function commandLogin(flags, positional) {
 
 async function commandWhoami(flags) {
   const apiBase = resolveApiBase(flags.api);
-  const token = requireAuth();
+  const token = await requireAuth(apiBase);
 
   let me;
   try {
@@ -219,7 +275,7 @@ async function commandWhoami(flags) {
 
 async function commandAsk(flags, positional) {
   const apiBase = resolveApiBase(flags.api);
-  const token = requireAuth();
+  const token = await requireAuth(apiBase);
   const message = positional.join(" ").trim();
   if (!message) {
     fail("Nothing to ask. Example: " + cyan('tech-ai ask "how do I X?"'));
@@ -242,7 +298,7 @@ async function commandAsk(flags, positional) {
 
 async function commandChat(flags) {
   const apiBase = resolveApiBase(flags.api);
-  const token = requireAuth();
+  const token = await requireAuth(apiBase);
 
   const credentials = loadCredentials();
   say();
@@ -291,10 +347,20 @@ async function commandChat(flags) {
   return 0;
 }
 
+/**
+ * No arguments: what the application-menu entry and a double-clicked .exe run.
+ * Signs the user in on the first run, then drops straight into the chat.
+ */
+async function commandWelcome(flags) {
+  const apiBase = resolveApiBase(flags.api);
+  if (!storedToken()) await requireAuth(apiBase);
+  return commandChat(flags);
+}
+
 async function main() {
   const argv = process.argv.slice(2);
   const { flags, positional } = parseArgs(argv);
-  const command = positional.shift() ?? "help";
+  const command = positional.shift() ?? (canPrompt() ? "welcome" : "help");
 
   if (flags.version || command === "version") {
     say(`${CLIENT_NAME} ${VERSION}`);
@@ -326,6 +392,10 @@ async function main() {
 
     case "chat":
       return commandChat(flags);
+
+    case "welcome":
+    case "start":
+      return commandWelcome(flags);
 
     default:
       fail(`Unknown command: ${command}`);
