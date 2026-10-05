@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
-import { auth } from "@/auth";
+import { auth, signOut } from "@/auth";
 import { db } from "@/lib/db";
+import { deleteUserData } from "@/lib/account";
 import { notebooks, integrations, artifacts } from "@/lib/db/schema";
 
 async function requireUserId(): Promise<string> {
@@ -100,4 +101,16 @@ export async function saveArtifact(kind: string, title: string, content: string)
     updatedAt: new Date(),
   });
   revalidatePath("/dashboard/artifacts");
+}
+
+// ---- Privacy & data (GDPR / CASA) ----
+
+/**
+ * Permanently deletes the signed-in user and every row we store for them,
+ * then signs them out. Irreversible — the UI requires an explicit checkbox.
+ */
+export async function deleteMyAccount() {
+  const userId = await requireUserId();
+  await deleteUserData(userId);
+  await signOut({ redirectTo: "/" });
 }

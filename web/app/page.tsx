@@ -33,6 +33,7 @@ export default async function HomePage() {
         <nav className="flex items-center gap-4 text-sm">
           <Link href="/pricing" className="text-zinc-400 hover:text-white">Pricing</Link>
           <Link href="/privacy" className="text-zinc-400 hover:text-white">Privacy</Link>
+          <Link href="/terms" className="text-zinc-400 hover:text-white">Terms</Link>
           <Link href="/copyright" className="text-zinc-400 hover:text-white">Legal</Link>
           {session?.user ? (
             <>

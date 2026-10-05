@@ -7,7 +7,7 @@ export const siteConfig = {
   companyName: process.env.COMPANY_NAME ?? "Salazar Rivero Smart Things",
   organizationNumber: process.env.ORGANIZATION_NUMBER ?? "933 853 195",
   taxCountry: "Norway",
-  supportEmail: process.env.SUPPORT_EMAIL ?? "support@etch-ai.tech",
+  supportEmail: process.env.SUPPORT_EMAIL ?? "support@tech-ai.tech",
   supportWhatsAppUrl: process.env.SUPPORT_WHATSAPP_URL ?? "https://wa.me/4748904267",
   supportHours: process.env.SUPPORT_HOURS ?? "12:00–21:00 every day",
 };

@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard/apps", label: "Apps to connect" },
   { href: "/dashboard/notebook", label: "Notebook" },
   { href: "/dashboard/subscription", label: "Subscription" },
+  { href: "/dashboard/privacy", label: "Privacy & data" },
 ];
 
 export default function Sidebar({ role }: { role?: string }) {
@@ -47,7 +48,13 @@ export default function Sidebar({ role }: { role?: string }) {
         })}
       </nav>
 
-      <div className="border-t border-zinc-800 p-2">
+      <div className="space-y-1 border-t border-zinc-800 p-2">
+        <a
+          href="mailto:support@tech-ai.tech?subject=Customer%20support"
+          className="block rounded-lg px-3 py-2 text-sm text-zinc-400 hover:bg-zinc-900"
+        >
+          Support
+        </a>
         <button
           onClick={() => signOut({ callbackUrl: "/signin" })}
           className="w-full rounded-lg px-3 py-2 text-left text-sm text-zinc-400 hover:bg-zinc-900 hover:text-red-400"

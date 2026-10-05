@@ -719,6 +719,142 @@
 				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.stage-all.sh"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk integrasjon-OAuth",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-integrations-oauth.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk integrasjoner mot Google",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-integrations-google.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: integrasjoner env",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-integrations.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk integrasjon-creds",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-integrations-creds.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Google kontrolltest",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-google-control.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk base-URL i appen",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-base-url.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk APP_URL-bytes",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-app-url-bytes.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Reproduser Connect-flyt",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.repro-connect.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Reproduser + test Google-URL",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.repro-connect.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Rydd testbrukere",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.cleanup-test-users.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Bygg + restart web (feilmeldinger)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.build-and-restart-web.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk /terms live",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"for p in /terms /privacy /copyright; do curl -s -o /dev/null -w \"https://tech-ai.tech$p -> %{http_code}\\n\" --max-time 15 \"https://tech-ai.tech$p\"; done; echo '--- tittel ---'; curl -s --max-time 15 https://tech-ai.tech/terms | grep -oE '<title>[^<]*</title>' | head -1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk /terms live v2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-terms.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk security-headere",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-security.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Secret-scan for push",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.secret-scan.sh"
+			],
+			"problemMatcher": []
 		}
 	]
 }

@@ -41,7 +41,10 @@ function statusBanner(searchParams: {
     missing_code: "The app did not return an authorization code.",
     bad_state: "The security check failed. Please try connecting again.",
     session_mismatch: "Your session changed during the connection. Please try again.",
-    access_denied: "You declined the permission request.",
+    access_denied:
+      "The provider blocked the request, or you declined. If this is a Google app " +
+      "that has not completed Google verification yet, only approved test users " +
+      "can connect — contact support and we will add you.",
     no_access_token: "The app did not return an access token.",
   };
   return { kind: "err", text: friendly[error] ?? `Connection failed (${error}).` };
@@ -74,6 +77,37 @@ export default async function AppsPage({
           When the AI needs an app, it will ask your permission first. Connecting an
           app happens through the provider&apos;s own secure login — this app never
           sees your password.
+        </p>
+        <p className="mt-3 rounded-lg border border-amber-900 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
+          Seeing <strong>“Google hasn&apos;t verified this app”</strong>? That warning
+          appears while our Google verification is pending. Click{" "}
+          <strong>Advanced</strong> → <strong>Go to tech-ai.tech (unsafe)</strong> to
+          continue. It is safe to proceed: access is read-only, and you can
+          disconnect at any time.
+        </p>
+        <p className="mt-3 rounded-lg border border-blue-900 bg-blue-950/30 px-3 py-3 text-xs text-blue-200">
+          <strong>Google connections are currently limited.</strong> While Google
+          completes our app verification, connecting <strong>Google services</strong> or{" "}
+          <strong>Google Workspace</strong> has to be approved by us manually.
+          <br />
+          <br />
+          Email{" "}
+          <a
+            className="underline"
+            href="mailto:support@tech-ai.tech?subject=New%20customer%20%E2%80%93%20Google%20access%20request"
+          >
+            support@tech-ai.tech
+          </a>{" "}
+          with: <em>(1)</em> that you are a new customer, <em>(2)</em> the email you
+          registered on tech-ai.tech, and <em>(3)</em> the Google account you want to
+          connect (only if it is different from your registered email). We will add
+          you and reply as soon as possible.
+          <br />
+          <br />
+          You can always reach customer service from this dashboard (see{" "}
+          <strong>Support</strong> in the menu) or on our{" "}
+          <a className="underline" href="/privacy">Privacy</a> and{" "}
+          <a className="underline" href="/terms">Terms</a> pages.
         </p>
       </div>
 

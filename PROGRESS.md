@@ -69,7 +69,7 @@ Everything **built and building cleanly** (`tsc` + `next build` pass):
 
 ## Support contact
 
-- Email: **support@etch-ai.tech**
+- Email: **support@tech-ai.tech**
 - WhatsApp: https://wa.me/4748904267 — hours 12:00–21:00 daily
 - Website (planned domain): **tech-ai.tech**
 
@@ -114,7 +114,7 @@ MISSING ⬜ (optional, for on-chain crypto verification):
 ## Google OAuth setup path (for when we resume)
 
 console.cloud.google.com → project "Tech AI monkey" → OAuth consent screen
-(External; support email support@etch-ai.tech) → Credentials → OAuth client ID
+(External; support email support@tech-ai.tech) → Credentials → OAuth client ID
 → Web application → redirect URIs:
 - http://localhost:3000/api/auth/callback/google
 - https://tech-ai.tech/api/auth/callback/google
