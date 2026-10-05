@@ -84,11 +84,6 @@
 			"command": "cd ${workspaceFolder} && npx eve info 2>&1 | tail -40"
 		},
 		{
-			"label": "Bygg agent på nytt (eve build)",
-			"type": "shell",
-			"command": "cd ${workspaceFolder} && npm run build 2>&1 | tail -40"
-		},
-		{
 			"label": "Finn server-IP og router-adresse",
 			"type": "shell",
 			"command": "echo '=== Din server sin lokale IP ==='; hostname -I; echo '=== Standard gateway (routerens adresse) ==='; ip route | grep default; echo '=== Offentlig IP ==='; curl -s https://api.ipify.org && echo"
@@ -172,11 +167,6 @@
 			"label": "Gi repoet nytt navn og sjekk web-repo",
 			"type": "shell",
 			"command": "cd ${workspaceFolder}; echo '=== rename repo ==='; gh api -X PATCH repos/Salazar-Rivero-Smart-Things/Tech-AI-Monkey-v1 -f name=tech-ai-monkey --jq '.full_name' 2>&1; echo; echo '=== .gitmodules? ==='; ls -la .gitmodules 2>&1; echo '=== web git-historikk ==='; cd web && git log --oneline 2>&1 | head -5; echo '=== web status ==='; git status --short 2>&1 | head -20"
-		},
-		{
-			"label": "Klargjør commit (konverter web, stage alt)",
-			"type": "shell",
-			"command": "cd ${workspaceFolder}; echo '=== fjern web som submodule/gitlink ==='; git rm --cached web 2>&1; rm -rf web/.git; echo '=== stage alt ==='; git add -A 2>&1; echo '=== hva blir med i commiten? (filer) ==='; git diff --cached --name-only | head -80; echo; echo '=== SJEKK: noen hemmelige .env-filer med? ==='; git diff --cached --name-only | grep -iE '\\.env|secret|credential' || echo 'INGEN hemmelige filer er med ✓'"
 		},
 		{
 			"label": "Diagnostikk: Node og npm",
@@ -324,181 +314,6 @@
 				"-c",
 				"cd /run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey && echo '=== HEAD ===' && git --no-pager log --oneline -1 && echo '=== remote ===' && git --no-pager ls-remote origin -h refs/heads/main && echo '=== status ===' && git status --short && echo '=== downloads ===' && ls -la web/public/downloads/ && echo '=== ikoner ===' && ls -la cli/assets/"
 			]
-		},
-		{
-			"label": "Ollama: status og modeller",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== ollama bin ==='; command -v ollama; echo '=== service ==='; systemctl is-active ollama 2>&1; echo '=== api/tags ==='; curl -s --max-time 6 http://127.0.0.1:11434/api/tags | head -c 2000; echo; echo '=== ollama list ==='; ollama list 2>&1; echo '=== env-nokler (kun navn) ==='; for f in .env .env.local web/.env.local; do echo \"--- $f ---\"; [ -f \"$f\" ] && grep -oE '^[A-Z0-9_]+=' \"$f\" | tr -d '='; done; echo '=== RAM ==='; free -h | head -2; echo '=== CPU ==='; nproc; echo '=== GPU ==='; (nvidia-smi --query-gpu=name,memory.total --format=csv,noheader 2>/dev/null || echo 'ingen NVIDIA GPU')",
-			"problemMatcher": []
-		},
-		{
-			"label": "Test Ollama OpenAI-endepunkt",
-			"type": "shell",
-			"command": "echo '=== OpenAI-kompatibelt kall mot Ollama ==='; time curl -s --max-time 240 http://127.0.0.1:11434/v1/chat/completions -H 'Content-Type: application/json' -H 'Authorization: Bearer ollama' -d '{\"model\":\"llama3.1:8b\",\"messages\":[{\"role\":\"user\",\"content\":\"Svar kort og presist: hva er 2+2?\"}],\"max_tokens\":40}' ; echo",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sjekk eve dev port-valg",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== eve dev --help ==='; npx eve dev --help 2>&1 | head -60; echo; echo '=== eve --help ==='; npx eve --help 2>&1 | head -40; echo; echo '=== PORT i eve-kilde? ==='; grep -rIn --include=*.js -e 'process.env.PORT' -e 'EVE_PORT' node_modules/eve/dist/src/cli 2>/dev/null | head -20",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sjekk eve invoke",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== eve invoke --help ==='; npx eve invoke --help 2>&1 | head -60; echo; echo '=== hvordan lastes .env? ==='; grep -rIn --include=*.js -e 'dotenv' -e '\\.env' node_modules/eve/dist/src/cli/index.js 2>/dev/null | head -10",
-			"problemMatcher": []
-		},
-		{
-			"label": "eve dev med Ollama (port 2001)",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && OLLAMA_MODEL=llama3.1:8b OLLAMA_CONTEXT_TOKENS=8192 npx eve dev --port 2001 --no-ui",
-			"isBackground": true,
-			"problemMatcher": []
-		},
-		{
-			"label": "Test invoke mot Ollama-agent",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== invoke mot dev-agent pa 2001 ==='; time npx eve invoke --url http://127.0.0.1:2001 \"Svar kort pa norsk: hva er 2+2, og nevn en fordel med lokal AI?\" 2>&1 | tail -40",
-			"problemMatcher": []
-		},
-		{
-			"label": "Test tool-kall mot Ollama-agent",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== test: tool-kall (list_memories) ==='; time npx eve invoke --url http://127.0.0.1:2001 \"Bruk verktoeyet list_memories til aa sjekke hva som ligger lagret i minnet ditt, og oppsummer kort.\" 2>&1 | tail -50",
-			"problemMatcher": []
-		},
-		{
-			"label": "Stopp dev-agent 2001",
-			"type": "shell",
-			"command": "pkill -f 'eve dev --port 2001' 2>/dev/null; pkill -f 'eve/dist/src/cli' 2>/dev/null; sleep 2; echo '=== port 2001 ==='; ss -tln 2>/dev/null | grep ':2001' || echo 'port 2001 er fri'; echo '=== port 2000 (live, skal fortsatt svare) ==='; curl -s -o /dev/null -w 'agent health HTTP %{http_code}\\n' --max-time 8 http://127.0.0.1:2000/eve/v1/health; echo '=== igjen-vaerende eve-dev prosesser ==='; pgrep -af 'eve dev' || echo 'ingen'",
-			"problemMatcher": []
-		},
-		{
-			"label": "Verifiser stopp og live-agent",
-			"type": "shell",
-			"command": "echo '=== port 2001 ==='; ss -tln 2>/dev/null | grep ':2001' || echo 'port 2001 er fri'; echo '=== live agent (2000) ==='; curl -s -o /dev/null -w 'agent health HTTP %{http_code}\\n' --max-time 8 http://127.0.0.1:2000/eve/v1/health; echo '=== live web (3000) ==='; curl -s -o /dev/null -w 'web HTTP %{http_code}\\n' --max-time 8 http://127.0.0.1:3000/; echo '=== eve-dev prosesser ==='; pgrep -af 'eve dev' || echo 'ingen'; echo '=== ollama ==='; systemctl is-active ollama",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sjekk CLI-er og AI Gateway-modeller",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== CLI-er installert ==='; for c in llm aichat mods sgpt ollama gh vercel node npm npx opencode crush aider gemini claude codex; do printf '%-10s ' \"$c\"; command -v \"$c\" 2>/dev/null || echo '-'; done; echo; echo '=== nokler i rot-.env (kun navn) ==='; grep -oE '^[A-Z0-9_]+=' .env 2>/dev/null | tr -d '='; echo; echo '=== AI Gateway versjon/nokkel ==='; command -v vercel >/dev/null && vercel --version 2>&1 | head -2; echo; echo '=== AI Gateway: antall modeller + forste 40 id-er ==='; curl -s --max-time 25 https://ai-gateway.vercel.sh/v1/models | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);const a=j.data||j.models||j;console.log('antall:',Array.isArray(a)?a.length:'ukjent');(a||[]).slice(0,40).forEach(m=>console.log(' -',m.id||m.name))}catch(e){console.log('parse-feil:',s.slice(0,300))}})\"",
-			"problemMatcher": []
-		},
-		{
-			"label": "Kartlegg raske modeller og llm-CLI",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== llm CLI ==='; llm --version 2>&1 | head -2; llm plugins 2>&1 | head -20; echo; echo '=== ett modell-objekt (felter) ==='; curl -s --max-time 25 https://ai-gateway.vercel.sh/v1/models | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const a=j.data;console.log(JSON.stringify(a[0],null,2));console.log('--- nokler ---');console.log(Object.keys(a[0]).join(', '))})\"; echo; echo '=== kandidater (raske / gpt-5 / claude / gemini / llama / groq / free) ==='; curl -s --max-time 25 https://ai-gateway.vercel.sh/v1/models | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const a=j.data;const re=/(gpt-5|gpt-oss|claude-(haiku|sonnet)|gemini-3|gemini-2\\.5-flash|llama-4|llama-3\\.3|groq|cerebras|free|flash|mini|kimi|deepseek|qwen3-coder|glm)/i;a.map(m=>m.id).filter(id=>re.test(id)).sort().forEach(id=>console.log(' -',id))})\"",
-			"problemMatcher": []
-		},
-		{
-			"label": "Test AI Gateway chat + tools",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && export AI_GATEWAY_API_KEY=\"$(grep -E '^AI_GATEWAY_API_KEY=' .env | head -1 | cut -d= -f2- | tr -d '\\\"')\" && node --input-type=module <<'EOF'\nconst key = process.env.AI_GATEWAY_API_KEY;\nif (!key) { console.log('INGEN AI_GATEWAY_API_KEY funnet'); process.exit(1); }\nconsole.log('nokkel satt, lengde', key.length);\nconst base = 'https://ai-gateway.vercel.sh/v1';\nconst tools = [{ type: 'function', function: { name: 'get_weather', description: 'Get the weather for a city', parameters: { type: 'object', properties: { city: { type: 'string' } }, required: ['city'] } } }];\nasync function chat(model, messages, withTools) {\n  const t0 = Date.now();\n  const r = await fetch(base + '/chat/completions', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },\n    body: JSON.stringify({ model, messages, max_tokens: 64, ...(withTools ? { tools } : {}) }),\n  });\n  const ms = Date.now() - t0;\n  let j; try { j = await r.json(); } catch { j = { raw: await r.text().catch(()=> '') }; }\n  return { status: r.status, ms, j };\n}\nconst models = ['poolside/laguna-s-2.1-free', 'openai/gpt-5.4-mini'];\nfor (const model of models) {\n  try {\n    const a = await chat(model, [{ role: 'user', content: 'Svar kort: hva er 2+2?' }], false);\n    console.log('\\n[' + model + '] plain ->', a.status, a.ms + 'ms');\n    console.log('  svar:', JSON.stringify(a.j?.choices?.[0]?.message?.content ?? a.j).slice(0, 160));\n    const b = await chat(model, [{ role: 'user', content: 'Hva er vaeret i Oslo? Bruk verktoeyet.' }], true);\n    const tc = b.j?.choices?.[0]?.message?.tool_calls;\n    console.log('[' + model + '] tools ->', b.status, b.ms + 'ms', 'tool_calls=', JSON.stringify(tc ?? b.j?.error ?? null).slice(0, 220));\n  } catch (e) { console.log('[' + model + '] FEIL:', e.message); }\n}\nEOF",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sjekk gateway-nokkel format",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && V=$(grep -E '^AI_GATEWAY_API_KEY=' .env | head -1 | cut -d= -f2- | tr -d '\\\"\\r') && echo \"lengde: ${#V}\" && echo \"prefiks: ${V:0:6}...\" && echo \"suffix: ...${V: -4}\" && echo \"--- er den en placeholder? ---\" && case \"$V\" in *change*|*xxx*|*your*|*placeholder*|*example*) echo 'JA - placeholder';; *) echo 'nei';; esac && echo '--- andre relevante env-navn i .env / web/.env.local ---' && grep -oE '^[A-Z0-9_]*(GATEWAY|OIDC|OPENAI|GROQ|CEREBRAS|OPENROUTER|TOGETHER|FIREWORKS)[A-Z0-9_]*=' .env web/.env.local 2>/dev/null | tr -d '=' && echo '--- vercel link-status ---' && ls -la .vercel 2>/dev/null || echo 'ingen .vercel (ikke linket)'",
-			"problemMatcher": []
-		},
-		{
-			"label": "Mal DeepSeek fart og tools",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && export DSK=\"$(grep -E '^DEEPSEEK_API_KEY=' .env | head -1 | cut -d= -f2- | tr -d '\\\"\\r')\" && node --input-type=module <<'EOF'\nconst key = process.env.DSK;\nconsole.log('deepseek-nokkel lengde', key ? key.length : 0, 'prefiks', key ? key.slice(0,6)+'...' : '-');\nconst base = 'https://api.deepseek.com/v1';\nconst tools = [{ type: 'function', function: { name: 'get_weather', description: 'Get the weather for a city', parameters: { type: 'object', properties: { city: { type: 'string' } }, required: ['city'] } } }];\nasync function chat(model, messages, withTools, max_tokens = 64) {\n  const t0 = Date.now();\n  const r = await fetch(base + '/chat/completions', {\n    method: 'POST',\n    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + key },\n    body: JSON.stringify({ model, messages, max_tokens, ...(withTools ? { tools } : {}) }),\n  });\n  const ms = Date.now() - t0;\n  let j; try { j = await r.json(); } catch { j = { error: 'no json' }; }\n  return { status: r.status, ms, j };\n}\nfor (const model of ['deepseek-chat']) {\n  try {\n    const a = await chat(model, [{ role: 'user', content: 'Svar kort: hva er 2+2?' }], false);\n    const u = a.j?.usage;\n    const cps = u ? Math.round((u.completion_tokens / (a.ms/1000))) : '?';\n    console.log('[' + model + '] plain ->', a.status, a.ms + 'ms', 'tok/s=' + cps, '| svar:', JSON.stringify(a.j?.choices?.[0]?.message?.content ?? a.j?.error).slice(0,120));\n    const b = await chat(model, [{ role: 'user', content: 'Hva er vaeret i Oslo? Bruk verktoeyet.' }], true);\n    const tc = b.j?.choices?.[0]?.message?.tool_calls;\n    console.log('[' + model + '] tools ->', b.status, b.ms + 'ms tool_calls=', JSON.stringify(tc ?? b.j?.error ?? null).slice(0,200));\n  } catch (e) { console.log('[' + model + '] FEIL:', e.message); }\n}\nEOF",
-			"problemMatcher": []
-		},
-		{
-			"label": "Bench: DeepSeek",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && export BENCH_BASE_URL=https://api.deepseek.com/v1 && export BENCH_API_KEY=\"$(grep -E '^DEEPSEEK_API_KEY=' .env | head -1 | cut -d= -f2- | tr -d '\\\"\\r')\" && export BENCH_MODELS=\"deepseek-chat\" && export BENCH_RUNS=3 && node scripts/model-bench.mjs",
-			"problemMatcher": []
-		},
-		{
-			"label": "Valider agent etter modellvalg-endring",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && npx eve info 2>&1 | tail -40",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sjekk hvilken nokkel som er lagt inn",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== env-navn i rot-.env ==='; grep -oE '^[A-Z0-9_]+=' .env | tr -d '='; echo; echo '=== relevante nokler (kun prefiks) ==='; for k in AI_GATEWAY_API_KEY OPENAI_COMPAT_API_KEY OPENAI_COMPAT_BASE_URL OPENAI_COMPAT_MODEL AGENT_MODEL GROQ_API_KEY CEREBRAS_API_KEY OPENROUTER_API_KEY; do V=$(grep -E \"^$k=\" .env | head -1 | cut -d= -f2- | tr -d '\\\"\\r'); if [ -n \"$V\" ]; then printf '%-24s = %s...\\n' \"$k\" \"${V:0:8}\"; else printf '%-24s = (ikke satt)\\n' \"$k\"; fi; done",
-			"problemMatcher": []
-		},
-		{
-			"label": "List leverandorens modeller",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && BASE=$(grep '^OPENAI_COMPAT_BASE_URL=' .env | cut -d= -f2- | tr -d '\\\"\\r') && KEY=$(grep '^OPENAI_COMPAT_API_KEY=' .env | cut -d= -f2- | tr -d '\\\"\\r') && echo \"BASE_URL : $BASE\" && echo \"MODEL    : $(grep '^OPENAI_COMPAT_MODEL=' .env | cut -d= -f2- | tr -d '\\\"\\r')\" && echo \"CTX      : $(grep '^OPENAI_COMPAT_CONTEXT_TOKENS=' .env | cut -d= -f2- | tr -d '\\\"\\r')\" && echo && echo '=== tilgjengelige modeller hos leverandoren ===' && curl -s --max-time 20 \"$BASE/models\" -H \"Authorization: Bearer $KEY\" | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);const a=j.data||j.models||[];console.log('antall:',a.length);a.map(m=>m.id).sort().forEach(id=>console.log(' -',id))}catch(e){console.log('raw:',s.slice(0,400))}})\"",
-			"problemMatcher": []
-		},
-		{
-			"label": "Bench: Groq-modeller",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && BENCH_MODELS=\"llama-3.3-70b-versatile,openai/gpt-oss-120b,openai/gpt-oss-20b,qwen/qwen3.8-27b,allam-2-7b\" BENCH_RUNS=3 npm run bench",
-			"problemMatcher": []
-		},
-		{
-			"label": "Bygg + restart agent (Groq-modell)",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== BYGGER AGENT ===' && npm run build 2>&1 | tail -25 && echo '=== RESTARTER myai-agent ===' && sudo systemctl restart myai-agent && sleep 4 && echo '=== STATUS ===' && systemctl is-active myai-agent && echo '=== LOGG (modellvalg) ===' && journalctl -u myai-agent --no-pager -n 30 -o cat 2>&1 | grep -iE 'modell|model|error|listen' | tail -12 && echo '=== HELSE ===' && curl -s -o /dev/null -w 'agent health HTTP %{http_code}\\n' --max-time 10 http://127.0.0.1:2000/eve/v1/health",
-			"problemMatcher": []
-		},
-		{
-			"label": "Ende-til-ende test live agent",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== ekte samtale mot live-agenten (2000) ==='; time npx eve invoke --url http://127.0.0.1:2000 \"Svar kort pa norsk: hva er 2+2?\" 2>&1 | head -30; echo; echo '=== web lokalt (3000) ==='; curl -s -o /dev/null -w 'web HTTP %{http_code}\\n' --max-time 10 http://127.0.0.1:3000/; echo '=== offentlig via Cloudflare ==='; curl -s -o /dev/null -w 'tech-ai.tech HTTP %{http_code}\\n' --max-time 20 https://tech-ai.tech/",
-			"problemMatcher": []
-		},
-		{
-			"label": "Tool-test live agent",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== tool-test mot live-agenten ==='; npx eve invoke --url http://127.0.0.1:2000 \"Bruk verktoeyet list_memories og si kort hva som ligger i minnet.\" 2>&1 | head -20",
-			"problemMatcher": []
-		},
-		{
-			"label": "Sjekk CLI-verktoy og naavaerende nedlastinger",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== verktoy ==='; for c in bun npx dpkg-deb makensis file objdump python3 sha256sum; do printf '%-12s ' \"$c\"; command -v \"$c\" 2>/dev/null || echo 'MANGLER'; done; echo; echo '=== naavaerende artefakter ==='; ls -lh web/public/downloads/; echo; echo '=== live /download i dag (filer) ==='; curl -s --max-time 25 https://tech-ai.tech/download | grep -oE 'tech-ai_[0-9]+\\.[0-9]+\\.[0-9]+_[a-z0-9_]*\\.(deb|exe)' | sort -u; echo; echo '=== live /download (storrelser) ==='; curl -s --max-time 25 https://tech-ai.tech/download | grep -oE 'Download [0-9.]+ (MB|KB|B)' | sort -u",
-			"problemMatcher": []
-		},
-		{
-			"label": "Bygg CLI deb + exe",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && bash scripts/build-cli.sh 2>&1 | tail -45",
-			"problemMatcher": []
-		},
-		{
-			"label": "Verifiser download-side etter bygg",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== restarter myai-web ===' && sudo systemctl restart myai-web && sleep 6 && systemctl is-active myai-web && echo '=== lokal /download ===' && curl -s -o /dev/null -w 'local /download HTTP %{http_code}\\n' --max-time 15 http://127.0.0.1:3000/download && echo '=== live SHA-256 pa /download ===' && curl -s --max-time 25 \"https://tech-ai.tech/download?cb=$(date +%s)\" | grep -oE 'SHA-256 [0-9a-f]{64}' | sort -u && echo '=== forventet (fra checksums.txt) ===' && cat web/public/downloads/checksums.txt && echo '=== nedlasting av filene (HTTP + bytes) ===' && for f in tech-ai_1.0.0_amd64.deb tech-ai_1.0.0_windows_x64.exe tech-ai_1.0.0_windows_x64_setup.exe; do printf '%-40s ' \"$f\"; curl -s -o /dev/null -w 'HTTP %{http_code}  %{size_download} bytes\\n' --max-time 60 \"https://tech-ai.tech/downloads/$f\"; done",
-			"problemMatcher": []
-		},
-		{
-			"label": "Bekreft nye hasher pa live-siden",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && H=$(curl -s --max-time 25 https://tech-ai.tech/download); echo '=== nye hasher funnet pa live-siden? ==='; for h in 14ff3e3273bbbcd4 ca8cd12a472e69d2 5c9c93dc56c7ca1f; do if printf '%s' \"$H\" | grep -q \"$h\"; then echo \"  FUNNET   $h...\"; else echo \"  MANGLER  $h...\"; fi; done; echo; echo '=== tekst rundt SHA-256 ==='; printf '%s' \"$H\" | grep -oE 'SHA-256[^<]{0,80}' | head -5; echo; echo '=== storrelser pa siden ==='; printf '%s' \"$H\" | grep -oE 'Download[^<]{0,20}' | head -5; echo; echo '=== filnavn pa siden ==='; printf '%s' \"$H\" | grep -oE 'tech-ai_1\\.0\\.0_[a-z0-9_]*\\.(deb|exe)' | sort -u",
-			"problemMatcher": []
-		},
-		{
-			"label": "Git status og remote",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && echo '=== branch + remote ==='; git branch --show-current; git remote -v; echo; echo '=== status (kort) ==='; git status --short; echo; echo '=== endrede filer (diff --stat) ==='; git --no-pager diff --stat; echo; echo '=== staged? ==='; git --no-pager diff --cached --stat; echo; echo '=== hemmeligheter ignorert? ==='; git check-ignore -v .env web/.env.local 2>&1; echo; echo '=== siste commit ==='; git --no-pager log --oneline -3",
-			"problemMatcher": []
-		},
-		{
-			"label": "Preflight for push",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && bash scripts/preflight.sh 2>&1 | tail -60",
-			"problemMatcher": []
-		},
-		{
-			"label": "Commit og push modellendringer",
-			"type": "shell",
-			"command": "cd \"${workspaceFolder}\" && git add -A && echo '=== COMMIT ===' && git commit -m 'Add pluggable model selection and a model-speed benchmark' -m 'agent/agent.ts: pick the model by AGENT_MODEL (AI Gateway) > OPENAI_COMPAT_* (Groq, Cerebras, OpenRouter, Ollama, ...) > OLLAMA_MODEL > DEEPSEEK_API_KEY > free gateway fallback. Add scripts/model-bench.mjs and npm run bench to measure latency, tokens/s and tool-calling; it auto-loads the root .env. Remove 59 throwaway diag/verify/build/push scripts from the repo root and prune .vscode/tasks.json from 156 to 50 tasks. Document the model chain in README and .env.example.' 2>&1 | tail -8 && echo '=== PUSH ===' && GIT_TERMINAL_PROMPT=0 git push origin main 2>&1 | tail -8 && echo '=== RESULTAT ===' && git --no-pager log --oneline -2 && git status --short | head -5 && echo '(tomt over = rent tre)'",
-			"problemMatcher": []
 		}
 	]
 }
