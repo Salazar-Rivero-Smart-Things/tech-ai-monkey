@@ -35,5 +35,10 @@ if (deepseek) {
 
 export default defineAgent({
   model: deepseek ?? "poolside/laguna-s-2.1-free",
+  // DeepSeek is OpenAI-compatible and carries no AI Gateway metadata, so the
+  // context window must be declared explicitly or `eve build` refuses to
+  // compile the compaction step. deepseek-chat = 64K tokens.
+  // (The gateway fallback has known metadata, so it is left undefined there.)
+  modelContextWindowTokens: deepseek ? 65_536 : undefined,
 });
 

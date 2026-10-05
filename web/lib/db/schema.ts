@@ -223,7 +223,7 @@ export const integrations = pgTable(
     userId: text("userId")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    provider: text("provider").notNull(), // slack | google_workspace | hubspot | google
+    provider: text("provider").notNull(), // slack | google_workspace | google
     status: text("status").notNull().default("disconnected"), // disconnected | pending | connected
     // Permission answer: "yes" | "yes_this_project" | "no", plus optional note.
     permission: text("permission"),

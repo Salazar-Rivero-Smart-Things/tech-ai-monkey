@@ -1,0 +1,23 @@
+=== ~/.pgpass exists? ===
+NO
+
+=== pg_hba.conf readable? ===
+not readable without sudo
+
+=== TCP connect as URL user (no prompt) ===
+psql: error: connection to server at "127.0.0.1", port 5432 failed: fe_sendauth: no password supplied
+
+=== TCP connect, db postgres ===
+psql: error: connection to server at "127.0.0.1", port 5432 failed: fe_sendauth: no password supplied
+
+=== old deployment folder ===
+exists: NO
+
+=== systemd units for MyAI installed? ===
+-rw-r--r-- 1 root root 807 Oct  1 22:04 /etc/systemd/system/myai-agent.service
+-rw-r--r-- 1 root root 816 Oct  1 22:04 /etc/systemd/system/myai-web.service
+enabled
+enabled
+
+=== caddy installed? ===
+/usr/bin/caddy

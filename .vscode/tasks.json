@@ -4,7 +4,7 @@
 		{
 			"label": "Remove stale eve workflow data",
 			"type": "shell",
-			"command": "rm -rf /home/hesriverp7/Dokumenter/MyGits/MyAI/.eve/.workflow-data && echo 'removed .eve/.workflow-data'"
+			"command": "rm -rf ${workspaceFolder}/.eve/.workflow-data && echo 'removed .eve/.workflow-data'"
 		},
 		{
 			"label": "List dev processes",
@@ -24,7 +24,7 @@
 		{
 			"label": "Remove workflow data dir",
 			"type": "shell",
-			"command": "rm -rf /home/hesriverp7/Dokumenter/MyGits/MyAI/.eve/.workflow-data && echo 'REMOVED_OK' || echo 'REMOVE_FAILED'; ls -la /home/hesriverp7/Dokumenter/MyGits/MyAI/.eve/"
+			"command": "rm -rf ${workspaceFolder}/.eve/.workflow-data && echo 'REMOVED_OK' || echo 'REMOVE_FAILED'; ls -la ${workspaceFolder}/.eve/"
 		},
 		{
 			"label": "eve dev",
@@ -51,7 +51,7 @@
 		{
 			"label": "Finn lagringssteder",
 			"type": "shell",
-			"command": "echo '=== OLLAMA_MODELS env ==='; echo \"${OLLAMA_MODELS:-(ikke satt, bruker standard)}\"; echo '=== Modeller ==='; ollama list 2>/dev/null; echo '=== ~/.ollama/models ==='; ls -la ~/.ollama/models/ 2>/dev/null; echo '=== deploy-mappe ==='; ls -la deploy/ 2>/dev/null; echo '=== .eve (agentdata) ==='; ls ~/Dokumenter/MyGits/MyAI/.eve/ 2>/dev/null"
+			"command": "echo '=== OLLAMA_MODELS env ==='; echo \"${OLLAMA_MODELS:-(ikke satt, bruker standard)}\"; echo '=== Modeller ==='; ollama list 2>/dev/null; echo '=== ~/.ollama/models ==='; ls -la ~/.ollama/models/ 2>/dev/null; echo '=== deploy-mappe ==='; ls -la deploy/ 2>/dev/null; echo '=== .eve (agentdata) ==='; ls ${workspaceFolder}/.eve/ 2>/dev/null"
 		},
 		{
 			"label": "Sjekk ollama lagring og pull-status",
@@ -81,22 +81,22 @@
 		{
 			"label": "Valider agent (eve info)",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI && npx eve info 2>&1 | tail -40"
+			"command": "cd ${workspaceFolder} && npx eve info 2>&1 | tail -40"
 		},
 		{
 			"label": "Bygg agent (eve build)",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI && npm run build 2>&1 | tail -50"
+			"command": "cd ${workspaceFolder} && npm run build 2>&1 | tail -50"
 		},
 		{
 			"label": "Sjekk public/index.html",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI && ls -la public/ && wc -c public/index.html && readlink -f public/index.html"
+			"command": "cd ${workspaceFolder} && ls -la public/ && wc -c public/index.html && readlink -f public/index.html"
 		},
 		{
 			"label": "Bygg agent på nytt (eve build)",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI && npm run build 2>&1 | tail -40"
+			"command": "cd ${workspaceFolder} && npm run build 2>&1 | tail -40"
 		},
 		{
 			"label": "Finn server-IP og router-adresse",
@@ -106,7 +106,7 @@
 		{
 			"label": "Bygg web-appen (next build)",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI/web && npm run build 2>&1 | tail -60"
+			"command": "cd ${workspaceFolder}/web && npm run build 2>&1 | tail -60"
 		},
 		{
 			"label": "Sjekk service-status og agent-logg",
@@ -156,22 +156,22 @@
 		{
 			"label": "Sjekk git-status og hemmeligheter",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI; echo '=== ROOT repo: remote ==='; git remote -v 2>&1; echo '=== ROOT repo: branch/status (kort) ==='; git branch --show-current 2>&1; git status --short 2>&1 | head -40; echo; echo '=== er web en egen git-repo? ==='; ls -d web/.git 2>/dev/null && (cd web && git remote -v 2>&1) || echo 'web er ikke egen repo'; echo; echo '=== sjekk at hemmeligheter IKKE spores ==='; git check-ignore .env.local .env.agent .env web/.env.local 2>&1"
+			"command": "cd ${workspaceFolder}; echo '=== ROOT repo: remote ==='; git remote -v 2>&1; echo '=== ROOT repo: branch/status (kort) ==='; git branch --show-current 2>&1; git status --short 2>&1 | head -40; echo; echo '=== er web en egen git-repo? ==='; ls -d web/.git 2>/dev/null && (cd web && git remote -v 2>&1) || echo 'web er ikke egen repo'; echo; echo '=== sjekk at hemmeligheter IKKE spores ==='; git check-ignore .env.local .env.agent .env web/.env.local 2>&1"
 		},
 		{
 			"label": "Sjekk GitHub-autentisering",
 			"type": "shell",
-			"command": "echo '=== GitHub CLI (gh) ==='; command -v gh && gh auth status 2>&1 | head -8 || echo 'gh ikke installert'; echo; echo '=== SSH-nøkler ==='; ls -la ~/.ssh/*.pub 2>/dev/null || echo 'ingen SSH-pubkey'; echo; echo '=== git config user ==='; git -C /home/hesriverp7/Dokumenter/MyGits/MyAI config user.name; git -C /home/hesriverp7/Dokumenter/MyGits/MyAI config user.email"
+			"command": "echo '=== GitHub CLI (gh) ==='; command -v gh && gh auth status 2>&1 | head -8 || echo 'gh ikke installert'; echo; echo '=== SSH-nøkler ==='; ls -la ~/.ssh/*.pub 2>/dev/null || echo 'ingen SSH-pubkey'; echo; echo '=== git config user ==='; git -C ${workspaceFolder} config user.name; git -C ${workspaceFolder} config user.email"
 		},
 		{
 			"label": "Oppdater git-remote til nytt reponavn",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI; git remote set-url origin https://github.com/Salazar-Rivero-Smart-Things/tech-ai-monkey.git; echo '=== ny remote ==='; git remote -v; echo; echo '=== kan vi nå repoet? ==='; GIT_TERMINAL_PROMPT=0 git ls-remote origin 2>&1 | head -6"
+			"command": "cd ${workspaceFolder}; git remote set-url origin https://github.com/Salazar-Rivero-Smart-Things/tech-ai-monkey.git; echo '=== ny remote ==='; git remote -v; echo; echo '=== kan vi nå repoet? ==='; GIT_TERMINAL_PROMPT=0 git ls-remote origin 2>&1 | head -6"
 		},
 		{
 			"label": "Sjekk GitHub-innlogging og repo-plassering",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI; echo '=== gh auth ==='; gh auth status 2>&1 | head -6; echo; echo '=== dine repoer ==='; gh repo list --limit 50 2>&1; echo; echo '=== tester org-URL ==='; GIT_TERMINAL_PROMPT=0 git ls-remote origin 2>&1 | head -4"
+			"command": "cd ${workspaceFolder}; echo '=== gh auth ==='; gh auth status 2>&1 | head -6; echo; echo '=== dine repoer ==='; gh repo list --limit 50 2>&1; echo; echo '=== tester org-URL ==='; GIT_TERMINAL_PROMPT=0 git ls-remote origin 2>&1 | head -4"
 		},
 		{
 			"label": "Finn riktig repo og organisasjon",
@@ -181,12 +181,544 @@
 		{
 			"label": "Gi repoet nytt navn og sjekk web-repo",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI; echo '=== rename repo ==='; gh api -X PATCH repos/Salazar-Rivero-Smart-Things/Tech-AI-Monkey-v1 -f name=tech-ai-monkey --jq '.full_name' 2>&1; echo; echo '=== .gitmodules? ==='; ls -la .gitmodules 2>&1; echo '=== web git-historikk ==='; cd web && git log --oneline 2>&1 | head -5; echo '=== web status ==='; git status --short 2>&1 | head -20"
+			"command": "cd ${workspaceFolder}; echo '=== rename repo ==='; gh api -X PATCH repos/Salazar-Rivero-Smart-Things/Tech-AI-Monkey-v1 -f name=tech-ai-monkey --jq '.full_name' 2>&1; echo; echo '=== .gitmodules? ==='; ls -la .gitmodules 2>&1; echo '=== web git-historikk ==='; cd web && git log --oneline 2>&1 | head -5; echo '=== web status ==='; git status --short 2>&1 | head -20"
 		},
 		{
 			"label": "Klargjør commit (konverter web, stage alt)",
 			"type": "shell",
-			"command": "cd /home/hesriverp7/Dokumenter/MyGits/MyAI; echo '=== fjern web som submodule/gitlink ==='; git rm --cached web 2>&1; rm -rf web/.git; echo '=== stage alt ==='; git add -A 2>&1; echo '=== hva blir med i commiten? (filer) ==='; git diff --cached --name-only | head -80; echo; echo '=== SJEKK: noen hemmelige .env-filer med? ==='; git diff --cached --name-only | grep -iE '\\.env|secret|credential' || echo 'INGEN hemmelige filer er med ✓'"
+			"command": "cd ${workspaceFolder}; echo '=== fjern web som submodule/gitlink ==='; git rm --cached web 2>&1; rm -rf web/.git; echo '=== stage alt ==='; git add -A 2>&1; echo '=== hva blir med i commiten? (filer) ==='; git diff --cached --name-only | head -80; echo; echo '=== SJEKK: noen hemmelige .env-filer med? ==='; git diff --cached --name-only | grep -iE '\\.env|secret|credential' || echo 'INGEN hemmelige filer er med ✓'"
+		},
+		{
+			"label": "Diagnostikk: Node og npm",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"echo '=== node ==='; node -v; echo '=== npm ==='; npm -v; echo '=== cwd ==='; pwd; echo '=== OS ==='; cat /etc/os-release | head -3"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: miljo",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"OUT=$PWD/.diag.txt; { echo '=== node ==='; node -v; echo '=== npm ==='; npm -v; echo '=== npx ==='; npx -v; echo '=== whoami/home ==='; whoami; echo $HOME; echo '=== OS ==='; cat /etc/os-release 2>/dev/null | head -4; echo '=== DB binaries ==='; command -v psql || echo 'no psql'; command -v mariadb || echo 'no mariadb'; command -v mysql || echo 'no mysql'; echo '=== DB services ==='; systemctl list-units --type=service --all 2>/dev/null | grep -iE 'postgres|mysql|mariadb' || echo 'none'; echo '=== disk ==='; df -h / | tail -1; } > \"$OUT\" 2>&1; echo done"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: kjor script",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"diag.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: kjor script abs",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.diag.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: kjor script 2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.diag2.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: sjekk sudo og Postgres",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.setup1.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: sjekk DB-auth og gammel deploy",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.setup2.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: mappestruktur og tjenester",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.setup3.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Setup: les kjorende tjeneste-env",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.setup4.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Installer avhengigheter (root + web)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.install.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Bygg agent + web",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.build.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Bygg agent pa nytt",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.build2.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Opprett databasetabeller",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.push.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Verifiser DB og smoketest appene",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.verify.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Smoketest agent med lengre ventetid",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.verify2.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Lengre smoketest agent",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.verify3.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Opprett tabeller (drizzle push)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.push.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Royk-test web-app",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.smoke.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Bygg web pa nytt (ny URL)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.buildweb.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Bygg web pa nytt (forsok 2)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.buildweb.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Verifiser live-tjenester",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.check-live.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diagnostikk: domene og caddy",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.diag-domain.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diagnostikk: domene svar og cloudflared",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"${workspaceFolder}/.diag-domain2.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: sjekk passordfri sudo",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd \"$HOME\" && echo \"cwd=$(pwd)\" && sudo -n true; echo \"sudo_exit=$?\""
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: sjekk passordfri sudo 2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd \"$HOME\" && sudo -n true 2>&1; echo \"sudo_exit=$?\"; ls -la /etc/sudoers.d/ 2>&1"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: tjenester, porter, cloudflared, stier",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd \"$HOME\" && echo '=== SERVICES ===' ; systemctl is-active myai-agent myai-web caddy cloudflared 2>&1 ; echo ; echo '=== UNIT FILES ===' ; for u in myai-agent myai-web caddy; do echo \"--- $u ---\"; systemctl cat $u 2>/dev/null | grep -E 'WorkingDirectory|ExecStart|EnvironmentFile|^User=' ; done ; echo ; echo '=== PORTS ===' ; sudo -n ss -ltnp 2>/dev/null | grep -E ':(80|443|2000|3000|8000|8080|8443) ' ; echo ; echo '=== CLOUDFLARED ===' ; pgrep -a cloudflared || echo 'ikke kjorende' ; ls -la \"$HOME/.cloudflared\" 2>&1 ; echo ; echo '=== PATHS ===' ; for p in ${workspaceFolder} /run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey ; do if [ -d \"$p\" ]; then echo \"OK     $p\"; else echo \"MANGLER $p\"; fi; done"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: etter flytting",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-move.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: nettverk og bygg",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-net.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Finn prosjektmapper",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"find /home/hesriverp7 /media /mnt /run/media -maxdepth 7 -type d -name 'tech-ai-monkey' 2>/dev/null | sort -u"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: sudo og gamle stier",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"echo '=== sudo -n ==='; sudo -n true 2>&1; echo \"sudo_exit=$?\"; echo '=== /etc/sudoers.d ==='; ls -la /etc/sudoers.d/ 2>&1; echo '=== Dokumenter/MyGits ==='; ls -la /home/hesriverp7/Dokumenter/MyGits/ 2>&1 | head; echo '=== gammel prosjektsti finnes? ==='; [ -e ${workspaceFolder} ] && echo FINNES || echo MANGLER"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: sudo og gamle stier",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-sudo.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag sudo og stier v2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-sudo.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Fiks tasks.json stier",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.fix-tasks-json.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Installer tjenester (ny sti)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/deploy/install-services.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: agent-feil etter flytting",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-agent.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Rebuild agent (ny sti)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.build2.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Restart agent og vent",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.restart-agent.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Verifiser live (ny sti)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-live.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag domene (ny sti)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-domain.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: systemd-stier",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"echo '=== units som nevner Dokumenter/MyGits eller /run/media ==='; grep -rIn -e 'Dokumenter' -e 'MyGits' -e '/run/media' /etc/systemd/system /etc/systemd/user \"$HOME/.config/systemd\" 2>/dev/null | head -60; echo; echo '=== alle myai/monkey/tech units ==='; systemctl list-unit-files --no-pager 2>/dev/null | grep -iE 'myai|monkey|tech|caddy|servidor|apache|nginx'; echo; echo '=== kjørende tjenester (utvalg) ==='; systemctl list-units --type=service --state=running --no-pager 2>/dev/null | grep -iE 'myai|monkey|tech|caddy|servidor|apache|nginx|postgres|ollama'"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: systemd-stier",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-units.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: systemd stier v2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-units.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: domene v3",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-domain3.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Diag: ekstern port-test",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-port.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Cloudflare tunnel login",
+			"type": "shell",
+			"command": "/home/hesriverp7/.local/bin/cloudflared",
+			"args": [
+				"tunnel",
+				"login"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Diag: cloudflare login",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-cf.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Cloudflare tunnel login 2",
+			"type": "shell",
+			"command": "/home/hesriverp7/.local/bin/cloudflared",
+			"args": [
+				"tunnel",
+				"login"
+			],
+			"isBackground": true
+		},
+		{
+			"label": "Diag: cloudflare login 2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.diag-cf.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sett opp Cloudflare-tunnel",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/deploy/setup-cloudflare-tunnel.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Verifiser tech-ai.tech live",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.verify-site.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Ekstern verifisering",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.verify-external.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk env-nokler",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-env-keys.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk Google OAuth redirect",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-oauth.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Fiks AUTH_URL + Host-header",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.fix-auth-url.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk Google OAuth redirect 2",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-oauth.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk Google godtar URI",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.check-google-ok.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Sluttverifisering",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.verify-site.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Stage alle endringer",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.stage-all.sh"
+			],
+			"problemMatcher": []
 		}
 	]
 }

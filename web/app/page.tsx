@@ -10,7 +10,7 @@ const FEATURES = [
   { title: "Chat history control", body: "Clear or delete your conversations whenever you want." },
   { title: "API keys", body: "Give your own server a key and hook the AI into your systems." },
   { title: "Notebook reminders", body: "Reminders that stay until you mark them done." },
-  { title: "App connections", body: "Slack, Google Workspace, HubSpot, and Google — always with your permission." },
+  { title: "App connections", body: "Slack, Google Workspace, and Google — always with your permission." },
   { title: "Fair pricing", body: "Pay only for what you use. Cheaper than the big AI subscriptions." },
 ];
 

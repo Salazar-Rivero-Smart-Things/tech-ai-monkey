@@ -4,13 +4,12 @@
 // Every endpoint below is taken from the providers' official docs (verified):
 //  - Slack:   https://docs.slack.dev/authentication/installing-with-oauth
 //  - Google:  https://developers.google.com/identity/protocols/oauth2/web-server
-//  - HubSpot: https://developers.hubspot.com/docs/api/oauth-quickstart-guide
 //
 // Nothing here contacts a provider until the user clicks Connect, and Connect
 // only works once the matching client id/secret are set in the environment.
 // ---------------------------------------------------------------------------
 
-export type ProviderId = "slack" | "google_workspace" | "hubspot" | "google";
+export type ProviderId = "slack" | "google_workspace" | "google";
 
 export interface ProviderConfig {
   id: ProviderId;
@@ -76,20 +75,6 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
       prompt: "consent",
       include_granted_scopes: "true",
     },
-  },
-  hubspot: {
-    id: "hubspot",
-    name: "HubSpot",
-    description: "Contacts, deals, and tickets.",
-    clientIdEnv: "HUBSPOT_CLIENT_ID",
-    clientSecretEnv: "HUBSPOT_CLIENT_SECRET",
-    setupUrl: "https://developers.hubspot.com/",
-    docsUrl: "https://developers.hubspot.com/docs/api/oauth-quickstart-guide",
-    scopes: ["oauth", "crm.objects.contacts.read", "crm.objects.deals.read"],
-    scopeSeparator: " ",
-    authorizeEndpoint: "https://app.hubspot.com/oauth/authorize",
-    tokenEndpoint: "https://api.hubapi.com/oauth/v1/token",
-    requiresHttpsRedirect: true,
   },
   google: {
     id: "google",

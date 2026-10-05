@@ -13,10 +13,11 @@ Wants=network-online.target
 Type=simple
 User=hesriverp7
 Group=hesriverp7
-WorkingDirectory=/home/hesriverp7/Dokumenter/MyGits/MyAI
+WorkingDirectory=@@REPO@@
 Environment=PATH=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PORT=2000
-EnvironmentFile=/home/hesriverp7/Dokumenter/MyGits/MyAI/.env.agent
+Environment=NODE_ENV=production
+EnvironmentFile=@@REPO@@/.env
 ExecStart=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin/npm run start
 Restart=always
 RestartSec=5

@@ -1,6 +1,29 @@
 # Tech AI monkey — Project Progress Checkpoint
 
-> Resume point for future sessions. Last updated: 2026-09-24.
+> Resume point for future sessions. Last updated: 2026-10-05.
+
+## 🟢 LIVE på internett (2026-10-05)
+
+- **https://tech-ai.tech og https://www.tech-ai.tech er LIVE** (HTTP 200 fra 6 land).
+- Løsning: **Cloudflare Tunnel** (port 80/443 er stengt utenfra – port-forwarding ville ikke virke).
+  - Tunnel: `tech-ai-monkey` (id `d87f4c36-0421-45a4-bae1-6c975e9d4cb8`).
+  - Config: `~/.cloudflared/config.yml` → ingress til `http://localhost:3000`.
+  - Tjeneste: `cloudflared.service` (enabled, auto-start ved oppstart).
+  - Oppsettsskript: `deploy/setup-cloudflare-tunnel.sh` (idempotent — kan kjøres på nytt).
+  - **Caddy er slått av** (`systemctl disable --now caddy`) — tunnelen håndterer HTTPS.
+- Domenet er registrert hos **one.com**, men navnetjenerne peker til **Cloudflare** (kontoen eier sonen).
+- Auth: `NEXT_PUBLIC_APP_URL=https://tech-ai.tech`, `AUTH_URL=https://tech-ai.tech`,
+  `trustHost: true` i `web/auth.ts`, og `httpHostHeader: tech-ai.tech` i tunnel-config. ✅
+- ⚠️ Husk: Google OAuth redirect URI må inneholde
+  `https://tech-ai.tech/api/auth/callback/google` i Google Cloud Console.
+  (Feilen `redirect_uri_mismatch` kom av at tunnelen sendte Host=localhost:3000,
+  fikset med AUTH_URL + httpHostHeader.)
+
+## Prosjektmappe (flyttet)
+
+- Ny sti: `/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey`
+- systemd `myai-agent.service` og `myai-web.service` peker på ny sti.
+- Hjelpeskript og `.vscode/tasks.json` er gjort sti-uavhengige.
 
 ## What this is
 

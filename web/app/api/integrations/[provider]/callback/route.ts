@@ -67,9 +67,7 @@ async function exchangeCode(
   if (!accessToken) return { ok: false, error: "no_access_token" };
 
   const team = json.team as { name?: string } | undefined;
-  const account =
-    (typeof team?.name === "string" ? team.name : null) ??
-    (typeof json.hub_domain === "string" ? json.hub_domain : typeof json.hub_id === "string" ? json.hub_id : null);
+  const account = typeof team?.name === "string" ? team.name : null;
 
   return {
     ok: true,
