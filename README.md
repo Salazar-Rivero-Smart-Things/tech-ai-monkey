@@ -155,6 +155,40 @@ curl http://127.0.0.1:2000/eve/v1/session/<sessionId>/stream \
 | Delete/reset  | `POST /eve/v1/session/:sessionId/reset`        |
 | Cancel turn   | `POST /eve/v1/session/:sessionId/cancel`       |
 
+## CLI app (Linux & Windows)
+
+`cli/` is a dependency-free Node client that talks to the agent with the user's
+own account (or an API key). The installers are built on the server and served
+by the web app out of `web/public/downloads/`:
+
+```bash
+bash scripts/build-cli.sh                          # -> .deb + .exe + checksums.txt
+(cd web && npm run build)                          # then restart so /download picks them up
+sudo systemctl restart myai-web
+```
+
+`https://tech-ai.tech/download` lists whatever is present, with SHA-256 sums and
+the full system requirements.
+
+| Installer | Runs on |
+| --- | --- |
+| `tech-ai_<version>_amd64.deb` | Ubuntu 20.04 LTS+ and Debian 11+ (64-bit x86; needs `libc6 >= 2.31`) |
+| `tech-ai_<version>_windows_x64.exe` | Windows 10, Windows 11, Windows Server 2019+ (64-bit x86) |
+| macOS | **not built yet** — needs Apple code-signing + notarisation (planned for macOS 12+, Apple Silicon and Intel) |
+
+Both are self-contained: the runtime is bundled, so no Node.js or other
+dependency has to be installed on the target machine.
+
+```bash
+sudo dpkg -i tech-ai_1.0.0_amd64.deb   # Linux install
+tech-ai login                          # browser, or --email/--password, or --key tai_…
+tech-ai ask "why does my Next.js build fail?"
+tech-ai whoami
+```
+
+Credentials live in `~/.config/tech-ai/credentials.json` (file mode 600) and can
+be revoked at any time under **Dashboard → API keys**.
+
 ## Integrations ("Apps to connect")
 
 Users connect third-party apps from **`/dashboard/apps`**. Each provider is
@@ -307,7 +341,16 @@ agent/
   tools/list_memories.ts      # "what do you remember?"
   skills/                     # reusable skills (deep-web-research, self-improvement…)
 public/index.html             # built-in web chat UI
+cli/                          # terminal client (bundled into the .deb / .exe)
+  src/index.js                # command parsing (login, ask, chat, whoami)
+  src/login.js                # browser / e-mail+password / API-key sign-in
+  src/api.js                  # eve HTTP client
+  src/config.js               # ~/.config/tech-ai/credentials.json (mode 600)
+scripts/build-cli.sh          # builds the .deb + .exe into web/public/downloads/
 web/
+  app/download/               # public download page (links + system requirements)
+  app/cli-login/              # browser handoff for "tech-ai login"
+  app/dashboard/api-keys/     # create/revoke CLI + server API keys
   app/                        # Next.js pages + API routes (auth, billing, eve proxy)
   app/dashboard/privacy/      # GDPR: download data + delete account
   app/api/account/export/     # GDPR: JSON data export

@@ -234,3 +234,57 @@ export const integrations = pgTable(
   },
   (table) => [index("integration_userId_idx").on(table.userId)],
 );
+
+// ---------------------------------------------------------------------------
+// CLI access.
+//
+// cliAuthCode is a short-lived, single-use PKCE code that lets the terminal
+// prove it started the browser login (`tech-ai login`). It is created by the
+// /cli-login page after the user has authenticated in the browser and is
+// exchanged for a cliToken on the loopback callback.
+//
+// cliToken is the long-lived credential the CLI stores in
+// ~/.config/tech-ai/credentials.json. Only the SHA-256 hash is stored.
+// ---------------------------------------------------------------------------
+
+export const cliAuthCodes = pgTable(
+  "cliAuthCode",
+  {
+    // SHA-256 hex of the code handed to the CLI (never the code itself).
+    codeHash: text("codeHash").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    // base64url-encoded SHA-256 of the CLI's PKCE verifier (S256).
+    codeChallenge: text("codeChallenge").notNull(),
+    redirectPort: integer("redirectPort").notNull(),
+    clientName: text("clientName"),
+    expiresAt: timestamp("expiresAt", { mode: "date" }).notNull(),
+    usedAt: timestamp("usedAt", { mode: "date" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("cliAuthCode_userId_idx").on(table.userId)],
+);
+
+export const cliTokens = pgTable(
+  "cliToken",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull().default("CLI"),
+    // SHA-256 hex of the token. The token itself is shown only once.
+    tokenHash: text("tokenHash").notNull(),
+    // First characters of the token, so the dashboard can identify it.
+    prefix: text("prefix").notNull(),
+    lastUsedAt: timestamp("lastUsedAt", { mode: "date" }),
+    expiresAt: timestamp("expiresAt", { mode: "date" }),
+    revokedAt: timestamp("revokedAt", { mode: "date" }),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("cliToken_hash_idx").on(table.tokenHash),
+    index("cliToken_userId_idx").on(table.userId),
+  ],
+);

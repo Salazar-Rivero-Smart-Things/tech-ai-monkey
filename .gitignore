@@ -10,3 +10,5 @@ dist/
 .env*
 !.env.example
 .agent-memory/
+.build/
+.tmp*

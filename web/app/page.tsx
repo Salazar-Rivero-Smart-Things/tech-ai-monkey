@@ -34,6 +34,7 @@ export default async function HomePage() {
           <Link href="/pricing" className="text-zinc-400 hover:text-white">Pricing</Link>
           <Link href="/privacy" className="text-zinc-400 hover:text-white">Privacy</Link>
           <Link href="/terms" className="text-zinc-400 hover:text-white">Terms</Link>
+          <Link href="/download" className="text-zinc-400 hover:text-white">Download app</Link>
           <Link href="/copyright" className="text-zinc-400 hover:text-white">Legal</Link>
           {session?.user ? (
             <>

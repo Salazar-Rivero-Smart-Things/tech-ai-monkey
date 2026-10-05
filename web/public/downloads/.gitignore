@@ -1,0 +1,5 @@
+# Built CLI artifacts are large binaries — never commit them.
+# Build them locally with:  bash scripts/build-cli.sh
+*
+!.gitignore
+!README.md

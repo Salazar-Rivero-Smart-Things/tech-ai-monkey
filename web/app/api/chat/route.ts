@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { createAgentToken } from "@/lib/agent-auth";
+import { consumeTokens, getBillingState } from "@/lib/billing/service";
+import { isUnlimited } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -16,6 +18,19 @@ export async function POST(req: Request) {
   const session = await auth();
   const userId = session?.user?.id;
   if (!userId) return jsonError("Not authenticated.", 401);
+
+  // Same metering rules as /eve/v1/*: the owner/admin is never blocked or charged.
+  const unlimited = isUnlimited({
+    id: userId,
+    email: session?.user?.email,
+    role: session?.user?.role,
+  });
+  if (!unlimited) {
+    const billing = await getBillingState(userId);
+    if (billing.totalRemaining <= 0) {
+      return jsonError("You are out of tokens. Upgrade or add prepaid tokens to continue.", 402);
+    }
+  }
 
   let body: Record<string, unknown>;
   try {
@@ -108,6 +123,7 @@ export async function POST(req: Request) {
   const encoder = new TextEncoder();
   let buffer = "";
   let done = false;
+  let usedTokens = 0;
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -125,11 +141,24 @@ export async function POST(req: Request) {
 
           for (const line of lines) {
             if (!line.trim()) continue;
-            let event: { type?: string; data?: { messageDelta?: string; message?: string } };
+            let event: {
+              type?: string;
+              data?: {
+                messageDelta?: string;
+                message?: string;
+                usage?: { inputTokens?: number; outputTokens?: number };
+              };
+            };
             try {
               event = JSON.parse(line);
             } catch {
               continue;
+            }
+
+            if (event.type === "step.completed") {
+              usedTokens +=
+                Math.max(0, event.data?.usage?.inputTokens ?? 0) +
+                Math.max(0, event.data?.usage?.outputTokens ?? 0);
             }
 
             switch (event.type) {
@@ -159,6 +188,13 @@ export async function POST(req: Request) {
         controller.close();
       } catch {
         controller.close();
+      } finally {
+        // Charge the turn once it has finished (never for the owner).
+        if (!unlimited && usedTokens > 0) {
+          await consumeTokens(userId, usedTokens, { source: "api-chat", sessionId }).catch(
+            () => undefined,
+          );
+        }
       }
     },
     cancel(reason) {

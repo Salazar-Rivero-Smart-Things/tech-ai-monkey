@@ -1,0 +1,17 @@
+{
+  "name": "tech-ai-cli",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Command-line client for Tech AI monkey (tech-ai.tech)",
+  "type": "module",
+  "bin": {
+    "tech-ai": "./src/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "build": "bash ../scripts/build-cli.sh"
+  }
+}
