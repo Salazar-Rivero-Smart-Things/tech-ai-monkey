@@ -1,63 +1,15 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
 import { createAgentToken } from "@/lib/agent-auth";
+import { resolveApiCaller } from "@/lib/api-caller";
 import { consumeTokens, getBillingState } from "@/lib/billing/service";
-import { resolveCliToken } from "@/lib/cli-tokens";
-import { isUnlimited } from "@/lib/entitlements";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
-interface Caller {
-  userId: string;
-  email: string | null;
-  role: string;
-  /** Owner/admin: never metered, never blocked by a paywall. */
-  unlimited: boolean;
-}
-
 function jsonError(message: string, status: number) {
   return NextResponse.json({ ok: false, error: message }, { status });
-}
-
-function bearerFrom(request: Request): string {
-  const header = request.headers.get("authorization") ?? "";
-  return header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : "";
-}
-
-/**
- * Identify the caller. Two ways in:
- *   1. the browser session cookie (dashboard chat), or
- *   2. an `Authorization: Bearer tai_...` CLI token (`tech-ai login`).
- */
-async function resolveCaller(request: Request): Promise<Caller | null> {
-  const session = await auth();
-  if (session?.user?.id) {
-    const { id, email, role } = session.user;
-    return {
-      userId: id,
-      email: email ?? null,
-      role: role ?? "user",
-      unlimited: isUnlimited({ id, email, role }),
-    };
-  }
-
-  const bearer = bearerFrom(request);
-  if (bearer) {
-    const user = await resolveCliToken(bearer);
-    if (user) {
-      return {
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        unlimited: isUnlimited(user),
-      };
-    }
-  }
-
-  return null;
 }
 
 function isTerminalEvent(type: unknown) {
@@ -71,7 +23,7 @@ function isTerminalEvent(type: unknown) {
 }
 
 async function proxyRequest(request: Request, context: RouteContext) {
-  const caller = await resolveCaller(request);
+  const caller = await resolveApiCaller(request);
   if (!caller) return jsonError("Not authenticated.", 401);
   const { userId, unlimited } = caller;
 

@@ -155,6 +155,43 @@ curl http://127.0.0.1:2000/eve/v1/session/<sessionId>/stream \
 | Delete/reset  | `POST /eve/v1/session/:sessionId/reset`        |
 | Cancel turn   | `POST /eve/v1/session/:sessionId/cancel`       |
 
+## OpenAI-compatible API (VS Code and friends)
+
+The web app also serves an OpenAI-compatible Chat Completions API on the same
+host, so the agent can be used as a model in VS Code and any other tool that
+lets you set a base URL and a key. Authentication is the same `tai_…` key from
+**Dashboard → API keys** (`Authorization: Bearer tai_…`), and the same token
+metering applies — the owner account is unlimited.
+
+| Method | Path                     | Purpose                                          |
+| ------ | ------------------------ | ------------------------------------------------ |
+| `GET`  | `/v1/models`             | Lists the models you can call (`tech-ai-monkey`)  |
+| `POST` | `/v1/chat/completions`   | Chat Completions, with `stream: true` or `false`  |
+
+```bash
+curl https://tech-ai.tech/v1/chat/completions \
+  -H "Authorization: Bearer tai_…" \
+  -H "content-type: application/json" \
+  -d '{"model":"tech-ai-monkey","messages":[{"role":"user","content":"hi"}],"stream":false}'
+```
+
+Errors use OpenAI's shape (`{"error":{"message":…,"type":…}}`): `401` for a
+bad or revoked key, `402` when the account is out of tokens. The customer-facing
+walkthrough lives at **https://tech-ai.tech/docs/vscode** (`web/app/docs/vscode`),
+and the agent itself is instructed to link that page plus
+`https://tech-ai.tech/dashboard/api-keys` whenever anyone asks where to get a key.
+
+Implementation notes:
+
+- `web/app/v1/chat/completions/route.ts` flattens the OpenAI `messages` array into
+  the single prompt the eve agent accepts, creates a fresh session per request,
+  and translates the agent's event stream into `chat.completion.chunk` SSE.
+- `web/lib/api-caller.ts` resolves the caller from either the browser session
+  cookie or `Authorization: Bearer tai_…`, and both `/eve/v1/*` and `/v1/*` use it.
+- Configure the model with `"toolCalling": false`: the agent runs its own tools
+  server-side, so it belongs in VS Code's **Ask** mode. Agent mode expects the
+  model to call the editor's tools, which this endpoint does not expose.
+
 ## CLI app (Linux & Windows)
 
 `cli/` is a dependency-free Node client that talks to the agent with the user's

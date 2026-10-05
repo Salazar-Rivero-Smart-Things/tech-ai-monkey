@@ -357,6 +357,19 @@ tech-ai whoami        # account + how many tokens are left`}</pre>
           </div>
 
           <div>
+            <h2 className="text-lg font-semibold text-zinc-100">Use it inside VS Code</h2>
+            <p className="mt-2">
+              The same account also works as a model in the VS Code chat picker: add it as a{" "}
+              <em>Custom Endpoint</em> with an API key and it shows up next to the Copilot models.
+              No Copilot plan required for that. The{" "}
+              <Link href="/docs/vscode" className="text-blue-400 hover:underline">
+                VS Code guide
+              </Link>{" "}
+              has the three-step setup and a configuration block you can paste straight in.
+            </p>
+          </div>
+
+          <div>
             <h2 className="text-lg font-semibold text-zinc-100">Verify the download</h2>
             <p className="mt-2">
               Compare the SHA-256 shown above with the file you received, or check{" "}
