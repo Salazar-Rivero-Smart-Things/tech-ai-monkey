@@ -1,0 +1,24 @@
+# Tech AI monkey – nattlig PostgreSQL-backup (oneshot).
+# Installeres av: deploy/install-backup.sh
+# Test manuelt:   sudo systemctl start myai-backup.service
+
+[Unit]
+Description=Tech AI monkey - nattlig PostgreSQL-backup
+Documentation=file://@@REPO@@/docs/backup-og-gjenoppretting.md
+After=network-online.target postgresql.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=hesriverp7
+Group=hesriverp7
+WorkingDirectory=@@REPO@@
+Environment=PATH=/usr/lib/postgresql/18/bin:/usr/local/bin:/usr/bin:/bin
+Environment=BACKUP_DIR=/home/hesriverp7/backups/tech-ai-monkey
+EnvironmentFile=-@@REPO@@/deploy/backup.env
+ExecStart=/usr/bin/env bash @@REPO@@/deploy/backup-db.sh
+Nice=10
+IOSchedulingClass=idle
+
+[Install]
+WantedBy=multi-user.target

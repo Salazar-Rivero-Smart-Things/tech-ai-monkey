@@ -32,6 +32,9 @@ fornyes **hvert år**.
 | **Rett til sletting** – sletter konto + alle rader, logger ut | `web/lib/account.ts` → `deleteUserData()`, `web/app/dashboard/actions.ts` |
 | **Brukerflate for GDPR** – «Privacy & data» i sidemenyen | `web/app/dashboard/privacy/page.tsx` (last ned data + slett konto) |
 | **Rett til innsyn** – JSON-eksport (uten passord/tokens) | `web/app/api/account/export/route.ts` |
+| **Underleverandørliste + retensjon** i personvernerklæringen | `web/app/privacy/page.tsx` (§5 og §8) |
+| **Dataflyt-kart** – data → underleverandører, overføringer utenfor EØS, sletterutiner | [`dataflyt.md`](dataflyt.md) |
+| **Nattlig backup + dokumentert gjenoppretting** | `deploy/backup-db.sh`, `deploy/restore-db.sh`, `deploy/myai-backup.{service,timer}`, [`backup-og-gjenoppretting.md`](backup-og-gjenoppretting.md) |
 
 Verifisert live: headers svarer, `/api/account/export` gir **401** uinnlogget. ✅
 
@@ -40,9 +43,9 @@ Verifisert live: headers svarer, `/api/account/export` gir **401** uinnlogget. �
 ## Hva som gjenstår (sjekkliste)
 
 ### Dokumentasjon vurdereren spør om
-- [ ] **Datalagrings-/retensjonspolicy** – hvor lenge lagrer vi hva, og hvorfor
-- [ ] **Dataflyt-kart** – hvilke data går til hvilke underleverandører
-- [ ] **Underleverandørliste** – Google, Slack, Stripe, PayPal, DeepSeek, Cloudflare, one.com
+- [x] **Datalagrings-/retensjonspolicy** – konkrete frister i `/privacy` §8 og §2 i [`dataflyt.md`](dataflyt.md)
+- [x] **Dataflyt-kart** – [`dataflyt.md`](dataflyt.md) (med Mermaid-diagram, rettslig grunnlag og overføringer)
+- [x] **Underleverandørliste** – `/privacy` §5 (Cloudflare, Google, Slack, Stripe, PayPal, DeepSeek, Vercel, one.com)
 - [ ] **Sikkerhetshendelses-plan** (hvem gjør hva ved brudd, varsling innen 72 t)
 - [ ] **Sikker utviklingspraksis** – kodegjennomgang, minste privilegium, hemmeligheter
 - [ ] **Kontosletting ved forespørsel** – dokumenter prosessen (e-post → slett innen X dager)
@@ -50,7 +53,7 @@ Verifisert live: headers svarer, `/api/account/export` gir **401** uinnlogget. �
 ### Tekniske forbedringer som styrker vurderingen
 - [ ] **Rate limiting** på login/API (f.eks. Upstash/edge) for å hindre brute force
 - [ ] **`npm audit` i CI** + automatiske avhengighetsoppdateringer (Dependabot)
-- [ ] **Backup + gjenoppretting** dokumentert (Postgres-dump) og testet
+- [x] **Backup + gjenoppretting** dokumentert og automatisert (nattlig systemd-timer) – gjenstår å **øve** gjenoppretting kvartalsvis, se [`backup-og-gjenoppretting.md`](backup-og-gjenoppretting.md) §5
 - [ ] **Minimumsbredde på CSP** – vurder å fjerne `unsafe-inline` (krever nonce)
 - [ ] **Sesjons-håndtering** – korte levetider, `Secure`/`HttpOnly`/`SameSite` (NextAuth-standard: OK)
 - [ ] **DAST** – kjør en automatisk skanner (OWASP ZAP) mot en staging-URL og fiks funn
@@ -65,6 +68,8 @@ Verifisert live: headers svarer, `/api/account/export` gir **401** uinnlogget. �
 ## Forslag til rekkefølge
 
 1. Skriv de fem dokumentene over (policyer) — CASA-spørreskjemaet følger ASVS-kapitler.
+   Underleverandørliste, retensjon og dataflyt-kart er **ferdige**; sikkerhetshendelses-plan,
+   sikker utviklingspraksis og kontoslettingsprosess gjenstår.
 2. Kjør `npm audit` og en ZAP-skan mot staging; fiks det som kommer.
 3. Når Google inviterer deg: velg vurderer, bruk **CASA Accelerator** hvis du har
    andre sertifiseringer (ISO 27001/SOC 2) — det sparer deg for mye.

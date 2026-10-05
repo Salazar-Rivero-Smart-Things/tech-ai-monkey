@@ -260,8 +260,34 @@ The connect/callback routes are provider-generic, so adding an app is config onl
 - **Right to erasure:** *Dashboard → Privacy & data* deletes the account and
   every related row (`web/lib/account.ts`), then signs the user out.
 - **Audit trail:** account and integration events are recorded in `auditLog`.
+- **Sub-processors & retention:** the full list (Cloudflare, Google, Slack, Stripe, PayPal,
+  DeepSeek, Vercel, one.com) and concrete retention periods are published in
+  [`/privacy`](https://tech-ai.tech/privacy) (§5 and §8).
+- **Data-flow map:** what data goes where, legal basis, transfers outside the EEA and
+  deletion routines — [`docs/dataflyt.md`](docs/dataflyt.md).
+- **Backups:** a nightly `pg_dump` (systemd timer) with a documented, tested restore path —
+  [`docs/backup-og-gjenoppretting.md`](docs/backup-og-gjenoppretting.md).
 - **Google / CASA:** annual security-assessment plan and checklist in
   [`docs/casa-security-plan.md`](docs/casa-security-plan.md).
+
+## Backup & recovery
+
+Customer data lives in the local PostgreSQL database, so it is backed up nightly:
+
+```bash
+bash deploy/backup-db.sh       # manual run  -> ~/backups/tech-ai-monkey/daily/
+bash deploy/install-backup.sh  # installs the nightly systemd timer (03:30)
+bash deploy/restore-db.sh <fil.sql.gz>   # restore (takes a safety backup first)
+```
+
+- Keeps **30 daily** dumps and **12 monthly** copies; older ones are pruned automatically.
+- Dumps are written with mode `600` in a `700` directory and are **never** committed to git.
+- `BACKUP_DIR` can point at another disk (e.g. a NAS) via `deploy/backup.env`.
+- Full runbook (verify, restore from scratch, troubleshooting):
+  [`docs/backup-og-gjenoppretting.md`](docs/backup-og-gjenoppretting.md).
+
+> ⚠️ `SSN_KEK` is **not** part of the dump. Store it separately and securely — without it the
+> encrypted social-security numbers in a restored database cannot be decrypted.
 
 ## Project layout
 
@@ -295,6 +321,8 @@ docs/
   google-console-klikkguide.md   # screen-by-screen click guide (Norwegian)
   demo-video-manus.md            # demo-video script for Google
   casa-security-plan.md          # CASA / ASVS plan, status and checklist
+  dataflyt.md                    # data-flow map (sub-processors, transfers, retention)
+  backup-og-gjenoppretting.md    # backup/restore runbook (Norwegian)
 deploy/
   install-services.sh         # install/refresh the systemd services
   myai-agent.service          # agent unit (port 2000)
@@ -302,6 +330,12 @@ deploy/
   setup-db.sh                 # database setup
   setup-cloudflare-tunnel.sh  # publish tech-ai.tech via Cloudflare Tunnel
   Caddyfile                   # legacy (Caddy is disabled; the tunnel handles HTTPS)
+  backup-db.sh                # nightly pg_dump -> gzip (30 d + 12 mnd)
+  restore-db.sh               # restore a dump (safety backup first)
+  myai-backup.service         # oneshot backup unit
+  myai-backup.timer           # runs it nightly at 03:30
+  install-backup.sh           # installs + enables the timer
+  backup.env.example          # optional backup overrides (dir, retention)
 ```
 
 ## Deployment (self-hosted)
@@ -313,6 +347,7 @@ The site runs on this machine as three systemd services:
 | `myai-agent.service`  | eve agent (port 2000)            |
 | `myai-web.service`    | Next.js web app (port 3000)      |
 | `cloudflared.service` | Cloudflare Tunnel → tech-ai.tech |
+| `myai-backup.timer`   | nightly PostgreSQL backup (03:30)|
 
 ```bash
 # 1) Build both apps
@@ -324,6 +359,9 @@ bash deploy/install-services.sh
 
 # 3) Publish the domain (one-time Cloudflare login, then idempotent)
 bash deploy/setup-cloudflare-tunnel.sh
+
+# 4) Enable the nightly database backup (asks for sudo)
+bash deploy/install-backup.sh
 ```
 
 Notes:

@@ -1,0 +1,15 @@
+# Tech AI monkey – kjører myai-backup.service hver natt kl. 03:30.
+# Installeres av: deploy/install-backup.sh
+# Sjekk:          systemctl list-timers myai-backup.timer
+
+[Unit]
+Description=Kjor Tech AI monkey database-backup hver natt
+
+[Timer]
+OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=1800
+Persistent=true
+Unit=myai-backup.service
+
+[Install]
+WantedBy=timers.target

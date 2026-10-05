@@ -56,33 +56,112 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">5. Third parties</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">5. Sub-processors (third parties)</h2>
             <p className="mt-2">
-              We use trusted processors: Vercel (hosting), Neon (database), Stripe and PayPal
-              (payments), Google and Apple (sign-in), and AI model providers. Each processes data
-              only to perform its service under a data-processing agreement.
+              We never sell your personal data. We share it only with the sub-processors listed
+              below, each under a data-processing agreement and only to the extent needed to run
+              the Service. This list is kept up to date; the current version always applies.
+            </p>
+            <div className="mt-3 overflow-x-auto">
+              <table className="w-full border-collapse text-left text-xs">
+                <thead>
+                  <tr className="border-b border-zinc-700 text-zinc-400">
+                    <th className="py-2 pr-3 font-medium">Sub-processor</th>
+                    <th className="py-2 pr-3 font-medium">Purpose</th>
+                    <th className="py-2 font-medium">Data involved</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800 align-top">
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">{siteConfig.companyName} (own server, Norway)</td>
+                    <td className="py-2 pr-3">Hosting the Service and the database</td>
+                    <td className="py-2">All account data (encrypted at rest)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">Cloudflare, Inc. (EU/USA)</td>
+                    <td className="py-2 pr-3">DNS, DDoS protection and the encrypted tunnel to our server</td>
+                    <td className="py-2">IP address and request metadata (TLS is terminated here)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">Google Ireland Ltd (EU/USA)</td>
+                    <td className="py-2 pr-3">Sign-in with Google, and the Google integrations you connect (Calendar, Drive, Gmail — read-only)</td>
+                    <td className="py-2">Google account id, email address, and only the content you choose to connect</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">Slack Technologies / Salesforce (USA)</td>
+                    <td className="py-2 pr-3">The Slack integration you connect</td>
+                    <td className="py-2">Access tokens and the messages you ask the agent to handle</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">Stripe Payments Europe &amp; PayPal (EU/USA)</td>
+                    <td className="py-2 pr-3">Card and PayPal payments, subscriptions and invoices</td>
+                    <td className="py-2">Name, email and payment/billing data (we never store full card numbers)</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">DeepSeek (Hangzhou, China)</td>
+                    <td className="py-2 pr-3">The AI model that generates the agent&apos;s answers</td>
+                    <td className="py-2">The text (prompt) you send to the agent</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">Vercel Inc. (USA)</td>
+                    <td className="py-2 pr-3">AI Gateway — used only as fallback if our primary model provider is unavailable</td>
+                    <td className="py-2">The text (prompt) in that fallback request</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 pr-3 whitespace-nowrap">one.com (Denmark/EU)</td>
+                    <td className="py-2 pr-3">Domain and email for {siteConfig.supportEmail}</td>
+                    <td className="py-2">The email you send to support</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold text-zinc-100">6. Transfers outside the EEA</h2>
+            <p className="mt-2">
+              Your account data is stored in our own database on a server in Norway and does not
+              leave the EEA. A few sub-processors are outside the EEA (Cloudflare, Slack, Stripe,
+              PayPal and Vercel in the USA, and DeepSeek in China). Those transfers rely on the EU
+              Standard Contractual Clauses and the additional safeguards required by the GDPR.
+            </p>
+            <p className="mt-2">
+              Only the minimum leaves the EEA: the <strong>text you type in a chat</strong> is sent
+              to DeepSeek to produce an answer. Please do not paste sensitive personal data (health
+              information, your social security number or similar) into the chat. If you prefer not
+              to use a provider outside the EEA, contact us and we will disable the external AI
+              provider for your account.
             </p>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">6. Your rights</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">7. Your rights</h2>
             <p className="mt-2">
               Under the GDPR you have the right to access, correct, delete, and export your data,
-              and to object to or restrict processing. Contact us via the support channels below.
+              and to object to or restrict processing. You can download everything we store from{" "}
+              <span className="text-zinc-100">Dashboard → Privacy &amp; data → Download my data</span>{" "}
+              and delete your account from the same page. You may also contact us via the support
+              channels below, and you have the right to complain to your local data-protection
+              authority (in Norway: Datatilsynet).
             </p>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">7. Retention</h2>
-            <p className="mt-2">
-              We keep your data for as long as your account is active, and then only as long as
-              required by law (for example, accounting rules). You may delete your account at any
-              time and we will erase or anonymize your data.
-            </p>
+            <h2 className="text-lg font-semibold text-zinc-100">8. Retention (how long we keep data)</h2>
+            <ul className="mt-2 list-disc space-y-1 pl-6">
+              <li><span className="text-zinc-100">Account data</span> — while your account is active, then erased within 30 days of deletion.</li>
+              <li><span className="text-zinc-100">Chat history and saved artifacts</span> — until you clear them or delete your account.</li>
+              <li><span className="text-zinc-100">Connected-app tokens</span> — until you disconnect the app or delete your account.</li>
+              <li><span className="text-zinc-100">Audit log</span> — 12 months.</li>
+              <li><span className="text-zinc-100">Server and access logs</span> — 30 days.</li>
+              <li><span className="text-zinc-100">Backups</span> — nightly encrypted-at-rest dumps kept for 30 days, plus one monthly copy kept for 12 months. Deleted data is gone from backups within 30 days.</li>
+              <li><span className="text-zinc-100">Payment and accounting records</span> — 5 years, as required by the Norwegian Bookkeeping Act.</li>
+              <li><span className="text-zinc-100">Support email</span> — 24 months.</li>
+            </ul>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">8. Contact</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">9. Contact</h2>
             <p className="mt-2">
               WhatsApp:{" "}
               <a className="text-blue-400 hover:underline" href={siteConfig.supportWhatsAppUrl}>
