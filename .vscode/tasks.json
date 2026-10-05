@@ -499,6 +499,78 @@
 			"type": "shell",
 			"command": "cd \"${workspaceFolder}\" && git add -A && echo '=== COMMIT ===' && git commit -m 'Add pluggable model selection and a model-speed benchmark' -m 'agent/agent.ts: pick the model by AGENT_MODEL (AI Gateway) > OPENAI_COMPAT_* (Groq, Cerebras, OpenRouter, Ollama, ...) > OLLAMA_MODEL > DEEPSEEK_API_KEY > free gateway fallback. Add scripts/model-bench.mjs and npm run bench to measure latency, tokens/s and tool-calling; it auto-loads the root .env. Remove 59 throwaway diag/verify/build/push scripts from the repo root and prune .vscode/tasks.json from 156 to 50 tasks. Document the model chain in README and .env.example.' 2>&1 | tail -8 && echo '=== PUSH ===' && GIT_TERMINAL_PROMPT=0 git push origin main 2>&1 | tail -8 && echo '=== RESULTAT ===' && git --no-pager log --oneline -2 && git status --short | head -5 && echo '(tomt over = rent tre)'",
 			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk Dependabot + npm audit (root)",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}\" && echo '=== Dependabot-varsler (GitHub) ==='; gh api '/repos/HollmanRivero/tech-ai-monkey/dependabot/alerts?state=open' --jq '.[] | \"#\\(.number)  \\(.security_advisory.severity|ascii_upcase)  \\(.dependency.package.name)@\\(.dependency.manifest_path)  [\\(.security_vulnerability.vulnerable_version_range)]  patched=\\(.security_vulnerability.first_patched_version.identifier // \"INGEN\")  -> \\(.security_advisory.summary)\"' 2>&1 | head -20; echo; echo '=== npm audit (root, produksjon) ==='; npm audit --omit=dev 2>&1 | tail -15; echo; echo '=== npm audit (root, alle) ==='; npm audit 2>&1 | tail -25",
+			"problemMatcher": []
+		},
+		{
+			"label": "Undersok web-sarbarheter",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && echo '=== npm audit (web, produksjon) ==='; npm audit --omit=dev 2>&1 | tail -20; echo; echo '=== npm audit (web, alle) ==='; npm audit 2>&1 | tail -40; echo; echo '=== hvem drar inn braces og esbuild? ==='; npm ls braces esbuild 2>&1 | head -40",
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk patchede versjoner for braces",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && echo '=== braces: finnes en patchet versjon? ==='; npm view braces dist-tags 2>&1; npm view braces versions --json 2>&1 | tr -d ' \\n' | tail -c 200; echo; echo '=== micromatch avhengigheter ==='; npm view micromatch version 2>&1; npm view micromatch dependencies 2>&1; echo; echo '=== advisory #27 (braces) ==='; gh api /repos/HollmanRivero/tech-ai-monkey/dependabot/alerts/27 --jq '.security_advisory | {ghsa_id, cve_id, severity, summary, published_at}, .security_vulnerability | {vulnerable_version_range, first_patched_version}' 2>&1; echo; echo '=== advisory #26 (esbuild) ==='; gh api /repos/HollmanRivero/tech-ai-monkey/dependabot/alerts/26 --jq '.security_advisory | {ghsa_id, cve_id, severity, summary, published_at}, .security_vulnerability | {vulnerable_version_range, first_patched_version}' 2>&1",
+			"problemMatcher": []
+		},
+		{
+			"label": "Full npm audit-oversikt (web)",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && npm audit --json 2>/dev/null | node -e \"let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log('totalt:',JSON.stringify(j.metadata&&j.metadata.vulnerabilities));const v=j.vulnerabilities||{};for(const [k,x] of Object.entries(v)){const via=(x.via||[]).map(y=>typeof y==='string'?('avhengig av '+y):(y.title+' ['+y.severity+']')).join(' | ');console.log('- '+k+'  ('+x.severity+')  '+via)}})\"",
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk nyere eslint-config-next",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && echo '=== eslint-config-next dist-tags ==='; npm view eslint-config-next dist-tags 2>&1; echo '=== nyeste versjoner ==='; npm view eslint-config-next versions --json 2>&1 | tr -d ' \\n' | tail -c 200; echo; echo '=== @next/eslint-plugin-next latest + deps ==='; npm view @next/eslint-plugin-next dist-tags 2>&1; npm view @next/eslint-plugin-next@latest dependencies 2>&1; echo; echo '=== har typescript-eslint fast-glob? (hvis vi bytter lint-stack) ==='; npm view @typescript-eslint/typescript-estree@latest dependencies 2>&1 | head -20",
+			"problemMatcher": []
+		},
+		{
+			"label": "Hent radgivningsdetaljer",
+			"type": "shell",
+			"command": "echo '=== GHSA-vfj7-8cjw-p6xm (braces) ==='; gh api /advisories/GHSA-vfj7-8cjw-p6xm --jq '{ghsa_id, cve_id, severity, summary, published_at, updated_at, vulnerabilities}' 2>&1 | head -40; echo; echo '=== GHSA-67mh-4wv8-2f99 (esbuild) ==='; gh api /advisories/GHSA-67mh-4wv8-2f99 --jq '{ghsa_id, cve_id, severity, summary, published_at, vulnerabilities}' 2>&1 | head -40",
+			"problemMatcher": []
+		},
+		{
+			"label": "Installer esbuild-override og verifiser",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && echo '=== npm install (bruker override) ==='; npm install 2>&1 | tail -8; echo; echo '=== esbuild-versjoner i treet ==='; npm ls esbuild 2>&1 | head -20; echo; echo '=== npm audit ETTER fiks ==='; npm audit 2>&1 | tail -25; echo; echo '=== produksjon ==='; npm audit --omit=dev 2>&1 | tail -4; echo; echo '=== virker drizzle-kit? ==='; npx drizzle-kit --version 2>&1 | tail -3",
+			"problemMatcher": []
+		},
+		{
+			"label": "Tving esbuild-override",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && rm -rf node_modules/@esbuild-kit/core-utils/node_modules/esbuild && echo '=== npm install pa nytt ===' && npm install 2>&1 | tail -5 && echo && echo '=== esbuild i treet ===' && npm ls esbuild 2>&1 | head -20 && echo && echo '=== audit ===' && npm audit 2>&1 | tail -12",
+			"problemMatcher": []
+		},
+		{
+			"label": "Regenerer lockfile-oppforing for esbuild",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && node -e \"const fs=require('fs');const p='package-lock.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));const key='node_modules/@esbuild-kit/core-utils/node_modules/esbuild';let n=0;if(j.packages&&j.packages[key]){delete j.packages[key];n++}if(j.dependencies&&j.dependencies['@esbuild-kit/core-utils']){delete j.dependencies['@esbuild-kit/core-utils'];n++}fs.writeFileSync(p,JSON.stringify(j,null,2)+'\\n');console.log('fjernet '+n+' oppforinger fra lockfilen')\" && echo '=== npm install ===' && npm install 2>&1 | tail -4 && echo && echo '=== esbuild i treet ===' && npm ls esbuild 2>&1 | head -16 && echo && echo '=== audit ===' && npm audit 2>&1 | tail -6",
+			"problemMatcher": []
+		},
+		{
+			"label": "Verifiser drizzle-kit og web-bygg",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}/web\" && echo '=== drizzle-kit virker? ===' && npx drizzle-kit --version 2>&1 | tail -2 && echo && echo '=== bygger web ===' && npm run build 2>&1 | tail -18 && echo && echo '=== restart + helse ===' && sudo systemctl restart myai-web && sleep 6 && systemctl is-active myai-web && curl -s -o /dev/null -w 'web /download HTTP %{http_code}\\n' --max-time 15 http://127.0.0.1:3000/download",
+			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk fast-glob og micromatch",
+			"type": "shell",
+			"command": "echo '=== fast-glob ==='; npm view fast-glob dist-tags 2>&1; npm view fast-glob@latest version dependencies 2>&1; echo; echo '=== alle fast-glob 3.3.x ==='; npm view fast-glob versions --json 2>&1 | tr -d ' \\n' | tail -c 160; echo; echo; echo '=== micromatch nyeste ==='; npm view micromatch dist-tags 2>&1; npm view micromatch@latest version dependencies 2>&1",
+			"problemMatcher": []
+		},
+		{
+			"label": "Preflight + commit + push sarbarhetsfiks",
+			"type": "shell",
+			"command": "cd \"${workspaceFolder}\" && echo '=== PREFLIGHT ===' && bash scripts/preflight.sh 2>&1 | tail -14 && echo '=== COMMIT ===' && git add -A && git commit -m 'Fix the esbuild advisory in web/ and document the unfixable braces one' -m 'Pin esbuild to ^0.25.0 for @esbuild-kit/core-utils (pulled in by drizzle-kit) via an npm override in web/package.json, which removes the moderate GHSA-67mh-4wv8-2f99 chain from npm audit (9 -> 5 findings). The remaining high advisory is braces (CVE-2026-93687): there is no patched release anywhere in the chain (eslint-config-next -> @next/eslint-plugin-next -> fast-glob -> micromatch -> braces), it is dev-only, and production deps stay at 0. Documented as an accepted risk in docs/casa-security-plan.md.' 2>&1 | tail -5 && echo '=== PUSH ===' && GIT_TERMINAL_PROMPT=0 git push origin main 2>&1 | tail -8 && echo '=== RESULTAT ===' && git --no-pager log --oneline -2 && git status --short | head -3 && echo '(tomt over = rent)'",
+			"problemMatcher": []
 		}
 	]
 }

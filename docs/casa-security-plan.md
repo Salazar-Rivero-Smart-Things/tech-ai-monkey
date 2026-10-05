@@ -46,7 +46,7 @@ Kjørt `npm audit` på begge prosjekter, både med og uten produksjonsavhengighe
 | Prosjekt | Produksjon (`--omit=dev`) | Alt (inkl. byggeverktøy) |
 | --- | --- | --- |
 | Agenten (rot) | **0** ✅ | 0 ✅ |
-| Web-appen (`web/`) | **0** ✅ | 9 (5 high) — kun `drizzle-kit` |
+| Web-appen (`web/`) | **0** ✅ | 5 (5 high) — kun `eslint-config-next` → `braces` |
 
 ### Agenten – rettet
 `undici` var sårbar i to kopier: `8.9.0` (under `eve`) og `7.29.0` (under
@@ -66,28 +66,48 @@ Rettet med målrettede `overrides` i `package.json` i stedet for
 
 Resultat: `guarded-fetch` drar nå `undici@7.30.0`, og `eve`/resten bruker
 `undici@8.11.2`. Etterpå ble agenten bygget på nytt og restartet – helse 200,
-modell `deepseek-chat`, ingen feil i loggen.
+ingen feil i loggen.
 
-### Web-appen – akseptert, med begrunnelse
-Alle 9 funnene ligger i **`drizzle-kit`**, som er et rent **byggeverktøy**
-(kjøres bare for `drizzle-kit push`/migrasjoner, aldri i produksjon):
+### Web-appen – `esbuild` rettet, `braces` akseptert
+
+**Rettet:** `esbuild@0.18.20` (GHSA-67mh-4wv8-2f99, patchet i `0.25.0`) kom inn via
+`drizzle-kit@0.31.11 -> @esbuild-kit/esm-loader@2.6.5 -> @esbuild-kit/core-utils@3.3.2`.
+Løst med en målrettet `override` i `web/package.json`:
+
+```json
+"overrides": {
+  "@esbuild-kit/core-utils": { "esbuild": "^0.25.0" }
+}
+```
+
+Den nested kopien er nå `esbuild@0.25.12` (dedupet mot versjonen `drizzle-kit` selv
+bruker), og hele den moderate kjeden er borte fra `npm audit`. Verifisert etterpå:
+`drizzle-kit --version`, `npm run build` og tjenesten kjører fortsatt.
+
+**Akseptert:** de resterende 5 (alle **high**) er én og samme rådgivning —
+`braces` ([GHSA-vfj7-8cjw-p6xm](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm),
+CVE-2026-93687) — som telles én gang per pakke i kjeden:
 
 ```
-drizzle-kit@0.31.11 -> @esbuild-kit/esm-loader@2.6.5
-                    -> @esbuild-kit/core-utils@3.3.2
-                    -> esbuild@0.18.20
+eslint-config-next@16.3.6 -> @next/eslint-plugin-next@16.3.6
+                          -> fast-glob@3.3.1
+                          -> micromatch@4.0.8
+                          -> braces@3.0.3
 ```
 
-- Produksjonsavhengighetene i web-appen har **0** sårbarheter.
-- `0.31.11` er **nyeste tilgjengelige** versjon av `drizzle-kit`, så det finnes
-  ingen oppgradering som fjerner funnet. Det må i så fall komme fra upstream.
-- Advarselen som rammer `esbuild@0.18.20` gjelder **utviklerserveren** til
-  esbuild, som kan svare på forespørsler fra vilkårlige nettsteder. `drizzle-kit`
-  bruker bare esbuild til å laste `drizzle.config.ts` – den starter ingen
-  utviklerserver. Risikoen i vår bruk er derfor i praksis null.
-- Tiltak: overvåkes av **Dependabot**, og `npm audit --omit=dev` kjører både lokalt
-  (`scripts/preflight.sh`) og i `.github/workflows/security.yml` når GitHub Actions
-  kan starte på nytt. Revurderes når `drizzle-kit` bytter bort `@esbuild-kit`.
+- **Det finnes ingen patchet versjon.** Rådgivningen rammer `<= 3.0.3`, og `3.0.3` er
+  nyeste utgivelse av `braces`. `fast-glob@3.3.3` og `micromatch@4.0.8` er også nyeste,
+  og begge krever fortsatt `braces`. `npm audit fix --force` «løser» det bare ved å
+  **nedgradere** `eslint-config-next` til 14.x, som ville bryte linting for Next 16.
+- **Dev-only og ikke eksponert.** Pakken ligger i `devDependencies` og brukes kun av
+  ESLint. `npm audit --omit=dev` = **0**. Den kjører aldri i produksjon og er ikke
+  tilgjengelig for brukere av `tech-ai.tech`.
+- **Ikke utløsbar i vår bruk.** DoS-en krever at `braces` parser et dypt nestet mønster
+  fra en angriper. Mønstrene våre kommer fra vår egen `eslint.config.mjs`.
+- **Tiltak:** overvåkes av Dependabot. Revurderes når `fast-glob`/`micromatch` bytter bort
+  `braces`, eller når en patchet `braces` publiseres. Det eneste alternativet som fjerner
+  funnet helt er å droppe `eslint-config-next`, som samtidig mister Next-spesifikke
+  lint-regler (derfor ikke gjort).
 
 Verifisert live: headers svarer, `/api/account/export` gir **401** uinnlogget. ✅
 
