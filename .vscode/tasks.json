@@ -855,6 +855,32 @@
 				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.secret-scan.sh"
 			],
 			"problemMatcher": []
+		},
+		{
+			"label": "Sjekk remote for push",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.push-check.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Verifiser push",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.push-check.sh"
+			],
+			"problemMatcher": []
+		},
+		{
+			"label": "Push til GitHub (vanlig git)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"/run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey/.push-github.sh"
+			]
 		}
 	]
 }
