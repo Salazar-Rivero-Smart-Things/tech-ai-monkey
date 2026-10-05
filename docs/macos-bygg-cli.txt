@@ -1,0 +1,424 @@
+================================================================================
+ TECH AI MONKEY — LAGE DEN SIGNERTE macOS-VERSJONEN AV CLI-EN
+================================================================================
+ Steg for steg. Du gjør alt dette PÅ MAC'EN din.
+ Sist oppdatert 2026-10-05 · gjelder macOS 12 eller nyere
+
+ Du har Apple Developer-konto, så du kan gjøre dette helt ferdig.
+
+ HVORFOR DETTE TRENGS
+ macOS (Gatekeeper) blokkerer programmer som ikke er signert og notarisert av
+ Apple. Uten dette får kunden "app cannot be opened because the developer
+ cannot be verified", og må godkjenne den manuelt i Systeminnstillinger. Med
+ signering + notarisering åpner den rett fram, uten advarsler.
+
+ HVOR LANG TID
+ Første gang: 45-60 min. Selve notariseringen tar 2-15 minutter (Apple
+ behandler den).
+
+ HVA DU TRENGER
+   [ ] Apple Developer Program (betalt medlemskap) — du har det
+   [ ] Team ID (10 tegn)                  — steg 1
+   [ ] Et app-spesifikt passord           — steg 2
+   [ ] To sertifikater                    — steg 3
+   [ ] Xcode Command Line Tools           — steg 3
+   [ ] bun (kompilatoren til CLI-en)      — steg 4
+   [ ] Prosjektet klonet på Mac'en        — se docs/macos-oppsett.txt
+
+
+================================================================================
+ STEG 1 — FINN TEAM ID
+================================================================================
+ 1. Gå til https://developer.apple.com/account
+ 2. Logg inn med Apple ID-en som har developer-medlemskapet
+ 3. Venstre meny -> "Membership details"
+ 4. Kopier "Team ID" — 10 tegn, ser ut som: A1B2C3D4E5
+
+ Skriv den ned. Du bruker den i nesten hvert eneste steg under.
+ Heretter kalles den TEAMID i kommandoene.
+
+
+================================================================================
+ STEG 2 — LAG ET APP-SPESIFIKT PASSORD
+================================================================================
+ Dette er IKKE Apple ID-passordet ditt. Det er et eget passord som bare
+ notariseringsverktøyet bruker. Fordelen: du kan trekke det tilbake uten å
+ bytte Apple ID-passord, og du slipper å oppgi hovedpassordet til et script.
+
+ 1. Gå til https://appleid.apple.com og logg inn
+ 2. "Sign-In and Security" -> "App-Specific Passwords"
+ 3. Trykk "+" / "Generate an app-specific password"
+ 4. Navn: tech-ai-notarytool
+ 5. Kopier passordet — format xxxx-xxxx-xxxx-xxxx
+
+ Skriv det ned nå. Apple viser det bare én gang.
+ Heretter kalles det APPPASS.
+
+ TIPS: Legg både APPPASS og TEAMID i passordbehandleren din med en gang.
+
+
+================================================================================
+ STEG 3 — INSTALLER SERTIFIKATENE
+================================================================================
+ Du trenger TO forskjellige sertifikater:
+
+   "Developer ID Application"  -> signerer selve programfilen
+   "Developer ID Installer"    -> signerer .pkg-installasjonspakken
+
+ Begge er gratis så lenge du har betalt medlemskap.
+
+ --- Måte A: gjennom Xcode (enklest) ---
+ 1. Åpne Xcode. Har du ikke Xcode: installer Command Line Tools først:
+        xcode-select --install
+    (Xcode i seg selv er 10+ GB fra App Store. Måte B under gir deg begge
+     sertifikatene uten Xcode — hopp dit hvis du vil spare plass.)
+ 2. Xcode -> Settings -> Accounts -> trykk "+" -> Apple ID -> logg inn
+ 3. Velg teamet ditt -> "Manage Certificates..."
+ 4. Trykk "+" nederst til venstre:
+        - velg "Developer ID Application"
+        - trykk "+" igjen og velg "Developer ID Installer"
+ 5. Ferdig. Sertifikatene ligger nå i nøkkelringen din.
+
+ --- Måte B: manuelt via nettsiden ---
+ 1. Åpne "Keychain Access" (Nøkkelringtilgang)
+ 2. Meny: Keychain Access -> Certificate Assistant ->
+    "Request a Certificate From a Certificate Authority..."
+ 3. E-post: din Apple ID.  Common Name: ditt navn.
+    Velg "Saved to disk" -> lagre CSR-filen
+ 4. Gå til https://developer.apple.com/account/resources/certificates
+ 5. Trykk "+" -> under "Software" velg "Developer ID Application" -> Continue
+ 6. Last opp CSR-filen -> Download .cer
+ 7. Dobbeltklikk .cer-filen så den havner i nøkkelringen
+ 8. Gjenta 5-7, men velg "Developer ID Installer" denne gangen
+
+ --- KONTROLLER at begge er på plass ---
+     security find-identity -v -p codesigning
+
+ Du skal se to linjer som ligner:
+     1) ABC... "Developer ID Application: Ditt Navn (TEAMID)"
+     2) DEF... "Developer ID Installer: Ditt Navn (TEAMID)"
+
+ Viktig: hvis listen er tom, mangler den private nøkkelen. Sertifikatet må
+ enten lages på denne Mac'en, eller du må importere en .p12-fil (se steg 14).
+
+ Heretter skriver jeg:
+     "Developer ID Application: DITT NAVN (TEAMID)"
+     "Developer ID Installer: DITT NAVN (TEAMID)"
+ Bytt ut DITT NAVN og TEAMID med dine egne verdier, ellers feiler kommandoene.
+
+
+================================================================================
+ STEG 4 — BYGG PROGRAMFILENE
+================================================================================
+ Installer bun (kompilatoren):
+
+     brew install oven-sh/bun/bun
+     bun --version
+
+ Gå til prosjektet og bygg for BEGGE Mac-typene:
+
+     cd ~/tech-ai-monkey
+
+     bun build cli/src/index.js --compile --minify \
+         --target=bun-darwin-arm64 --outfile=/tmp/tech-ai-arm64
+
+     bun build cli/src/index.js --compile --minify \
+         --target=bun-darwin-x64 --outfile=/tmp/tech-ai-x64
+
+ Slå dem sammen til ÉN fil som virker på begge:
+
+     lipo -create -output /tmp/tech-ai /tmp/tech-ai-arm64 /tmp/tech-ai-x64
+     lipo -archs /tmp/tech-ai
+     # skal svare:  x86_64 arm64
+
+     chmod 755 /tmp/tech-ai
+     /tmp/tech-ai --version
+     # skal svare:  tech-ai CLI 1.0.0
+
+ (Vil du bare lage for din egen Mac i stedet for begge: hopp over lipo og bruk
+  den ene filen du trenger. M1/M2/M3/M4 = arm64, eldre Mac = x64.)
+
+
+================================================================================
+ STEG 5 — SIGNER PROGRAMFILEN
+================================================================================
+ Denne kommandoen er hele poenget. Merk "--options runtime" — det er Apples
+ "hardened runtime", og den er PÅKREVD for at notariseringen skal godtas.
+
+     codesign --force --options runtime --timestamp \
+       --sign "Developer ID Application: DITT NAVN (TEAMID)" \
+       /tmp/tech-ai
+
+ Kontroller at signaturen ble riktig:
+
+     codesign --verify --verbose=2 /tmp/tech-ai
+
+     codesign -dv --verbose=4 /tmp/tech-ai 2>&1 | grep -E 'Authority|TeamIdentifier|flags'
+     # Authority     = Developer ID Application: Ditt Navn (TEAMID)
+     # TeamIdentifier= TEAMID
+     # flags         = ... runtime     <-- "runtime" MÅ stå her
+
+ Har du glemt "runtime", feiler notariseringen senere med en vag melding.
+ Sjekk derfor nå.
+
+
+================================================================================
+ STEG 6 — LAG INSTALLASJONSPAKKEN (.pkg)
+================================================================================
+ En .pkg er for Mac det .deb er for Ubuntu: en installasjonspakke som legger
+ "tech-ai" i /usr/local/bin, slik at kommandoen virker overalt i terminalen.
+
+     PKGROOT=/tmp/tech-ai-pkg
+     rm -rf "$PKGROOT"
+     mkdir -p "$PKGROOT/usr/local/bin"
+     cp /tmp/tech-ai "$PKGROOT/usr/local/bin/tech-ai"
+     chmod 755 "$PKGROOT/usr/local/bin/tech-ai"
+
+     pkgbuild --root "$PKGROOT" \
+       --identifier tech.tech-ai.cli \
+       --version 1.0.0 \
+       --install-location / \
+       /tmp/tech-ai-1.0.0.pkg
+
+ Verifiser at filen er med i pakken:
+
+     pkgutil --payload-files /tmp/tech-ai-1.0.0.pkg
+     # skal vise:  ./usr/local/bin/tech-ai
+
+
+================================================================================
+ STEG 7 — SIGNER .PKG-FILEN
+================================================================================
+     productsign \
+       --sign "Developer ID Installer: DITT NAVN (TEAMID)" \
+       /tmp/tech-ai-1.0.0.pkg \
+       /tmp/tech-ai-1.0.0-signed.pkg
+
+ Kontroller:
+
+     pkgutil --check-signature /tmp/tech-ai-1.0.0-signed.pkg
+     # skal vise "Status: signed by a developer certificate issued by Apple"
+
+
+================================================================================
+ STEG 8 — LAGRE NOTARISERINGS-INNSTILLINGER (én gang)
+================================================================================
+ Dette lagrer APPPASS, e-post og TEAMID trygt i nøkkelringen, så du slipper å
+ skrive passordet i senere kommandoer.
+
+     xcrun notarytool store-credentials "tech-ai-notary" \
+       --apple-id "DIN-APPLE-ID@EPOST.NO" \
+       --team-id "TEAMID" \
+       --password "xxxx-xxxx-xxxx-xxxx"
+
+ Du blir spurt om Mac-passordet for å låse opp nøkkelringen. Det er greit.
+
+ "tech-ai-notary" er bare et navn du velger — bruker det videre under.
+
+
+================================================================================
+ STEG 9 — SEND TIL NOTARISERING
+================================================================================
+     xcrun notarytool submit /tmp/tech-ai-1.0.0-signed.pkg \
+       --keychain-profile "tech-ai-notary" \
+       --wait
+
+ "--wait" gjør at terminalen står og venter til Apple er ferdig (2-15 min).
+ Du får en tabell til slutt. Det du ser etter:
+
+     status: Accepted
+
+ Får du "Invalid", ikke gjett — hent begrunnelsen:
+
+     xcrun notarytool log <ID-fra-tabellen> --keychain-profile "tech-ai-notary"
+
+ De vanligste årsakene står i feilsøkingsavsnittet nederst. Det skal ikke være
+ nødvendig hvis du fulgte steg 5.
+
+
+================================================================================
+ STEG 10 — STIFT BILLETTEN FAST PÅ FILEN
+================================================================================
+ Apple legger et "notariserings-bevis" hos seg. Med "staple" fester du det til
+ filen, slik at den også godkjennes når kunden ikke har nett.
+
+     xcrun stapler staple /tmp/tech-ai-1.0.0-signed.pkg
+     xcrun stapler validate /tmp/tech-ai-1.0.0-signed.pkg
+
+ Viktig: staple virker på .pkg og .dmg, IKKE på en løs programfil. Det er en
+ annen god grunn til å bruke .pkg og ikke bare sende selve binæren.
+
+
+================================================================================
+ STEG 11 — KONTROLLER AT ALT ER GODKJENT
+================================================================================
+     spctl -a -vvv -t install /tmp/tech-ai-1.0.0-signed.pkg
+     # skal svare: accepted   source=Notarized Developer ID
+
+ Er svaret "rejected", ble ikke notariseringen godkjent eller ikke stiftet
+ fast (steg 9 og 10).
+
+ Bonus: test å installere den lokalt:
+     sudo installer -pkg /tmp/tech-ai-1.0.0-signed.pkg -target /
+     which tech-ai
+     tech-ai --version
+     sudo rm /usr/local/bin/tech-ai     # rydd opp etter testen, valgfritt
+
+
+================================================================================
+ STEG 12 — LEGG FILEN INN I PROSJEKTET
+================================================================================
+ Bruk dette filnavnet, så plukker nettsiden den opp automatisk:
+
+     tech-ai_1.0.0_macos_universal.pkg
+
+ Kopier den til downloads-mappen i prosjektet:
+
+     cp /tmp/tech-ai-1.0.0-signed.pkg \
+        ~/tech-ai-monkey/web/public/downloads/tech-ai_1.0.0_macos_universal.pkg
+
+ Oppdater sjekksummen (så nedlastingen kan verifiseres):
+
+     cd ~/tech-ai-monkey/web/public/downloads
+     shasum -a 256 tech-ai_1.0.0_macos_universal.pkg >> checksums.txt
+     cat checksums.txt
+
+ Fordi /download-siden er dynamisk og koden allerede godtar .pkg, trenger du
+ INGEN ny bygging på Mac'en. Men serveren som faktisk viser tech-ai.tech må ha
+ filen — se neste steg.
+
+
+================================================================================
+ STEG 13 — FÅ FILEN UT PÅ tech-ai.tech
+================================================================================
+ Du har to valg.
+
+ --- A) Kopier til serveren (enklest, virker med én gang) ---
+     scp ~/tech-ai-monkey/web/public/downloads/tech-ai_1.0.0_macos_universal.pkg \
+         hesriverp7@<SERVER-IP>:~/tech-ai-monkey/web/public/downloads/
+
+     # på serveren: oppdater sjekksummen OG restart tjenesten
+     ssh hesriverp7@<SERVER-IP>
+     cd ~/tech-ai-monkey/web/public/downloads
+     sha256sum tech-ai_1.0.0_macos_universal.pkg >> checksums.txt
+     sudo systemctl restart myai-web        # <-- MÅ GJØRES
+
+     OBS — DETTE ER VIKTIG OG TESTET:
+     Next.js kartlegger public/-mappen når tjenesten starter. En ny fil svarer
+     404 helt til du restarter myai-web, selv om /download-siden finner den
+     med en gang (den er dynamisk). Uten restarten ser kunden knappen men får
+     "404 Not Found" når hun klikker.
+
+     Sjekk BEGGE deler etterpå:
+         # 1. at selve filen kan lastes ned
+         curl -s -o /dev/null -w '%{http_code}\n' \
+           https://tech-ai.tech/downloads/tech-ai_1.0.0_macos_universal.pkg
+         # skal svare 200 (404 = glemt restart)
+
+         # 2. at siden viser macOS-kortet som nedlasting
+         curl -s https://tech-ai.tech/download | grep -c macos_universal
+         # skal svare 1 eller mer (0 = feil filnavn)
+
+     Åpne https://tech-ai.tech/download — macOS-kortet skal nå være en ekte
+     nedlastingsknapp i stedet for "coming soon".
+
+ --- B) Legg den i git ---
+     OBS: .deb/.exe/.pkg er bevisst git-ignorert fordi de er 30-90 MB.
+     Legger du den i git, vokser repoet for alltid. Metode A er å foretrekke.
+     Vil du likevel, se /downloads/.gitignore i prosjektet.
+
+
+================================================================================
+ STEG 14 — TA VARE PÅ SERTIFIKATENE (VIKTIG!)
+================================================================================
+ Sertifikatene varer i ca. 5 år. Notarisering fungerer bare så lenge de lever.
+ Mister du dem, kan du ikke lage nye godkjente versjoner uten å lage nye.
+
+ 1. Åpne Keychain Access -> "My Certificates"
+ 2. Høyreklikk "Developer ID Application: Ditt Navn (TEAMID)"
+    -> "Export..." -> filformat .p12 -> sett et sterkt passord
+ 3. Gjør det samme for "Developer ID Installer"
+ 4. Legg begge .p12-filene + passordet i passordbehandleren din
+
+ Da kan du signere fra en hvilken som helst Mac senere (steg 3, importer .p12).
+ Uten dette må du lage helt nye sertifikater neste gang du bytter maskin.
+
+ Legg også APPPASS og TEAMID der.
+
+
+================================================================================
+ NESTE GANG DU GIR UT EN NY VERSJON
+================================================================================
+ 1. Endre "version" i cli/package.json (f.eks. 1.0.1)
+ 2. Gjenta steg 4-11 med det nye versjonsnummeret i filnavnene
+ 3. Kopier filen til web/public/downloads/ (steg 12)
+ 4. Send den til serveren (steg 13)
+ Sertifikater og notariserings-innstillinger er allerede på plass.
+
+
+================================================================================
+ FEILSØKING
+================================================================================
+ "code object is not signed at all"
+     Du glemte codesign, eller signerte feil fil. Gå tilbake til steg 5.
+
+ "The signature does not include a secure timestamp"
+     Mangler --timestamp, eller Mac'en hadde ikke nett da du signerte.
+     Kjør steg 5 på nytt med nett.
+
+ Notarisering: status "Invalid"
+     Vanligste årsaker, i rekkefølge:
+       1. Programfilen ble ikke signert før .pkg ble laget (steg 5 må komme før 6)
+       2. "--options runtime" manglet i steg 5
+       3. .pkg-filen ble ikke signert med Developer ID Installer (steg 7)
+     Hent alltid årsaken: xcrun notarytool log <ID> --keychain-profile tech-ai-notary
+
+ "errSecInternalComponent"
+     Nøkkelringen er låst. Lås opp Mac'en / åpne Keychain Access og prøv igjen.
+
+ security find-identity viser 0 identiteter
+     Den private nøkkelen mangler. Sertifikatet må lages på denne Mac'en,
+     eller du må importere .p12-filen fra steg 14.
+
+ "productsign: error: Could not find appropriate signing identity"
+     Du mangler "Developer ID Installer"-sertifikatet. Det er et ANNET
+     sertifikat enn "Developer ID Application" (steg 3).
+
+ spctl sier "rejected" selv om notariseringen ble "Accepted"
+     Du glemte "xcrun stapler staple" (steg 10).
+
+ Kunden får fortsatt advarsel
+     Sjekk at filen du lastet opp er den SIGNERTE versjonen
+     (tech-ai-1.0.0-signed.pkg), ikke originalen fra steg 6.
+     Sjekk på serveren: pkgutil --check-signature <fil>
+
+ Nedlastingen svarer 404 selv om filen ligger i web/public/downloads
+     Next.js kartlegger public/-mappen ved oppstart. En ny fil virker ikke før
+     tjenesten restartes:
+         sudo systemctl restart myai-web
+     Bekreftet ved test: filen svarer 404 før restarten og 200 etterpå.
+
+
+================================================================================
+ SJEKKLISTE — KORT VERSJON
+================================================================================
+ [ ] Steg 1:  Team ID notert
+ [ ] Steg 2:  App-spesifikt passord laget og notert
+ [ ] Steg 3:  Begge sertifikatene i nøkkelringen (security find-identity viser 2)
+ [ ] Steg 4:  bun installert, begge arkitekturer bygget, lipo laget universal
+ [ ] Steg 5:  codesign med --options runtime → "flags ... runtime" bekreftet
+ [ ] Steg 6:  pkgbuild laget .pkg med usr/local/bin/tech-ai
+ [ ] Steg 7:  productsign med Developer ID INSTALLER
+ [ ] Steg 8:  notarytool store-credentials kjørt
+ [ ] Steg 9:  notarytool submit → status: Accepted
+ [ ] Steg 10: stapler staple + validate
+ [ ] Steg 11: spctl → accepted, source=Notarized Developer ID
+ [ ] Steg 12: filen kopiert til web/public/downloads/ med riktig navn
+ [ ] Steg 13: filen også på serveren, og lastet ned fra tech-ai.tech uten advarsel
+ [ ] Steg 14: .p12-backup av begge sertifikatene i passordbehandleren
+ [ ] Testet på en ANNEN Mac enn den du bygget på
+
+================================================================================
+ Lykke til. Etter steg 13 har du en macOS-versjon som oppfører seg akkurat
+ som .deb- og .exe-versjonene: last ned, installer, skriv "tech-ai login".
+================================================================================

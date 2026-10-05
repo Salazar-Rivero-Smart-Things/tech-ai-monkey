@@ -167,6 +167,11 @@ bash scripts/build-cli.sh                          # -> .deb + .exe + checksums.
 sudo systemctl restart myai-web
 ```
 
+> **Gotcha:** Next.js maps `public/` when the service starts, so **any** new file
+> dropped into `web/public/downloads/` returns 404 until `myai-web` is restarted.
+> The `/download` page is dynamic and finds the file immediately — so you can end
+> up with a button that works but a download that 404s. Always restart after copying.
+
 `https://tech-ai.tech/download` lists whatever is present, with SHA-256 sums and
 the full system requirements.
 
@@ -412,6 +417,7 @@ docs/
   dataflyt.md                    # data-flow map (sub-processors, transfers, retention)
   backup-og-gjenoppretting.md    # backup/restore runbook (Norwegian)
   macos-oppsett.txt              # setting up the whole project on a Mac (Norwegian)
+  macos-bygg-cli.txt             # build + sign + notarise the macOS CLI (Norwegian)
 deploy/
   install-services.sh         # install/refresh the systemd services
   myai-agent.service          # agent unit (port 2000)

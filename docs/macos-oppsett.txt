@@ -288,8 +288,11 @@
  og macOS står som "coming soon".
 
  Grunnen er Apple: en app må kode-signeres og notariseres med en Apple
- Developer-konto (99 USD/år) før folk kan åpne den uten advarsler. Det er ikke
- gjort ennå.
+ Developer-konto (99 USD/år) før folk kan åpne den uten advarsler.
+
+ Du HAR Apple Developer-konto, så du kan lage den ferdig selv. Full
+ steg-for-steg-oppskrift (bygg, signer, notariser, publiser):
+     docs/macos-bygg-cli.txt
 
  Du kan likevel bruke CLI-en på Mac'en allerede, på to måter:
 

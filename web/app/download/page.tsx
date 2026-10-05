@@ -25,7 +25,7 @@ async function listArtifacts(): Promise<Artifact[]> {
     const entries = await readdir(downloadsDir());
     const found: Artifact[] = [];
     for (const name of entries) {
-      if (!/\.(deb|exe|msi)$/i.test(name)) continue;
+      if (!/\.(deb|exe|msi|pkg|dmg)$/i.test(name)) continue;
       const info = await stat(join(downloadsDir(), name));
       found.push({ name, bytes: info.size });
     }
@@ -126,6 +126,7 @@ export default async function DownloadPage() {
   const [artifacts, checksums] = await Promise.all([listArtifacts(), readChecksums()]);
   const deb = artifacts.find((a) => a.name.endsWith(".deb"));
   const exe = artifacts.find((a) => a.name.endsWith(".exe"));
+  const mac = artifacts.find((a) => a.name.endsWith(".pkg") || a.name.endsWith(".dmg"));
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -163,10 +164,23 @@ tech-ai ask "hello"`}
           />
           <DownloadCard
             title="macOS"
-            subtitle="Intel and Apple Silicon — a signed installer is on the way"
-            comingSoon
-            command={`# not available yet — see below for how to run it
-# from source with Node.js 18+ meanwhile`}
+            subtitle={
+              mac
+                ? "Signed and notarised installer for Apple Silicon and Intel"
+                : "Intel and Apple Silicon — a signed installer is on the way"
+            }
+            artifact={mac}
+            checksum={mac ? checksums[mac.name] : undefined}
+            comingSoon={!mac}
+            command={
+              mac
+                ? `# double-click the .pkg, or from Terminal:
+sudo installer -pkg ${mac.name} -target /
+tech-ai login
+tech-ai ask "hello"`
+                : `# not available yet — see below for how to run it
+# from source with Node.js 18+ meanwhile`
+            }
           />
         </div>
 
@@ -257,6 +271,7 @@ sudo apt-get remove tech-ai   # uninstall`}</pre>
 tech-ai login --email you@example.com --password '…'`}</pre>
           </div>
 
+          {!mac && (
           <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-sm leading-relaxed text-zinc-300">
             <h3 className="font-semibold text-amber-200">macOS — coming soon</h3>
             <p className="mt-2">
@@ -277,6 +292,7 @@ cd tech-ai-monkey
 node cli/src/index.js login
 node cli/src/index.js ask "hello"`}</pre>
           </div>
+          )}
         </section>
 
         <section className="mt-12 space-y-6 text-sm leading-relaxed text-zinc-300">
