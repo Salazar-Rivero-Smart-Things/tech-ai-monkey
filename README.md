@@ -177,7 +177,7 @@ the full system requirements.
 
 | Installer | Runs on |
 | --- | --- |
-| `tech-ai_<version>_amd64.deb` | Ubuntu 20.04 LTS+ and Debian 11+ (64-bit x86; needs `libc6 >= 2.31`) |
+| `tech-ai_<version>_amd64.deb` | Ubuntu 20.04 LTS+ and Debian 11+ (64-bit x86; the package only needs `libc6 >= 2.17`) |
 | `tech-ai_<version>_windows_x64.exe` | Windows 10, Windows 11, Windows Server 2019+ (64-bit x86) |
 | macOS | **not built yet** — needs Apple code-signing + notarisation (planned for macOS 12+, Apple Silicon and Intel) |
 

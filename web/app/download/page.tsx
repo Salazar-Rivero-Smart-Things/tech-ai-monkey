@@ -213,8 +213,9 @@ tech-ai ask "hello"`
                   Parrot OS
                 </li>
                 <li>
-                  <span className="text-zinc-200">Requirement:</span> libc6 2.31 or newer (already
-                  present on everything listed above)
+                  <span className="text-zinc-200">Requires:</span> libc6 2.17 or newer — a bare
+                  minimum, so the package also installs on older releases such as Debian 10 and
+                  Ubuntu 18.04, even though we only test on the versions listed above
                 </li>
                 <li>
                   <span className="text-zinc-200">Not supported:</span> 32-bit (i386), ARM64 /
@@ -222,7 +223,7 @@ tech-ai ask "hello"`
                   RHEL and openSUSE
                 </li>
               </ul>
-              <pre className="mt-4 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-3 font-mono text-xs text-zinc-300">{`sudo dpkg -i tech-ai_1.0.0_amd64.deb
+              <pre className="mt-4 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-3 font-mono text-xs text-zinc-300">{`sudo dpkg -i ${deb?.name ?? "tech-ai_<version>_amd64.deb"}
 sudo apt-get install -f       # only if dpkg reports a missing dependency
 
 sudo apt-get remove tech-ai   # uninstall`}</pre>
@@ -335,8 +336,8 @@ tech-ai whoami        # account + how many tokens are left`}</pre>
               </a>
               :
             </p>
-            <pre className="mt-3 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-4 font-mono text-xs text-zinc-300">{`sha256sum tech-ai_1.0.0_amd64.deb     # Linux
-certutil -hashfile tech-ai_1.0.0_windows_x64.exe SHA256   # Windows`}</pre>
+            <pre className="mt-3 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-4 font-mono text-xs text-zinc-300">{`sha256sum ${deb?.name ?? "tech-ai_<version>_amd64.deb"}     # Linux
+certutil -hashfile ${exe?.name ?? "tech-ai_<version>_windows_x64.exe"} SHA256   # Windows`}</pre>
           </div>
 
           <div>

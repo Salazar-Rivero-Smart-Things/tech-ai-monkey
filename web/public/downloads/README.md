@@ -13,7 +13,7 @@ That produces:
 
 | File | Platform | Runs on |
 | --- | --- | --- |
-| `tech-ai_<version>_amd64.deb` | Ubuntu / Debian, 64-bit x86 | Ubuntu 20.04 LTS+, Debian 11+ (needs `libc6 >= 2.31`) |
+| `tech-ai_<version>_amd64.deb` | Ubuntu / Debian, 64-bit x86 | Ubuntu 20.04 LTS+ / Debian 11+ tested; the package only needs `libc6 >= 2.17`, so it also installs on Debian 10 and Ubuntu 18.04 |
 | `tech-ai_<version>_windows_x64.exe` | Windows, 64-bit x86 | Windows 10, Windows 11, Windows Server 2019+ |
 | `checksums.txt` | — | SHA-256 for the files above |
 
