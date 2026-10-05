@@ -149,7 +149,7 @@ export default async function DownloadPage() {
             subtitle="64-bit .deb package for Ubuntu 20.04 and newer, and Debian 11 and newer"
             artifact={deb}
             checksum={deb ? checksums[deb.name] : undefined}
-            command={`sudo dpkg -i ${deb?.name ?? "tech-ai_1.0.0_amd64.deb"}
+            command={`sudo dpkg -i ${deb?.name ?? "tech-ai_<version>_amd64.deb"}
 tech-ai login
 tech-ai ask "hello"`}
           />
@@ -159,7 +159,7 @@ tech-ai ask "hello"`}
             artifact={exe}
             checksum={exe ? checksums[exe.name] : undefined}
             command={`# double-click the .exe, or from PowerShell:
-.\\${exe?.name ?? "tech-ai_1.0.0_windows_x64.exe"} login
+.\\${exe?.name ?? "tech-ai_<version>_windows_x64.exe"} login
 tech-ai ask "hello"`}
           />
           <DownloadCard
