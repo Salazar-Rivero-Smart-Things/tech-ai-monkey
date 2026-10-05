@@ -31,7 +31,7 @@ Internet → Cloudflare (tech-ai.tech, HTTPS)
          → Next.js web app  (web/,  port 3000)
          → /eve/v1/* proxy  (web/app/eve/v1/[...path]/route.ts)
          → eve agent        (port 2000)
-         → DeepSeek API     (deepseek-chat)
+         → Model API        (Groq / DeepSeek / AI Gateway)
 ```
 
 The chat in `web/components/chat.tsx` talks to the eve agent over
@@ -43,19 +43,38 @@ Ports: **web 3000**, **agent 2000**. Postgres runs locally
 
 ## Model
 
-The agent's model is chosen in `agent/agent.ts`:
+The model is selected in `agent/agent.ts`. The first one configured wins:
 
-- **Preferred — `deepseek-chat`** (DeepSeek V3) via the OpenAI-compatible
-  `https://api.deepseek.com/v1` endpoint. Enabled by setting `DEEPSEEK_API_KEY`
-  in the root `.env`.
-- **Fallback — `poolside/laguna-s-2.1-free`** through the Vercel AI Gateway
-  (needs no paid credits) when no DeepSeek key is set.
+1. **`AGENT_MODEL`** — a plain model string routed through the Vercel AI
+   Gateway, e.g. `openai/gpt-5.4-fast`. Uses `AI_GATEWAY_API_KEY` (or
+   `VERCEL_OIDC_TOKEN`). List all 400+ models:
+   `curl -s https://ai-gateway.vercel.sh/v1/models`.
+2. **`OPENAI_COMPAT_*`** — any OpenAI-compatible provider (Groq, Cerebras,
+   OpenRouter, Together, DeepSeek, Ollama, vLLM …). Set `OPENAI_COMPAT_BASE_URL`,
+   `OPENAI_COMPAT_MODEL`, `OPENAI_COMPAT_API_KEY` (+ optional
+   `OPENAI_COMPAT_CONTEXT_TOKENS`, `OPENAI_COMPAT_NAME`).
+3. **`OLLAMA_MODEL`** — a model running locally via Ollama, e.g. `llama3.1:8b`.
+4. **`DEEPSEEK_API_KEY`** — DeepSeek direct (`deepseek-chat`).
+5. **Nothing set** — free fallback `poolside/laguna-s-2.1-free` via AI Gateway.
 
-```ts
-model: deepseek ?? "poolside/laguna-s-2.1-free",
+**Currently in use:** `qwen/qwen3.8-27b` via Groq — the fastest model with
+tool-calling on this host (~230 ms, ~300 tok/s).
+
+### Measure before you choose
+
+`scripts/model-bench.mjs` measures latency, throughput and tool-calling support
+for a list of models. It auto-loads the root `.env`, so it benchmarks whatever
+provider you have configured:
+
+```bash
+npm run bench                                     # configured provider
+BENCH_MODELS="openai/gpt-oss-120b,qwen/qwen3.8-27b" BENCH_RUNS=3 npm run bench
+BENCH_BASE_URL=https://api.deepseek.com/v1 BENCH_API_KEY=... \
+  BENCH_MODELS=deepseek-chat npm run bench
 ```
 
-To use a different provider, change the model helper/id in `agent/agent.ts`.
+Pick a model that reports `tools=ja` — an agent without tool-calling cannot use
+its tools.
 
 ## Requirements
 
@@ -74,7 +93,10 @@ cp .env.example .env
 # edit .env:
 #   AGENT_API_KEY_SECRET=$(openssl rand -hex 32)   # shared secret for API keys
 #   EVE_PUBLIC_URL=http://127.0.0.1:2000
-#   DEEPSEEK_API_KEY=sk-...                        # optional; falls back to AI Gateway
+#   # model (first configured wins): AGENT_MODEL > OPENAI_COMPAT_* > OLLAMA_MODEL > DEEPSEEK_API_KEY
+#   OPENAI_COMPAT_BASE_URL=https://api.groq.com/openai/v1
+#   OPENAI_COMPAT_MODEL=qwen/qwen3.8-27b
+#   OPENAI_COMPAT_API_KEY=...
 
 npm run dev          # dev server at http://127.0.0.1:2000
 
@@ -422,7 +444,7 @@ live site through Cloudflare, and a secret scan of what would be pushed.
   dependabot.yml              # weekly npm + GitHub Actions updates
   workflows/security.yml      # npm audit on production deps + tracked-.env check
 agent/
-  agent.ts                    # model config (DeepSeek / AI Gateway fallback)
+  agent.ts                    # model config (AGENT_MODEL / OPENAI_COMPAT_* / Ollama / DeepSeek)
   instructions.md             # system prompt / operating rules
   channels/eve.ts             # HTTP API auth (API keys)
   channels/home.ts            # serves the web chat UI at /
@@ -442,6 +464,7 @@ cli/                          # terminal client (bundled into the .deb / .exe)
   src/api.js                  # eve HTTP client
   src/config.js               # ~/.config/tech-ai/credentials.json (mode 600)
 scripts/build-cli.sh          # builds the .deb + .exe into web/public/downloads/
+scripts/model-bench.mjs       # measures latency / tok-s / tool-calling per model
 web/
   app/download/               # public download page (links + system requirements)
   app/cli-login/              # browser handoff for "tech-ai login"
