@@ -177,9 +177,17 @@ the full system requirements.
 
 | Installer | Runs on |
 | --- | --- |
-| `tech-ai_<version>_amd64.deb` | Ubuntu 20.04 LTS+ and Debian 11+ (64-bit x86; the package only needs `libc6 >= 2.17`) |
-| `tech-ai_<version>_windows_x64.exe` | Windows 10, Windows 11, Windows Server 2019+ (64-bit x86) |
+| `tech-ai_<version>_amd64.deb` | Ubuntu 20.04 LTS+ and Debian 11+ (64-bit x86; the package only needs `libc6 >= 2.17`). Adds a “Tech AI monkey” entry to the application menu |
+| `tech-ai_<version>_windows_x64_setup.exe` | Windows 10, Windows 11, Windows Server 2019+ (64-bit x86). Per-user install, Start-menu entry with the app icon, optional desktop shortcut, PATH entry and an uninstaller |
+| `tech-ai_<version>_windows_x64.exe` | The same agent as a portable single file, no installation — but no Start-menu entry and the default Windows icon |
 | macOS | **not built yet** — needs Apple code-signing + notarisation (planned for macOS 12+, Apple Silicon and Intel) |
+
+All three carry the same icon: `cli/assets/icon.svg` plus `.png`, `.ico` and `.icns`, all
+produced from one source of truth by `python3 scripts/make-icons.py`.
+
+The Windows installer is cross-built on Linux by `makensis` (no emulation layer involved).
+Because bun can only attach an icon to a `.exe` when bun itself runs on Windows, the
+shortcut icon comes from the installer rather than from the executable.
 
 Both are self-contained: the runtime is bundled, so no Node.js or other
 dependency has to be installed on the target machine.

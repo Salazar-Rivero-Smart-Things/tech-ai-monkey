@@ -13,9 +13,14 @@ That produces:
 
 | File | Platform | Runs on |
 | --- | --- | --- |
-| `tech-ai_<version>_amd64.deb` | Ubuntu / Debian, 64-bit x86 | Ubuntu 20.04 LTS+ / Debian 11+ tested; the package only needs `libc6 >= 2.17`, so it also installs on Debian 10 and Ubuntu 18.04 |
-| `tech-ai_<version>_windows_x64.exe` | Windows, 64-bit x86 | Windows 10, Windows 11, Windows Server 2019+ |
+| `tech-ai_<version>_amd64.deb` | Ubuntu / Debian, 64-bit x86 | Ubuntu 20.04 LTS+ / Debian 11+ tested; the package only needs `libc6 >= 2.17`, so it also installs on Debian 10 and Ubuntu 18.04. Adds an application-menu entry |
+| `tech-ai_<version>_windows_x64_setup.exe` | Windows, 64-bit x86 | Windows 10, Windows 11, Windows Server 2019+. Per-user NSIS install: Start-menu entry with the app icon, optional desktop shortcut, PATH entry, uninstaller |
+| `tech-ai_<version>_windows_x64.exe` | Windows, 64-bit x86 | The portable single file — no installation, no Start-menu entry, default Windows icon |
 | `checksums.txt` | — | SHA-256 for the files above |
+
+Everything is built by `bash scripts/build-cli.sh`, which also verifies what it produced.
+The icons come from `cli/assets/` (`python3 scripts/make-icons.py` regenerates them), and
+the Windows installer is cross-built on Linux by `makensis` — no emulation layer involved.
 
 The `/download` page on the website lists whatever is present here, together
 with the system requirements. If you change what the build produces, update the

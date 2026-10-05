@@ -1,0 +1,21 @@
+#!/bin/sh
+# ---------------------------------------------------------------------------
+# Tech AI monkey — launcher inside the .app bundle.
+#
+# macOS does not give a plain command-line program an icon in Launchpad, so we
+# ship this tiny app. Double-clicking it opens Terminal and starts the chat.
+#
+# The real CLI is /usr/local/bin/tech-ai, installed by the same .pkg.
+# ---------------------------------------------------------------------------
+set -u
+
+CLI="/usr/local/bin/tech-ai"
+
+if [ ! -x "$CLI" ]; then
+  osascript -e 'display alert "Tech AI monkey" message "/usr/local/bin/tech-ai er ikke installert. Installer .pkg-pakken pa nytt." as critical' >/dev/null 2>&1
+  exit 1
+fi
+
+# Hand the command to Terminal so the user gets a real, interactive window.
+exec osascript -e "tell application \"Terminal\" to do script \"$CLI chat\"" \
+               -e 'tell application "Terminal" to activate'

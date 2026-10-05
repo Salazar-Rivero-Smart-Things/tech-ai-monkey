@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Info.plist for the Tech AI monkey launcher app.
+
+  This tiny .app exists only to give the command-line client an icon in
+  /Applications, Launchpad and Spotlight. Opening it starts Terminal and runs
+  "tech-ai chat". The real program is /usr/local/bin/tech-ai.
+
+  @VERSION@ is replaced with the real version by scripts/build-cli.sh.
+-->
+<plist version="1.0">
+<dict>
+  <key>CFBundleName</key>
+  <string>Tech AI monkey</string>
+  <key>CFBundleDisplayName</key>
+  <string>Tech AI monkey</string>
+  <key>CFBundleIdentifier</key>
+  <string>tech.tech-ai.cli</string>
+  <key>CFBundleVersion</key>
+  <string>@VERSION@</string>
+  <key>CFBundleShortVersionString</key>
+  <string>@VERSION@</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleExecutable</key>
+  <string>TechAIMonkey</string>
+  <key>CFBundleIconFile</key>
+  <string>icon</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>12.0</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.developer-tools</string>
+</dict>
+</plist>

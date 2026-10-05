@@ -165,25 +165,69 @@
 ================================================================================
  STEG 6 — LAG INSTALLASJONSPAKKEN (.pkg)
 ================================================================================
- En .pkg er for Mac det .deb er for Ubuntu: en installasjonspakke som legger
- "tech-ai" i /usr/local/bin, slik at kommandoen virker overalt i terminalen.
+ En .pkg er for Mac det .deb er for Ubuntu. Den legger to ting paa plass:
 
+   /usr/local/bin/tech-ai            selve kommandoen
+   /Applications/Tech AI monkey.app  en liten startapp med ikon
+
+ MacOS gir ikke et rent kommandolinjeprogram et ikon i Launchpad. Derfor lager
+ vi en liten .app som bare aapner Terminal og starter chatten. Det er den som
+ gir deg ikonet.
+
+ --- 6a. Legg inn selve kommandolinjen ---
      PKGROOT=/tmp/tech-ai-pkg
      rm -rf "$PKGROOT"
      mkdir -p "$PKGROOT/usr/local/bin"
      cp /tmp/tech-ai "$PKGROOT/usr/local/bin/tech-ai"
      chmod 755 "$PKGROOT/usr/local/bin/tech-ai"
 
+ --- 6b. Bygg startappen med ikon ---
+ Prosjektet har ferdige filer for dette i cli/assets/. Bytt ut ~/tech-ai-monkey
+ hvis du klonet et annet sted.
+
+     REPO=~/tech-ai-monkey
+     APP="$PKGROOT/Applications/Tech AI monkey.app"
+     mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+
+     # Info.plist med riktig versjonsnummer
+     sed "s/@VERSION@/1.0.0/g" "$REPO/cli/assets/macos/Info.plist" \
+       > "$APP/Contents/Info.plist"
+
+     # startskriptet
+     cp "$REPO/cli/assets/macos/TechAIMonkey" "$APP/Contents/MacOS/TechAIMonkey"
+     chmod 755 "$APP/Contents/MacOS/TechAIMonkey"
+
+     # ikonet
+     cp "$REPO/cli/assets/icon.icns" "$APP/Contents/Resources/icon.icns"
+
+     # fjern utvidet attributt-beskyttelse, ellers klager codesign
+     xattr -cr "$APP"
+
+ --- 6c. Signer startappen ---
+     codesign --force --options runtime --timestamp \
+       --sign "Developer ID Application: DITT NAVN (TEAMID)" \
+       "$APP"
+
+ Kontroller:
+
+     codesign --verify --verbose=2 "$APP"
+
+ --- 6d. Bygg pakken ---
      pkgbuild --root "$PKGROOT" \
        --identifier tech.tech-ai.cli \
        --version 1.0.0 \
        --install-location / \
        /tmp/tech-ai-1.0.0.pkg
 
- Verifiser at filen er med i pakken:
+ Verifiser at BEGGE delene er med:
 
      pkgutil --payload-files /tmp/tech-ai-1.0.0.pkg
-     # skal vise:  ./usr/local/bin/tech-ai
+     # skal vise baade:
+     #   ./usr/local/bin/tech-ai
+     #   ./Applications/Tech AI monkey.app/Contents/...
+
+ VIKTIG: signer binæren (steg 5) OG appen (steg 6c) FOER du lager .pkg-filen.
+ Er noe usignert inni pakken, blir notariseringen avvist i steg 9.
 
 
 ================================================================================
@@ -262,7 +306,9 @@
      sudo installer -pkg /tmp/tech-ai-1.0.0-signed.pkg -target /
      which tech-ai
      tech-ai --version
-     sudo rm /usr/local/bin/tech-ai     # rydd opp etter testen, valgfritt
+     open "/Applications/Tech AI monkey.app"   # skal åpne Terminal med chat
+     sudo rm /usr/local/bin/tech-ai            # rydd opp etter testen, valgfritt
+     sudo rm -rf "/Applications/Tech AI monkey.app"
 
 
 ================================================================================
@@ -407,7 +453,10 @@
  [ ] Steg 3:  Begge sertifikatene i nøkkelringen (security find-identity viser 2)
  [ ] Steg 4:  bun installert, begge arkitekturer bygget, lipo laget universal
  [ ] Steg 5:  codesign med --options runtime → "flags ... runtime" bekreftet
- [ ] Steg 6:  pkgbuild laget .pkg med usr/local/bin/tech-ai
+ [ ] Steg 6a: binæren lagt i usr/local/bin/tech-ai
+ [ ] Steg 6b: startappen bygget med icon.icns
+ [ ] Steg 6c: startappen signert (codesign --verify sier OK)
+ [ ] Steg 6d: pkgbuild laget .pkg med BADE binæren og appen
  [ ] Steg 7:  productsign med Developer ID INSTALLER
  [ ] Steg 8:  notarytool store-credentials kjørt
  [ ] Steg 9:  notarytool submit → status: Accepted

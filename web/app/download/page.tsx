@@ -57,6 +57,7 @@ function DownloadCard({
   command,
   comingSoon = false,
   note,
+  extra,
 }: {
   title: string;
   subtitle: string;
@@ -65,6 +66,7 @@ function DownloadCard({
   command: string;
   comingSoon?: boolean;
   note?: string;
+  extra?: string;
 }) {
   if (comingSoon) {
     return (
@@ -108,6 +110,7 @@ function DownloadCard({
               SHA-256 {checksum}
             </p>
           )}
+          {extra && <p className="mt-2 text-xs text-zinc-500">{extra}</p>}
           <pre className="mt-4 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-3 font-mono text-xs text-zinc-300">
             {command}
           </pre>
@@ -125,7 +128,10 @@ function DownloadCard({
 export default async function DownloadPage() {
   const [artifacts, checksums] = await Promise.all([listArtifacts(), readChecksums()]);
   const deb = artifacts.find((a) => a.name.endsWith(".deb"));
-  const exe = artifacts.find((a) => a.name.endsWith(".exe"));
+  // Prefer the installer for Windows: it is what gives the Start-menu entry.
+  const winSetup = artifacts.find((a) => /_setup\.exe$/i.test(a.name));
+  const winPortable = artifacts.find((a) => a.name.endsWith(".exe") && a !== winSetup);
+  const exe = winSetup ?? winPortable;
   const mac = artifacts.find((a) => a.name.endsWith(".pkg") || a.name.endsWith(".dmg"));
 
   return (
@@ -155,12 +161,27 @@ tech-ai ask "hello"`}
           />
           <DownloadCard
             title="Windows"
-            subtitle="Standalone 64-bit .exe for Windows 10 and 11"
+            subtitle={
+              winSetup
+                ? "Installer for Windows 10 and 11 — adds “Tech AI monkey” to the Start menu"
+                : "Standalone 64-bit .exe for Windows 10 and 11"
+            }
             artifact={exe}
             checksum={exe ? checksums[exe.name] : undefined}
-            command={`# double-click the .exe, or from PowerShell:
+            command={
+              winSetup
+                ? `# double-click to install, then open a new terminal:
+tech-ai login
+tech-ai ask "hello"`
+                : `# double-click the .exe, or from PowerShell:
 .\\${exe?.name ?? "tech-ai_<version>_windows_x64.exe"} login
-tech-ai ask "hello"`}
+tech-ai ask "hello"`
+            }
+            extra={
+              winSetup && winPortable
+                ? `Prefer no installer? There is also a portable single file: ${winPortable.name}`
+                : undefined
+            }
           />
           <DownloadCard
             title="macOS"
@@ -218,6 +239,11 @@ tech-ai ask "hello"`
                   Ubuntu 18.04, even though we only test on the versions listed above
                 </li>
                 <li>
+                  <span className="text-zinc-200">Menu entry:</span> on a desktop install you also
+                  get “Tech AI monkey” in the application menu, which opens a terminal running
+                  tech-ai chat
+                </li>
+                <li>
                   <span className="text-zinc-200">Not supported:</span> 32-bit (i386), ARM64 /
                   Raspberry Pi, Alpine and other musl-based distros, and RPM distros such as Fedora,
                   RHEL and openSUSE
@@ -245,8 +271,15 @@ sudo apt-get remove tech-ai   # uninstall`}</pre>
                   <span className="text-zinc-200">Server:</span> Windows Server 2019 and newer
                 </li>
                 <li>
-                  <span className="text-zinc-200">Install:</span> nothing to install — download it
-                  and run it. No Node.js, no setup wizard, no admin rights needed
+                  <span className="text-zinc-200">Installer:</span> no admin rights needed. It
+                  installs into your own user folder, adds “Tech AI monkey” to the Start menu with
+                  the app icon, optionally a desktop shortcut, puts <code>tech-ai</code> on your
+                  PATH, and registers an uninstaller under Apps &amp; features
+                </li>
+                <li>
+                  <span className="text-zinc-200">Portable:</span> the single .exe runs anywhere
+                  with no installation — but then there is no Start-menu entry, and the file
+                  carries the default Windows icon rather than the app icon
                 </li>
                 <li>
                   <span className="text-zinc-200">Not supported:</span> 32-bit Windows, Windows on
