@@ -23,5 +23,11 @@
     "just-bash": "^3.6.0",
     "microsandbox": "0.5.5",
     "typescript": "latest"
+  },
+  "overrides": {
+    "guarded-fetch": "^0.1.5",
+    "eve": {
+      "undici": "^8.11.2"
+    }
   }
 }

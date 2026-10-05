@@ -1,0 +1,387 @@
+================================================================================
+ TECH AI MONKEY — SETTE OPP PROSJEKTET PÅ EN MAC
+================================================================================
+ Skrevet 2026-10-05. Les hele denne filen én gang før du begynner.
+ Regn med 40–60 minutter første gang.
+
+ VIKTIGST AV ALT:
+ Prosjektet på GitHub inneholder KUN koden. Alle hemmeligheter (passord,
+ nøkler, API-nøkler) er bevisst holdt utenfor git. Du må derfor ta dem med
+ selv på en USB-pinne. Uten dem starter ikke appen.
+
+
+================================================================================
+ 1. HVA DU MÅ TA MED PÅ USB-PINNEN
+================================================================================
+ Kopier disse filene fra Linux-maskinen til en USB-pinne. De inneholder ekte
+ hemmeligheter — bruk en pinne du stoler på, og formater den etterpå.
+
+   FRA LINUX-MASKINEN                                TIL MAC'EN
+   ------------------------------------------------  ---------------------------
+   tech-ai-monkey/.env                         -->   tech-ai-monkey/.env
+   tech-ai-monkey/web/.env.local               -->   tech-ai-monkey/web/.env.local
+
+ Det er alt av filer. Men skriv ned / kopier også disse verdiene separat, for
+ de er lette å miste og umulige å gjenskape:
+
+   - SSN_KEK          (ligger i web/.env.local) — 44 tegn. Uten denne kan
+                       ingen fødselsnumre eller Google/Slack-tilkoblinger
+                       leses opp igjen fra en database-backup.
+   - AUTH_SECRET      (ligger i web/.env.local) — logger alle brukere ut hvis
+                       den endres.
+   - AGENT_API_KEY_SECRET  (ligger i .env OG web/.env.local) — MÅ være helt
+                       lik i begge filene, ellers virker ingen API-nøkler.
+
+ ANBEFALING: Legg SSN_KEK, AUTH_SECRET og AGENT_API_KEY_SECRET i en
+ passordbehandler (Bitwarden, KeePassXC eller 1Password) FØR du begynner.
+ Det er ingen "passord" i prosjektet ditt — det er disse tre tilfeldige
+ nøklene som ER passordene. Se avsnitt 9.
+
+ På Linux, for å se dem selv (ikke lim dem inn i en chat):
+     cd tech-ai-monkey
+     grep -E '^(SSN_KEK|AUTH_SECRET|AGENT_API_KEY_SECRET)=' web/.env.local .env
+
+
+================================================================================
+ 2. KRAV PÅ MAC'EN
+================================================================================
+ - macOS 12 (Monterey) eller nyere. Både Apple Silicon (M1/M2/M3/M4) og Intel
+   fungerer.
+ - Xcode Command Line Tools (for kompilering av noen npm-pakker):
+       xcode-select --install
+ - Homebrew (pakkehåndterer):
+       /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+ - Node.js 24 eller nyere. Enkleste vei er nvm:
+       brew install nvm
+       mkdir -p ~/.nvm
+       # legg linjene nvm ber deg om inn i ~/.zshrc, åpne et nytt terminalvindu
+       nvm install 24
+       nvm use 24
+       node -v          # skal vise v24.x
+ - PostgreSQL 18:
+       brew install postgresql@18
+       brew services start postgresql@18
+ - Git følger med Xcode-verktøyene.
+
+
+================================================================================
+ 3. LAST NED PROSJEKTET FRA GITHUB PÅ NYTT
+================================================================================
+ Du skal altså klone på nytt — ikke kopiere mappen fra Linux-disken. Koden er
+ identisk, og git-historikken følger med.
+
+     cd ~
+     git clone https://github.com/HollmanRivero/tech-ai-monkey.git
+     cd tech-ai-monkey
+
+ Sjekk at du er på riktig commit:
+     git log --oneline -1
+
+ Hvis du ikke er innlogget på GitHub og får spørsmål om passord: lag et
+ Personal Access Token under GitHub -> Settings -> Developer settings, og bruk
+ det som passord. (Repositoriet er privat hvis du har satt det til privat.)
+
+
+================================================================================
+ 4. LEGG HEMMELIGHETENE PÅ PLASS
+================================================================================
+ Kopier fra USB-pinnen til NØYAKTIG disse stiene:
+
+     cp /Volumes/USBNAVN/tech-ai-monkey/.env              ~/tech-ai-monkey/.env
+     cp /Volumes/USBNAVN/tech-ai-monkey/web/.env.local    ~/tech-ai-monkey/web/.env.local
+
+ Lås filrettighetene så ikke andre brukere på Mac'en kan lese dem:
+     chmod 600 ~/tech-ai-monkey/.env
+     chmod 600 ~/tech-ai-monkey/web/.env.local
+
+ Sjekk at de kom helskinnet over:
+     grep -c '=' ~/tech-ai-monkey/.env
+     grep -c '=' ~/tech-ai-monkey/web/.env.local
+ Begge skal svare med et tall større enn 5. Er de 0, gikk kopien galt.
+
+ Nå må to ting ENDRES i web/.env.local på Mac'en, fordi stiene og databasen
+ er nye:
+
+   DATABASE_URL
+     Linux har noe sånt som:
+       postgresql://tech_ai_monkey:<passord>@127.0.0.1:5432/tech_ai_monkey
+     På Mac kan du lage en ny lokal bruker/database (avsnitt 6) og lime inn
+     den nye URL-en her. Passordet genereres på nytt lokalt — det er helt greit,
+     for databasen på Mac'en er en NY, tom database.
+
+   AUTH_URL  og  NEXT_PUBLIC_APP_URL
+     Hvis du kjører lokalt på Mac'en, sett begge til:
+       AUTH_URL=http://localhost:3000
+       NEXT_PUBLIC_APP_URL=http://localhost:3000
+     Beholder du tech-ai.tech, la dem stå som de er. MERK: AUTH_URL og
+     NEXT_PUBLIC_APP_URL leses ved BYGGING, så du må bygge web-appen på nytt
+     etter at du har endret dem (se avsnitt 7).
+
+
+================================================================================
+ 5. INSTALLER AVHENGIGHETER
+================================================================================
+ Prosjektet har to npm-prosjekter: agenten (rot) og web-appen.
+
+     cd ~/tech-ai-monkey
+     npm install
+     cd web && npm install && cd ..
+
+ Kan ta 5–10 minutter første gang.
+
+
+================================================================================
+ 6. SETT OPP DATABASEN PÅ MAC
+================================================================================
+ Linux-scriptet deploy/setup-db.sh bruker sudo -u postgres, som ikke finnes på
+ Mac. Gjør dette i stedet:
+
+     # start Postgres (hvis ikke allerede)
+     brew services start postgresql@18
+
+     # lag bruker og database
+     createuser -s tech_ai_monkey
+     createdb -O tech_ai_monkey tech_ai_monkey
+     psql -d tech_ai_monkey -c "ALTER USER tech_ai_monkey WITH PASSWORD 'VELG-ET-STERKT-PASSORD';"
+
+     # sett DATABASE_URL i web/.env.local til:
+     # postgresql://tech_ai_monkey:VELG-ET-STERKT-PASSORD@127.0.0.1:5432/tech_ai_monkey
+
+     # lag alle tabellene
+     cd web
+     npx drizzle-kit push
+     cd ..
+
+ Verifiser at tabellene kom inn (skal svare 14):
+     psql "postgresql://tech_ai_monkey:VELG-ET-STERKT-PASSORD@127.0.0.1:5432/tech_ai_monkey" \
+       -tAc "SELECT count(*) FROM information_schema.tables WHERE table_schema='public';"
+
+ Databasen på Mac'en er NY og TOM. Vil du ha med kundedata fra Linux, må du
+ gjenopprette en backup der (se avsnitt 10).
+
+
+================================================================================
+ 7. BYGG OG KJØR
+================================================================================
+ Bygg agenten:
+     cd ~/tech-ai-monkey
+     npm run build
+
+ Bygg web-appen:
+     cd ~/tech-ai-monkey/web
+     npm run build
+     cd ..
+
+ Start begge (to terminalvinduer, eller bruk & som under):
+     cd ~/tech-ai-monkey && npm run start          # agenten, port 2000
+     cd ~/tech-ai-monkey/web && npm run start      # web-appen, port 3000
+
+ Åpne http://localhost:3000 i nettleseren.
+
+ For utvikling (auto-reload) bruker du `npm run dev` i stedet for `start`.
+
+ VIKTIG: Linux bruker systemd (myai-agent.service / myai-web.service) for å
+ holde tjenestene kjørende. macOS har ikke systemd. Vil du at de skal starte
+ automatisk på Mac, må du lage launchd-oppføringer i
+ ~/Library/LaunchAgents/ — eller enklere: bruk `pm2`:
+     npm install -g pm2
+     pm2 start "npm run start" --name tech-ai-agent --cwd ~/tech-ai-monkey
+     pm2 start "npm run start" --name tech-ai-web   --cwd ~/tech-ai-monkey/web
+     pm2 save && pm2 startup
+
+
+================================================================================
+ 8. UBEGRENSET TILGANG FOR DEG — GJELDER OGSÅ PÅ MAC
+================================================================================
+ Ja. Ubegrenset tilgang henger på KONTOEN din, ikke på maskinen. Den utløses av
+ web/lib/entitlements.ts og gjelder når:
+
+   (a) kontoen din har rollen "admin" (den FØRSTE kontoen som registreres i en
+       ny database blir automatisk admin), ELLER
+   (b) e-postadressen din står i OWNER_EMAILS i web/.env.local.
+
+ På Mac'en er databasen ny. Derfor:
+
+   1) Sjekk at denne linjen finnes i web/.env.local på Mac'en:
+          OWNER_EMAILS=riveroosx7@gmail.com
+      (den ligger allerede i filen du kopierer over — bare bekreft den)
+
+   2) Verifiser etter oppstart:
+          # logg inn på http://localhost:3000 med samme Google-konto
+          # gå til http://localhost:3000/dashboard/subscription
+          # det skal stå "Unlimited"
+      Eller fra terminalen, hvis du har en CLI-nøkkel:
+          node cli/src/index.js login --key tai_...
+          node cli/src/index.js whoami
+      Skal svare: Plan: Unlimited — owner account, never metered
+
+ Du bruker DeepSeek direkte også på Mac — DEEPSEEK_API_KEY ligger i .env.
+ Kostnaden er den samme uansett hvilken maskin agenten kjører på.
+
+
+================================================================================
+ 9. PASSORDBEHANDLER — HVILKE VERDIER SOM ER "PASSORDENE"
+================================================================================
+ Det finnes ikke noe vanlig brukerpassord for prosjektet. Det er disse tre
+ tilfeldige nøklene som må behandles som passord og lagres trygt:
+
+   SSN_KEK               krypterer fødselsnumre OG Google/Slack-tokens.
+                         Mister du den, må alle kunder koble Google/Slack på
+                         nytt, og gamle fødselsnumre er tapt for alltid.
+   AUTH_SECRET           signerer innloggingssesjoner. Mister du den, logges
+                         alle ut (ufarlig). Lekker den, kan sesjoner forfalskes
+                         (alvorlig).
+   AGENT_API_KEY_SECRET  delt hemmelighet mellom web-appen og agenten.
+
+ Lag én oppføring i passordbehandleren din, f.eks.:
+   Tittel:  Tech AI monkey — produksjonsnøkler
+   Bruker:  tech-ai.tech
+   Notat:   SSN_KEK=<44 tegn>
+            AUTH_SECRET=<verdi>
+            AGENT_API_KEY_SECRET=<verdi>
+            DATABASE_URL=<verdi>
+
+ + Legg ved et notat om HVOR de ligger: web/.env.local på serveren.
+
+ ADVARSEL: Nå er nøkkelen din blitt kopiert til 18–50 filer under
+ ~/.config/Code på Linux (VS Code-historikk og chat-logger) fordi den ble
+ åpnet i editoren. Det er ryddet nå, og .env*-filer er lagt inn i
+ workbench.localHistory.exclude så det ikke skjer igjen. Men det illustrerer
+ poenget: åpne aldri .env.local i et vanlig editorvindu uten grunn.
+
+
+================================================================================
+ 10. FLYTTE DATA (VALGFRITT)
+================================================================================
+ Vil du ha kundedataene med til Mac'en:
+
+   På Linux:
+       bash deploy/backup-db.sh
+       # filen havner i ~/backups/tech-ai-monkey/daily/
+       # kopier nyeste .sql.gz til USB-pinnen
+
+   På Mac:
+       gunzip -c /Volumes/USBNAVNN/tech_ai_monkey-<dato>.sql.gz \
+         | psql "postgresql://tech_ai_monkey:PASSORD@127.0.0.1:5432/tech_ai_monkey" \
+                -v ON_ERROR_STOP=1 -1
+
+   VIKTIG: backupen inneholder krypterte fødselsnumre og tokens. Uten den
+   SAMME SSN_KEK-en kan de ikke leses. Kopier derfor nøkkelen samtidig.
+   Har du glemt nøkkelen, må alle kundene registrere seg på nytt og koble
+   Google/Slack på nytt.
+
+ Automatisk nattlig backup på Mac: deploy/install-backup.sh bruker systemd og
+ virker ikke. Bruk en cron-jobb i stedet:
+       crontab -e
+       # 0 3 * * * /Users/DITTBRUKERNAVN/tech-ai-monkey/deploy/backup-db.sh >> /tmp/tech-ai-backup.log 2>&1
+
+
+================================================================================
+ 11. CLI-APPEN PÅ MAC — STATUS
+================================================================================
+ Det finnes FORELØPIG INGEN .dmg eller ferdig macOS-fil å laste ned.
+ Nedlastingssiden har bare:
+     .deb   for Ubuntu 20.04+/Debian 11+   (64-bit x86)
+     .exe   for Windows 10/11/Server 2019+ (64-bit x86)
+ og macOS står som "coming soon".
+
+ Grunnen er Apple: en app må kode-signeres og notariseres med en Apple
+ Developer-konto (99 USD/år) før folk kan åpne den uten advarsler. Det er ikke
+ gjort ennå.
+
+ Du kan likevel bruke CLI-en på Mac'en allerede, på to måter:
+
+ A) KJØR FRA KILDEKODEN (enklest, virker i dag)
+        cd ~/tech-ai-monkey
+        node cli/src/index.js login
+        node cli/src/index.js ask "hva er status?"
+        node cli/src/index.js whoami
+    Koden har allerede macOS-støtte (den bruker `open` for å åpne nettleseren).
+    Ulempen er at du må skrive `node cli/src/index.js` hver gang. Vil du ha
+    kommandoen `tech-ai`, lag et alias:
+        echo 'alias tech-ai="node ~/tech-ai-monkey/cli/src/index.js"' >> ~/.zshrc
+        source ~/.zshrc
+        tech-ai login
+
+ B) BYGG EN EKTE MAC-BINÆR SELV
+        brew install oven-sh/bun/bun
+        cd ~/tech-ai-monkey
+        bun build cli/src/index.js --compile --minify \
+            --target=bun-darwin-arm64 --outfile=/tmp/tech-ai
+        # Intel-Mac: bruk --target=bun-darwin-x64 i stedet
+        sudo mv /tmp/tech-ai /usr/local/bin/tech-ai
+        sudo chmod +x /usr/local/bin/tech-ai
+        tech-ai login
+    Da får du en selvstendig binær akkurat som på Linux og Windows.
+    Den er usignert, så første gang må du godkjenne den under
+    Systeminnstillinger -> Personvern og sikkerhet -> "Åpne likevel".
+    Vil du distribuere den til andre, må den signeres og notariseres.
+
+
+================================================================================
+ 12. CLOUDFLARE OG DOMENET (VALGFRITT)
+================================================================================
+ Kjører du agenten på Mac'en og vil beholde tech-ai.tech, må Cloudflare-tunnelen
+ peke på Mac'en i stedet. deploy/setup-cloudflare-tunnel.sh er skrevet for
+ Linux/systemd og må tilpasses:
+
+     brew install cloudflared
+     cloudflared tunnel login                    # åpner nettleseren
+     cloudflared tunnel run tech-ai-monkey       # bruker ~/.cloudflared/config.yml
+ Kopier ~/.cloudflared/ fra Linux til Mac og kjør `cloudflared tunnel run`.
+ Da må Linux-maskinen SLUTTE å kjøre sin tunnel, ellers kjemper de om samme
+ rute. Enkleste oppsett: la Linux-maskinen være serveren, og bruk Mac'en som
+ utviklingsmaskin.
+
+
+================================================================================
+ 13. VANLIGE FEIL PÅ MAC
+================================================================================
+ "command not found: node"
+     nvm er ikke lastet. Åpne nytt terminalvindu, eller kjør `nvm use 24`.
+
+ "Cannot find module 'argon2'" eller byggefeil med node-gyp
+     Mangler Xcode-verktøy: `xcode-select --install`. Deretter
+     `cd web && npm rebuild argon2`.
+
+ "ECONNREFUSED 127.0.0.1:5432"
+     Postgres kjører ikke: `brew services start postgresql@18`
+
+ "password authentication failed for user tech_ai_monkey"
+     DATABASE_URL i web/.env.local stemmer ikke med passordet du satte med
+     ALTER USER. Sjekk at passordet er riktig, og at spesialtegn i passordet
+     er URL-kodet (f.eks. @ -> %40).
+
+ "redirect_uri_mismatch" fra Google
+     AUTH_URL og NEXT_PUBLIC_APP_URL stemmer ikke med adressen du bruker.
+     Husk at NEXT_PUBLIC_APP_URL bygges inn — kjør `npm run build` i web/ på
+     nytt etter endring.
+
+ Port 3000 eller 2000 er opptatt
+     `lsof -ti:3000 | xargs kill` (bytt ut 3000 med 2000).
+
+ Agenten starter men svarer ikke
+     Sjekk at DEEPSEEK_API_KEY ligger i .env og at du har nett.
+     Se loggen i terminalvinduet der du kjørte `npm run start`.
+
+
+================================================================================
+ 14. SJEKKLISTE — KORT VERSJON
+================================================================================
+ [ ] USB-pinne med .env og web/.env.local
+ [ ] SSN_KEK, AUTH_SECRET, AGENT_API_KEY_SECRET lagret i passordbehandler
+ [ ] Xcode-verktøy, Homebrew, nvm + Node 24, PostgreSQL 18 installert
+ [ ] git clone https://github.com/HollmanRivero/tech-ai-monkey.git
+ [ ] Filer kopiert til .env og web/.env.local, chmod 600
+ [ ] DATABASE_URL, AUTH_URL, NEXT_PUBLIC_APP_URL oppdatert for Mac
+ [ ] OWNER_EMAILS=riveroosx7@gmail.com finnes i web/.env.local
+ [ ] npm install i rot og i web/
+ [ ] createuser + createdb + npx drizzle-kit push (14 tabeller)
+ [ ] npm run build i rot og i web/
+ [ ] Begge starter, http://localhost:3000 svarer
+ [ ] dashboard/subscription viser "Unlimited"
+ [ ] CLI: node cli/src/index.js whoami sier "Unlimited"
+
+================================================================================
+ Ferdig. Lykke til!
+================================================================================

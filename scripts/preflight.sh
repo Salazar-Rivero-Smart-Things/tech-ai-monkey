@@ -5,7 +5,8 @@
 # deletes it again. It never pushes and never changes app data otherwise.
 # ===========================================================================
 set -uo pipefail
-cd "$(dirname "$0")"
+# Skriptet ligger i scripts/ – gå til prosjektroten.
+cd "$(dirname "$0")/.."
 ROOT="$PWD"
 PASS=0; FAIL=0; WARN=0
 
