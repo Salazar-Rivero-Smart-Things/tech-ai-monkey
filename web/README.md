@@ -52,7 +52,7 @@ Open http://localhost:3000.
 | `SLACK_CLIENT_ID` / `SLACK_CLIENT_SECRET` | Slack app credentials for integrations |
 | `EVE_AGENT_URL` / `AGENT_API_KEY_SECRET` | eve agent base URL (`http://127.0.0.1:2000`) + shared API-key secret |
 | `AUTH_APPLE_ID` / `AUTH_APPLE_SECRET` | Apple Sign In credentials (optional) |
-| `SSN_KEK` | 32-byte base64 master key for SSN encryption (`openssl rand -base64 32`) |
+| `SECRET_KEK` | 32-byte base64 master key for encrypting connected-app tokens (`openssl rand -base64 32`). The older name `SSN_KEK` still works as a fallback. |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe |
 | `STRIPE_PRICE_PRO` / `STRIPE_PRICE_ULTRA` / `STRIPE_PRICE_BOMB` | Stripe Price IDs for each plan |
 | `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` / `PAYPAL_ENV` | PayPal |
@@ -67,7 +67,7 @@ Open http://localhost:3000.
 app/
   (pages)                  landing, signin, signup, pricing, privacy, terms, copyright
   dashboard/               auth-protected dashboard + sidebar, admin, privacy & data
-  api/auth/                Auth.js + signup (SSN encryption)
+  api/auth/                Auth.js + signup
   api/account/export/      GDPR data export (JSON)
   api/integrations/        provider-generic OAuth connect + callback
   api/eve/                 proxies /eve/v1/* to the agent
@@ -75,7 +75,7 @@ app/
 components/                sidebar, chat, subscription manager
 lib/
   db/                      Drizzle schema + client
-  security/                SSN + token encryption (AES-256-GCM) + Argon2id
+  security/                secret encryption (AES-256-GCM) + Argon2id
   account.ts               delete / export user data
   integrations/            provider registry + OAuth flows
   billing/                 plans, token engine, Stripe, PayPal, crypto
@@ -85,8 +85,8 @@ next.config.ts             security headers (HSTS, CSP, …)
 ## Security model
 
 - Passwords hashed with **Argon2id**.
-- **SSN** and third-party **tokens** encrypted with AES-256-GCM (per-record key
-  wrapped by a master key, `SSN_KEK`, stored outside the database).
+- **Connected-app tokens** encrypted with AES-256-GCM (per-record key wrapped by a
+  master key, `SECRET_KEK`, stored outside the database).
 - **Security headers** (HSTS, CSP, `X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy`, `Permissions-Policy`) set in `next.config.ts`.
 - **GDPR:** users can export their data (`/api/account/export`) and delete their

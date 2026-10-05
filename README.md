@@ -285,8 +285,9 @@ The connect/callback routes are provider-generic, so adding an app is config onl
 
 ## Security & privacy
 
-- **Encryption at rest:** SSN and third-party tokens use AES-256-GCM envelope
-  encryption with a KEK from the environment (`SSN_KEK`); passwords use Argon2id.
+- **Encryption at rest:** third-party tokens (Google, Slack, …) use AES-256-GCM
+  envelope encryption with a KEK from the environment (`SECRET_KEK`, legacy name
+  `SSN_KEK`); passwords use Argon2id.
 - **Security headers** (HSTS, CSP, `X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy`, `Permissions-Policy`) are set in `web/next.config.ts`.
 - **Right of access:** signed-in users can download everything we store via

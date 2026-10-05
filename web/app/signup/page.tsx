@@ -12,7 +12,6 @@ export default function SignUpPage() {
     country: "",
     address: "",
     postalCode: "",
-    ssn: "",
   });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -75,9 +74,6 @@ export default function SignUpPage() {
           </div>
           <input placeholder="Address" value={form.address}
             onChange={(e) => update("address", e.target.value)}
-            className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5" />
-          <input placeholder="Social security number (optional, encrypted)" value={form.ssn}
-            onChange={(e) => update("ssn", e.target.value)}
             className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5" />
 
           {error && <p className="text-sm text-red-400">{error}</p>}

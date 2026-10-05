@@ -1,11 +1,14 @@
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 
 // ---------------------------------------------------------------------------
-// Envelope encryption for highly sensitive values (SSN / fødselsnummer).
+// Envelope encryption for secrets at rest (OAuth tokens from connected apps).
 //
 // Each value is encrypted with a fresh per-record data key (DEK), and the DEK
 // itself is wrapped with a master key (KEK) that lives in the environment /
 // KMS. A database dump alone therefore reveals nothing.
+//
+// The KEK is read from SECRET_KEK, falling back to the older SSN_KEK name so
+// existing installations do not have to rotate their key.
 // ---------------------------------------------------------------------------
 
 const ALGO = "aes-256-gcm";
@@ -24,10 +27,10 @@ interface Envelope {
 }
 
 function getKek(): Buffer {
-  const raw = process.env.SSN_KEK;
+  const raw = process.env.SECRET_KEK ?? process.env.SSN_KEK;
   if (!raw) {
     throw new Error(
-      "SSN_KEK is not set. Generate one with `openssl rand -base64 32` and store it in your secret manager.",
+      "SECRET_KEK is not set (the legacy name SSN_KEK also works). Generate one with `openssl rand -base64 32` and store it in your secret manager.",
     );
   }
   const kek = Buffer.from(raw, "base64");
@@ -58,11 +61,12 @@ function decrypt(key: Buffer, ivB64: string, tagB64: string, dataB64: string): B
   ]);
 }
 
-export function encryptSsn(ssn: string): string {
+/** Encrypt an arbitrary secret (e.g. an OAuth token bundle) into an envelope. */
+export function encryptSecret(plaintext: string): string {
   const kek = getKek();
   const dek = randomBytes(32);
   const wrapped = encrypt(kek, dek);
-  const encrypted = encrypt(dek, Buffer.from(ssn, "utf8"));
+  const encrypted = encrypt(dek, Buffer.from(plaintext, "utf8"));
 
   const envelope: Envelope = {
     v: 1,
@@ -77,29 +81,13 @@ export function encryptSsn(ssn: string): string {
   return JSON.stringify(envelope);
 }
 
-export function decryptSsn(envelope: string): string {
+/** Decrypt an envelope produced by {@link encryptSecret}. */
+export function decryptSecret(envelope: string): string {
   const kek = getKek();
   const env = JSON.parse(envelope) as Envelope;
   if (env.v !== 1 || env.alg !== ALGO) {
-    throw new Error("Unsupported SSN envelope format.");
+    throw new Error("Unsupported envelope format.");
   }
   const dek = decrypt(kek, env.dekIv, env.dekTag, env.dek);
   return decrypt(dek, env.iv, env.tag, env.ciphertext).toString("utf8");
 }
-
-export function maskSsn(ssn: string): string {
-  const cleaned = ssn.replace(/\D/g, "");
-  if (cleaned.length <= 4) return "••••";
-  return `${"•".repeat(cleaned.length - 4)} ${cleaned.slice(-4)}`;
-}
-
-// ---------------------------------------------------------------------------
-// Generic secret envelope — same AES-256-GCM format and the same KEK (SSN_KEK).
-// Used for OAuth access/refresh tokens from connected apps (Slack, Google, ...).
-// ---------------------------------------------------------------------------
-
-/** Encrypt an arbitrary secret (e.g. an OAuth token bundle) into an envelope. */
-export const encryptSecret = encryptSsn;
-
-/** Decrypt an envelope produced by {@link encryptSecret}. */
-export const decryptSecret = decryptSsn;

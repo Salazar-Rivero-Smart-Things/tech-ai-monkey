@@ -32,7 +32,7 @@ expect "$(sudo -n systemctl is-enabled myai-backup.timer 2>/dev/null)" "enabled"
 
 # ---------------------------------------------------------------------------
 head_ "2. Database og tabeller"
-EXPECTED_TABLES=(user account session verificationToken sensitiveData auditLog \
+EXPECTED_TABLES=(user account session verificationToken auditLog \
   subscription tokenBalance tokenTransaction artifact notebook integration \
   cliAuthCode cliToken)
 for t in "${EXPECTED_TABLES[@]}"; do

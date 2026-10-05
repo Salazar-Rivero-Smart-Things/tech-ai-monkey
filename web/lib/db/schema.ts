@@ -81,23 +81,6 @@ export const verificationTokens = pgTable(
   (table) => [primaryKey({ columns: [table.identifier, table.token] })],
 );
 
-// ---------------------------------------------------------------------------
-// Sensitive data (SSN) — kept in its own table so normal user queries never
-// touch it. The value is an opaque, encrypted envelope produced by
-// lib/security/crypto.ts.
-// ---------------------------------------------------------------------------
-
-export const sensitiveData = pgTable(
-  "sensitiveData",
-  {
-    userId: text("userId")
-      .primaryKey()
-      .references(() => users.id, { onDelete: "cascade" }),
-    ssnEncrypted: text("ssnEncrypted").notNull(),
-    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
-  },
-);
-
 export const auditLogs = pgTable(
   "auditLog",
   {

@@ -15,7 +15,6 @@ BEGIN
   DELETE FROM "tokenBalance"     WHERE "userId" = ANY(ids);
   DELETE FROM subscription       WHERE "userId" = ANY(ids);
   DELETE FROM "auditLog"         WHERE "userId" = ANY(ids);
-  DELETE FROM "sensitiveData"    WHERE "userId" = ANY(ids);
   DELETE FROM artifact           WHERE "userId" = ANY(ids);
   DELETE FROM notebook           WHERE "userId" = ANY(ids);
   DELETE FROM session            WHERE "userId" = ANY(ids);

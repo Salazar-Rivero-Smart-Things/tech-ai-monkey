@@ -14,7 +14,7 @@
 # Store the backups on another disk if you like:
 #     BACKUP_DIR=/mnt/nas/tech-ai-backups bash deploy/backup-db.sh
 #
-# The dumps contain personal data (encrypted SSN blobs, password hashes), so
+# The dumps contain personal data (third-party tokens, password hashes), so
 # they are written with mode 600 and must never be committed to git.
 # ---------------------------------------------------------------------------
 set -euo pipefail

@@ -4,13 +4,11 @@ import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
   users,
-  sensitiveData,
   auditLogs,
   subscriptions,
   tokenBalances,
 } from "@/lib/db/schema";
 import { hashPassword } from "@/lib/security/password";
-import { encryptSsn } from "@/lib/security/crypto";
 import { PLANS } from "@/lib/billing/plans";
 import { roleForNewUser } from "@/lib/roles";
 
@@ -31,7 +29,6 @@ export async function POST(request: Request) {
   const country = typeof body.country === "string" ? body.country.trim() : "";
   const address = typeof body.address === "string" ? body.address.trim() : "";
   const postalCode = typeof body.postalCode === "string" ? body.postalCode.trim() : "";
-  const ssn = typeof body.ssn === "string" ? body.ssn.trim() : "";
 
   if (!name) {
     return NextResponse.json({ error: "Name is required." }, { status: 400 });
@@ -45,13 +42,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (ssn && ssn.replace(/\D/g, "").length < 6) {
-    return NextResponse.json(
-      { error: "Social security number looks invalid." },
-      { status: 400 },
-    );
-  }
-
   const [existing] = await db
     .select({ id: users.id })
     .from(users)
@@ -106,19 +96,11 @@ export async function POST(request: Request) {
       updatedAt: now,
     });
 
-    if (ssn) {
-      await tx.insert(sensitiveData).values({
-        userId: id,
-        ssnEncrypted: encryptSsn(ssn),
-        updatedAt: now,
-      });
-    }
-
     await tx.insert(auditLogs).values({
       id: randomUUID(),
       userId: id,
       actorId: id,
-      action: ssn ? "user.signup.with_ssn" : "user.signup",
+      action: "user.signup",
       resource: "user",
       ip:
         request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null,

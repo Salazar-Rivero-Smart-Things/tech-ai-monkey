@@ -135,7 +135,9 @@ Note: eve agent needs Node 24 (run with `npx node@24 node_modules/eve/bin/eve.js
 - User's old Stripe secret + PayPal secret were pasted in chat → they were told
   to ROTATE them. Confirm new values are in .env.local.
 - Never commit `.env.local`. It is git-ignored.
-- SSN encrypted AES-256-GCM (KEK in `SSN_KEK`); passwords Argon2id.
+- Connected-app tokens encrypted AES-256-GCM (KEK in `SECRET_KEK`, legacy name
+  `SSN_KEK`); passwords Argon2id. (The SSN field was removed from signup — the
+  app does not collect social security numbers.)
 
 ## Next steps (in order)
 
@@ -153,6 +155,6 @@ Note: eve agent needs Node 24 (run with `npx node@24 node_modules/eve/bin/eve.js
 - User has **DeepSeek** (on their Mac, possibly via Ollama). Candidate for the
   agent's model or as one of the "full package" models. DeepSeek is very cheap
   (fits fair pricing). ⚠️ Data-protection consideration: DeepSeek is a Chinese
-  provider — for EU user data (incl. SSN) prefer a local/self-hosted DeepSeek or
+  provider — for EU user data prefer a local/self-hosted DeepSeek or
   a non-Chinese provider for the public chat. Decide when wiring models.
 - The eve agent currently defaults to Vercel AI Gateway (openai/gpt-5.5).

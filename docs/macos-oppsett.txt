@@ -24,9 +24,10 @@
  Det er alt av filer. Men skriv ned / kopier også disse verdiene separat, for
  de er lette å miste og umulige å gjenskape:
 
-   - SSN_KEK          (ligger i web/.env.local) — 44 tegn. Uten denne kan
-                       ingen fødselsnumre eller Google/Slack-tilkoblinger
-                       leses opp igjen fra en database-backup.
+   - SECRET_KEK       (ligger i web/.env.local, kan hete SSN_KEK) — 44 tegn.
+                       Krypterer Google/Slack-tilkoblingene i databasen. Uten
+                       denne kan de ikke leses opp igjen fra en backup, og
+                       kundene må koble på nytt.
    - AUTH_SECRET      (ligger i web/.env.local) — logger alle brukere ut hvis
                        den endres.
    - AGENT_API_KEY_SECRET  (ligger i .env OG web/.env.local) — MÅ være helt
@@ -225,9 +226,10 @@
  Det finnes ikke noe vanlig brukerpassord for prosjektet. Det er disse tre
  tilfeldige nøklene som må behandles som passord og lagres trygt:
 
-   SSN_KEK               krypterer fødselsnumre OG Google/Slack-tokens.
+   SECRET_KEK            krypterer Google/Slack-tokens i databasen (heter
+                         SSN_KEK i eldre .env-filer — begge virker).
                          Mister du den, må alle kunder koble Google/Slack på
-                         nytt, og gamle fødselsnumre er tapt for alltid.
+                         nytt.
    AUTH_SECRET           signerer innloggingssesjoner. Mister du den, logges
                          alle ut (ufarlig). Lekker den, kan sesjoner forfalskes
                          (alvorlig).
@@ -265,10 +267,10 @@
          | psql "postgresql://tech_ai_monkey:PASSORD@127.0.0.1:5432/tech_ai_monkey" \
                 -v ON_ERROR_STOP=1 -1
 
-   VIKTIG: backupen inneholder krypterte fødselsnumre og tokens. Uten den
-   SAMME SSN_KEK-en kan de ikke leses. Kopier derfor nøkkelen samtidig.
-   Har du glemt nøkkelen, må alle kundene registrere seg på nytt og koble
-   Google/Slack på nytt.
+   VIKTIG: backupen inneholder krypterte integrasjons-tokens. Uten den SAMME
+   krypteringsnøkkelen (SECRET_KEK / SSN_KEK) kan de ikke leses. Kopier derfor
+   nøkkelen samtidig. Har du glemt nøkkelen, må alle kundene koble Google/Slack
+   på nytt.
 
  Automatisk nattlig backup på Mac: deploy/install-backup.sh bruker systemd og
  virker ikke. Bruk en cron-jobb i stedet:

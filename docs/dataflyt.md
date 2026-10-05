@@ -40,14 +40,13 @@ Cloudflare og (b) **teksten brukeren skriver i chatten**, som sendes til språkm
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 | Konto | navn, e-post, passord-hash (Argon2id) | opprette og sikre konto | art. 6(1)(b) avtale | `user`, `account`, `session` i Postgres | til konto slettes (+30 d) |
 | 2 | Kontakt | telefon, land, adresse, postnr. | fakturering, support | art. 6(1)(b) | Postgres | til konto slettes |
-| 3 | Fødselsnummer | valgfritt felt | identitetsbekreftelse | art. 6(1)(a) samtykke + art. 9(2)(a) | `sensitiveData` i Postgres, **AES-256-GCM** | til konto slettes |
-| 4 | Samtaler/artefakter | chat-meldinger, notatbøker, innhold | levere tjenesten | art. 6(1)(b) | Postgres (`artifact`, `notebook`) + agentens minnelager | til bruker sletter / konto slettes |
-| 5 | Integrasjonstokens | OAuth-tokens for Google/Slack | utføre koblingen bruker ba om | art. 6(1)(b) | `integration` i Postgres, **AES-256-GCM** | til frakobling / konto slettes |
-| 6 | Betaling | navn, e-post, beløp, transaksjons-id | abonnement og fakturering | art. 6(1)(b) + bokføringsloven | Stripe/PayPal + `subscription` | 5 år (bokføring) |
-| 7 | Bruk/forbruk | tokens brukt, plan | fakturering, misbruksvern | art. 6(1)(b) | `tokenBalance`, `tokenTransaction` | til konto slettes |
-| 8 | Revisjonsspor | hvem gjorde hva, når | sikkerhet, sporbarhet | art. 6(1)(f) berettiget interesse | `auditLog` | 12 mnd |
-| 9 | Driftslogger | IP, tidspunkt, HTTP-status | feilsøking, angrepsvern | art. 6(1)(f) | journald/Cloudflare | 30 d |
-| 10 | Backup | kryptert dump av hele databasen | gjenoppretting etter feil | art. 6(1)(c)/(f) | `~/backups/tech-ai-monkey` (lokal disk) | 30 d daglig + 12 mnd månedlig |
+| 3 | Samtaler/artefakter | chat-meldinger, notatbøker, innhold | levere tjenesten | art. 6(1)(b) | Postgres (`artifact`, `notebook`) + agentens minnelager | til bruker sletter / konto slettes |
+| 4 | Integrasjonstokens | OAuth-tokens for Google/Slack | utføre koblingen bruker ba om | art. 6(1)(b) | `integration` i Postgres, **AES-256-GCM** | til frakobling / konto slettes |
+| 5 | Betaling | navn, e-post, beløp, transaksjons-id | abonnement og fakturering | art. 6(1)(b) + bokføringsloven | Stripe/PayPal + `subscription` | 5 år (bokføring) |
+| 6 | Bruk/forbruk | tokens brukt, plan | fakturering, misbruksvern | art. 6(1)(b) | `tokenBalance`, `tokenTransaction` | til konto slettes |
+| 7 | Revisjonsspor | hvem gjorde hva, når | sikkerhet, sporbarhet | art. 6(1)(f) berettiget interesse | `auditLog` | 12 mnd |
+| 8 | Driftslogger | IP, tidspunkt, HTTP-status | feilsøking, angrepsvern | art. 6(1)(f) | journald/Cloudflare | 30 d |
+| 9 | Backup | kryptert dump av hele databasen | gjenoppretting etter feil | art. 6(1)(c)/(f) | `~/backups/tech-ai-monkey` (lokal disk) | 30 d daglig + 12 mnd månedlig |
 
 ---
 
@@ -107,7 +106,7 @@ Cloudflare og (b) **teksten brukeren skriver i chatten**, som sendes til språkm
 | Vercel | USA | prompt (kun fallback) | SCC + DPA |
 | DeepSeek | **Kina** | **prompt-teksten i chat** | SCC; overføringen er begrenset til det brukeren skriver. Vi jobber med et EØS-alternativ for å fjerne den helt. |
 
-Ingen fødselsnummer, passord eller integrasjons-tokens forlater EØS i klartekst.
+Ingen passord eller integrasjons-tokens forlater EØS i klartekst.
 
 ---
 
@@ -140,7 +139,7 @@ rader blir liggende.
 | Nettleser → Cloudflare → server | TLS 1.2+, HSTS, ingen åpne innkommende porter |
 | Nettleser → web-app | CSP, `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy` |
 | Web-app → database | lokal socket/TCP på `127.0.0.1`, egen DB-rolle med minste privilegium |
-| Fødselsnummer og tokens i DB | AES-256-GCM envelope, KEK i miljøvariabel utenfor DB |
+| Integrasjons-tokens i DB | AES-256-GCM envelope, KEK i miljøvariabel utenfor DB |
 | Passord | Argon2id med salt |
 | Web-app → agent | delt hemmelighet `AGENT_API_KEY_SECRET`, feiler lukket |
 | Agent → språkmodell | HTTPS til leverandøren, kun prompt-tekst |

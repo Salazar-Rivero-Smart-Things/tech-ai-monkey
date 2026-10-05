@@ -6,7 +6,6 @@ import {
   auditLogs,
   integrations,
   notebooks,
-  sensitiveData,
   sessions,
   subscriptions,
   tokenBalances,
@@ -27,7 +26,6 @@ const USER_TABLES = [
   tokenBalances,
   subscriptions,
   auditLogs,
-  sensitiveData,
   artifacts,
   notebooks,
   sessions,
@@ -57,10 +55,6 @@ export async function exportUserData(userId: string) {
     .select()
     .from(tokenBalances)
     .where(eq(tokenBalances.userId, userId));
-  const [ssn] = await db
-    .select({ present: sensitiveData.ssnEncrypted })
-    .from(sensitiveData)
-    .where(eq(sensitiveData.userId, userId));
 
   const transactions = await db
     .select()
@@ -78,8 +72,6 @@ export async function exportUserData(userId: string) {
     profile,
     subscription: subscription ?? null,
     tokenBalance: balance ?? null,
-    // We record only that an SSN is on file — never the ciphertext.
-    sensitiveData: { ssnOnFile: Boolean(ssn) },
     tokenTransactions: transactions,
     notebooks: notes,
     artifacts: files,

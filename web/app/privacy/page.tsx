@@ -29,25 +29,13 @@ export default function PrivacyPage() {
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li>Account data: name, email address, and — if you choose email registration — a password (stored only as a salted Argon2id hash).</li>
               <li>Contact data: phone number, country, address, and postal code.</li>
-              <li>Social security number / fødselsnummer, if you choose to provide it (see section 3).</li>
               <li>Usage data: conversations, token usage, saved artifacts, notebook reminders, and connected apps.</li>
               <li>Payment data: handled by our payment providers (Stripe, PayPal) — we do not store full card numbers.</li>
             </ul>
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">3. How we protect your Social Security Number</h2>
-            <p className="mt-2">
-              Your social security number is treated as sensitive data. It is encrypted with
-              AES-256-GCM using a unique key per record, and that key is itself wrapped with a
-              master key held separately from the database. It is stored separately from the rest
-              of your account, masked in our interface, never logged, and never shared with
-              third parties. Access is logged and restricted.
-            </p>
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-zinc-100">4. Why we collect it</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">3. Why we collect it</h2>
             <p className="mt-2">
               We process your data to provide and secure the Service, manage subscriptions and
               payments, comply with legal obligations, and improve the product. We only process
@@ -56,7 +44,7 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">5. Sub-processors (third parties)</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">4. Sub-processors (third parties)</h2>
             <p className="mt-2">
               We never sell your personal data. We share it only with the sub-processors listed
               below, each under a data-processing agreement and only to the extent needed to run
@@ -118,7 +106,7 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">6. Transfers outside the EEA</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">5. Transfers outside the EEA</h2>
             <p className="mt-2">
               Your account data is stored in our own database on a server in Norway and does not
               leave the EEA. A few sub-processors are outside the EEA (Cloudflare, Slack, Stripe,
@@ -135,7 +123,7 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">7. Your rights</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">6. Your rights</h2>
             <p className="mt-2">
               Under the GDPR you have the right to access, correct, delete, and export your data,
               and to object to or restrict processing. You can download everything we store from{" "}
@@ -147,7 +135,7 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">8. Retention (how long we keep data)</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">7. Retention (how long we keep data)</h2>
             <ul className="mt-2 list-disc space-y-1 pl-6">
               <li><span className="text-zinc-100">Account data</span> — while your account is active, then erased within 30 days of deletion.</li>
               <li><span className="text-zinc-100">Chat history and saved artifacts</span> — until you clear them or delete your account.</li>
@@ -161,7 +149,7 @@ export default function PrivacyPage() {
           </div>
 
           <div>
-            <h2 className="text-lg font-semibold text-zinc-100">9. Contact</h2>
+            <h2 className="text-lg font-semibold text-zinc-100">8. Contact</h2>
             <p className="mt-2">
               WhatsApp:{" "}
               <a className="text-blue-400 hover:underline" href={siteConfig.supportWhatsAppUrl}>

@@ -16,7 +16,7 @@ fornyes **hvert år**.
 
 | Krav (ASVS-område) | Status i Tech AI monkey |
 | --- | --- |
-| Kryptering av sensitive data | ✅ AES-256-GCM envelope-kryptering (`web/lib/security/crypto.ts`), nøkkel i `SSN_KEK` |
+| Kryptering av sensitive data | ✅ AES-256-GCM envelope-kryptering (`web/lib/security/crypto.ts`) for integrasjons-tokens, nøkkel i `SECRET_KEK` (eldre navn: `SSN_KEK`) |
 | Passord-hashing | ✅ Argon2id (`web/lib/security/password.ts`) |
 | Tokens fra tredjepart | ✅ Kryptert før lagring (integrasjoner) |
 | Tilgangskontroll | ✅ Alt scopes per `userId` fra sesjon; egen `admin`-rolle |

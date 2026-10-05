@@ -14,15 +14,16 @@ sikkerhetskopierer den, hvordan vi gjenoppretter, og hvordan du **verifiserer at
 | --- | --- | --- | --- |
 | Hele databasen (`tech_ai_monkey`) | `pg_dump` + `gzip`, nattlig | `~/backups/tech-ai-monkey/daily/` | 30 dager |
 | Månedlig kopi (tas den 1. hver måned) | kopi av nattlig dump | `~/backups/tech-ai-monkey/monthly/` | 12 måneder |
-| Hemmeligheter (`.env`, `.env.local`, `SSN_KEK`) | **ikke** i backup-scriptet | egen, sikker lagring | — |
+| Hemmeligheter (`.env`, `.env.local`, `SECRET_KEK`) | **ikke** i backup-scriptet | egen, sikker lagring | — |
 
 > Ren kode ligger på GitHub. Backupene inneholder **persondata** og skal derfor aldri
 > committes, deles eller legges i en skytjeneste uten DPA. De skrives med filrettighet
 > `600` i en mappe med `700`.
 
-**Sikkerhetskopiering lagrer ikke `.env`/`.env.local`.** Krypteringsnøkkelen (`SSN_KEK`)
-må derfor oppbevares separat og sikkert — uten den kan fødselsnumre i en gjenopprettet
-database ikke dekrypteres. Ta vare på den i en passordbehandler eller et lukket, sikkert
+**Sikkerhetskopiering lagrer ikke `.env`/`.env.local`.** Krypteringsnøkkelen (`SECRET_KEK`,
+eldre navn `SSN_KEK`) må derfor oppbevares separat og sikkert — uten den kan
+integrasjons-tokens i en gjenopprettet database ikke dekrypteres, og kundene må koble
+Google/Slack på nytt. Ta vare på den i en passordbehandler eller et lukket, sikkert
 medium.
 
 ---
