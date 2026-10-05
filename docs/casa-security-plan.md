@@ -35,7 +35,7 @@ fornyes **hvert år**.
 | **Underleverandørliste + retensjon** i personvernerklæringen | `web/app/privacy/page.tsx` (§5 og §8) |
 | **Dataflyt-kart** – data → underleverandører, overføringer utenfor EØS, sletterutiner | [`dataflyt.md`](dataflyt.md) |
 | **Nattlig backup + dokumentert gjenoppretting** | `deploy/backup-db.sh`, `deploy/restore-db.sh`, `deploy/myai-backup.{service,timer}`, [`backup-og-gjenoppretting.md`](backup-og-gjenoppretting.md) |
-| **Automatisk sårbarhetsovervåking** | `.github/dependabot.yml` (ukesvis, npm rot + web + Actions) og `.github/workflows/security.yml` (`npm audit --omit=dev --audit-level=high` + gitleaks hemmelighetsskan) |
+| **Automatisk sårbarhetsovervåking** | `.github/dependabot.yml` (ukesvis, npm rot + web + Actions) og `.github/workflows/security.yml` (`npm audit --omit=dev --audit-level=high` + sjekk for innsjekkede `.env`-filer). **Merk:** GitHub Actions får for tiden ikke starte på repoet — kjøringer feiler med `startup_failure` og `path: BuildFailed`, som betyr at Actions-faktureringen/minuttene på kontoen må ordnes opp i. Workflow-filen er verifisert gyldig (`gh workflow list` viser `security active`), men den kjører ikke før det er på plass. Inntil da dekker `scripts/preflight.sh` de samme sjekkene lokalt. |
 | **Hemmeligheter holdes ute av editor-historikk** | `workbench.localHistory.exclude` for `**/.env*` (hindrer at `.env.local`-snapshots havner i VS Code-historikk) |
 | **macOS-oppsett (drift)** | [`macos-oppsett.txt`](macos-oppsett.txt) – hva som må flyttes manuelt, og hvorfor |
 
@@ -85,8 +85,9 @@ drizzle-kit@0.31.11 -> @esbuild-kit/esm-loader@2.6.5
   esbuild, som kan svare på forespørsler fra vilkårlige nettsteder. `drizzle-kit`
   bruker bare esbuild til å laste `drizzle.config.ts` – den starter ingen
   utviklerserver. Risikoen i vår bruk er derfor i praksis null.
-- Tiltak: overvåkes av **Dependabot**, og `npm audit` kjører i CI på
-  produksjonsavhengigheter. Revurderes når `drizzle-kit` bytter bort `@esbuild-kit`.
+- Tiltak: overvåkes av **Dependabot**, og `npm audit --omit=dev` kjører både lokalt
+  (`scripts/preflight.sh`) og i `.github/workflows/security.yml` når GitHub Actions
+  kan starte på nytt. Revurderes når `drizzle-kit` bytter bort `@esbuild-kit`.
 
 Verifisert live: headers svarer, `/api/account/export` gir **401** uinnlogget. ✅
 
