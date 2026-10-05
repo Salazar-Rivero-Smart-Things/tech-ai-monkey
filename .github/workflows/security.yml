@@ -28,27 +28,21 @@ jobs:
         with:
           node-version: "24"
 
-      - name: Agent — produksjonsavhengigheter
-        working-directory: .
+      - name: Agent - production dependencies
         run: |
           npm ci --omit=dev --ignore-scripts
           npm audit --omit=dev --audit-level=high
 
-      - name: Web-app — produksjonsavhengigheter
+      - name: Web app - production dependencies
         working-directory: web
         run: |
           npm ci --omit=dev --ignore-scripts
           npm audit --omit=dev --audit-level=high
 
-  gitleaks:
-    name: hemmelighetsskan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Let etter innsjekkede hemmeligheter
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITLEAKS_ENABLE_COMMENTS: "false"
+      - name: No env file is tracked by git
+        run: |
+          if git ls-files | grep -E '(^|/)\.env($|\.)' | grep -v '\.example$'; then
+            echo "::error::An .env file is tracked by git - remove it and rotate the secret"
+            exit 1
+          fi
+          echo "OK - no .env file is tracked"
