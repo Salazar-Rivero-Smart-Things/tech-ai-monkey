@@ -314,6 +314,16 @@
 				"-c",
 				"cd /run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey && echo '=== HEAD ===' && git --no-pager log --oneline -1 && echo '=== remote ===' && git --no-pager ls-remote origin -h refs/heads/main && echo '=== status ===' && git status --short && echo '=== downloads ===' && ls -la web/public/downloads/ && echo '=== ikoner ===' && ls -la cli/assets/"
 			]
+		},
+		{
+			"label": "Bygg agent på nytt (eve build)",
+			"type": "shell",
+			"command": "cd ${workspaceFolder} && npm run build 2>&1 | tail -40"
+		},
+		{
+			"label": "Klargjør commit (konverter web, stage alt)",
+			"type": "shell",
+			"command": "cd ${workspaceFolder}; echo '=== fjern web som submodule/gitlink ==='; git rm --cached web 2>&1; rm -rf web/.git; echo '=== stage alt ==='; git add -A 2>&1; echo '=== hva blir med i commiten? (filer) ==='; git diff --cached --name-only | head -80; echo; echo '=== SJEKK: noen hemmelige .env-filer med? ==='; git diff --cached --name-only | grep -iE '\\.env|secret|credential' || echo 'INGEN hemmelige filer er med ✓'"
 		}
 	]
 }
