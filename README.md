@@ -200,7 +200,7 @@ defined in `web/lib/integrations/providers.ts`; the OAuth flow is:
                  →  /api/integrations/<provider>/callback   (exchange code, store tokens)
 ```
 
-Tokens are stored **encrypted** (AES-256-GCM envelope, KEK = `SSN_KEK`).
+Tokens are stored **encrypted** (AES-256-GCM envelope, KEK = `SECRET_KEK`).
 
 Ready providers: **Slack**, **Google services** (Calendar + Drive + Gmail,
 read-only), **Google Workspace** (Gmail + Drive + Calendar, read-only).
@@ -288,6 +288,9 @@ The connect/callback routes are provider-generic, so adding an app is config onl
 - **Encryption at rest:** third-party tokens (Google, Slack, …) use AES-256-GCM
   envelope encryption with a KEK from the environment (`SECRET_KEK`, legacy name
   `SSN_KEK`); passwords use Argon2id.
+- **No social security numbers:** the signup form does not ask for fødselsnummer
+  and there is no table or field for it, so the Service does not process any
+  GDPR Article 9 (special category) data.
 - **Security headers** (HSTS, CSP, `X-Content-Type-Options`, `X-Frame-Options`,
   `Referrer-Policy`, `Permissions-Policy`) are set in `web/next.config.ts`.
 - **Right of access:** signed-in users can download everything we store via
@@ -321,12 +324,53 @@ bash deploy/restore-db.sh <fil.sql.gz>   # restore (takes a safety backup first)
 - Full runbook (verify, restore from scratch, troubleshooting):
   [`docs/backup-og-gjenoppretting.md`](docs/backup-og-gjenoppretting.md).
 
-> ⚠️ `SSN_KEK` is **not** part of the dump. Store it separately and securely — without it the
-> encrypted social-security numbers in a restored database cannot be decrypted.
+> ⚠️ `SECRET_KEK` is **not** part of the dump. Store it separately and securely — without it the
+> encrypted connected-app tokens in a restored database cannot be decrypted, and every
+> customer has to reconnect Google/Slack.
+
+## Owner access (unlimited)
+
+The instance owner is **never metered and never blocked** — no token counter and no
+402 "out of tokens". That applies to the dashboard, the HTTP API and the CLI alike,
+on every machine the owner signs in from, because it is tied to the account and not
+to a device.
+
+`web/lib/entitlements.ts` decides it. An account is unlimited when **either**:
+
+- its `role` is `admin` (the first account ever created is promoted automatically), **or**
+- its email is listed in `OWNER_EMAILS` in `web/.env.local` (comma-separated,
+  case-insensitive).
+
+Set `OWNER_EMAILS` in addition to the role, so owner access survives even if the
+role is ever lost:
+
+```
+OWNER_EMAILS=you@example.com
+```
+
+Verify: *Dashboard → Subscription* shows **Unlimited**, or `tech-ai whoami` replies
+`Unlimited — owner account, never metered`.
+
+## Tests before you push
+
+`scripts/preflight.sh` runs 66 checks and tells you whether it is safe to push:
+
+```bash
+bash scripts/preflight.sh
+```
+
+It verifies the systemd services, every database table, the owner/unlimited path
+end-to-end (it inserts a temporary CLI token, checks it, then deletes it again),
+all public and dashboard routes, that the APIs reject unauthenticated callers, the
+download files byte-for-byte, the installed CLI binary, the security headers, the
+live site through Cloudflare, and a secret scan of what would be pushed.
 
 ## Project layout
 
 ```
+.github/
+  dependabot.yml              # weekly npm + GitHub Actions updates
+  workflows/security.yml      # npm audit on production deps + tracked-.env check
 agent/
   agent.ts                    # model config (DeepSeek / AI Gateway fallback)
   instructions.md             # system prompt / operating rules
@@ -367,6 +411,7 @@ docs/
   casa-security-plan.md          # CASA / ASVS plan, status and checklist
   dataflyt.md                    # data-flow map (sub-processors, transfers, retention)
   backup-og-gjenoppretting.md    # backup/restore runbook (Norwegian)
+  macos-oppsett.txt              # setting up the whole project on a Mac (Norwegian)
 deploy/
   install-services.sh         # install/refresh the systemd services
   myai-agent.service          # agent unit (port 2000)
