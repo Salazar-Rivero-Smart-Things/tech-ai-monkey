@@ -13,7 +13,8 @@ The agent:
 - **Searches the whole web** until it finds the issue or fix (`web_search` +
   `web_fetch`, guided by the `deep-web-research` skill).
 - **Keeps learning** between conversations via cross-session memory.
-- **Has a library** of reusable skills under `agent/skills/`.
+- **Has a library** of reusable skills under `agent/skills/`, and can **learn new
+  ones** while you chat — saved for just you, or shared with everyone.
 - **Deletes chat history** on request (Clear / Reset).
 - **Issues API keys** so your server can talk to it over HTTP.
 
@@ -140,7 +141,52 @@ Ask it things like:
 
 - "Find out why my Next.js build fails with error X and give me the fix."
 - "Give me an API key for my Node server."
+- "Learn this: to deploy, run `scripts/preflight.sh` first, then `npm run build`."
 - "Delete this chat history."
+
+## Skills (learning new abilities)
+
+A **skill** is a short procedure the agent loads on demand for a specific kind of
+question. eve advertises each skill's description and the model calls `load_skill`
+only when a turn calls for it, so skills stay out of the prompt until they are
+needed.
+
+There are two sources:
+
+| Source | Where it lives | Who gets it |
+| --- | --- | --- |
+| **Built-in** | `agent/skills/*.md` (shipped, compiled) | Everyone |
+| **Learned** | `skills/global/<slug>.md` | Everyone |
+| **Learned** | `skills/users/<id>/<slug>.md` | One user |
+
+Learned skills are plain markdown on disk, committed to the repository (the
+global ones) and read at runtime — so a skill taught in a chat is available from
+the next turn on, **no rebuild required**.
+
+### Teach a skill
+
+Just ask in chat:
+
+> Learn this: when I ask to deploy, first run `bash scripts/preflight.sh`, then
+> `npm run build`, then restart `myai-web`.
+
+The agent calls `learn_skill` with a name, a description written as the question
+that should trigger it, the procedure, and example triggers. By default it saves
+**just for you** (`scope: "personal"`). It only publishes `scope: "global"` when
+you explicitly ask for *everybody* and you are the instance owner.
+
+### The switch: just me or everyone
+
+Open **Dashboard → Skills** (`/dashboard/skills`):
+
+- Create a skill by hand and pick **Just me** or **Everyone** with the switch.
+- *Share with everyone* / *Make private* to move an existing skill.
+- Delete a skill, and see the built-in ones.
+
+Only the instance owner can publish a skill for everybody; everyone else can
+still keep personal skills. The agent can also `list_skills` and `forget_skill`.
+
+See `docs/skills.md` for the file format.
 
 ## Hook up your server (HTTP API)
 
@@ -451,12 +497,20 @@ agent/
   instructions/memory.ts      # cross-session learning instructions
   lib/jwt.ts                  # API-key minting helper
   lib/memory-store.ts         # cross-session memory storage
+  lib/skills-store.ts         # learned-skills storage (global + per user)
   tools/issue_api_key.ts      # "give me an API key"
   tools/delete_chat_history.ts# "delete my history"
   tools/remember.ts           # "remember this"
   tools/forget.ts             # "forget this"
   tools/list_memories.ts      # "what do you remember?"
-  skills/                     # reusable skills (deep-web-research, self-improvement…)
+  tools/learn_skill.ts        # "learn this procedure"
+  tools/list_skills.ts        # "what have you learned?"
+  tools/forget_skill.ts       # delete a learned skill
+  skills/                     # built-in skills (deep-web-research, self-improvement…)
+  skills/learned.ts           # serves learned skills per caller (dynamic)
+skills/                       # learned skills (global/ committed, users/ git-ignored)
+  global/<slug>.md            # shared with everyone
+  users/<id>/<slug>.md        # private to one user
 public/index.html             # built-in web chat UI
 cli/                          # terminal client (bundled into the .deb / .exe)
   src/index.js                # command parsing (login, ask, chat, whoami)
@@ -471,9 +525,12 @@ web/
   app/dashboard/api-keys/     # create/revoke CLI + server API keys
   app/                        # Next.js pages + API routes (auth, billing, eve proxy)
   app/dashboard/privacy/      # GDPR: download data + delete account
+  app/dashboard/skills/       # teach skills; just-me / everyone switch
   app/api/account/export/     # GDPR: JSON data export
   components/chat.tsx         # dashboard chat (talks to the agent)
+  components/skill-manager.tsx# skills UI (create, publish, delete)
   components/sidebar.tsx      # dashboard nav (incl. Support link)
+  lib/skills-store.ts         # reads/writes the same skills/ folder as the agent
   lib/account.ts              # delete/export user data (shared by UI + API)
   lib/                        # auth, billing, db, security, integrations
   next.config.ts              # security headers (HSTS, CSP, …)

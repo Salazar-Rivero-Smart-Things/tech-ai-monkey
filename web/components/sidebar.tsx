@@ -11,6 +11,7 @@ const NAV = [
   { href: "/dashboard/workflows", label: "Workflows" },
   { href: "/dashboard/apps", label: "Apps to connect" },
   { href: "/dashboard/notebook", label: "Notebook" },
+  { href: "/dashboard/skills", label: "Skills" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/api-keys", label: "API keys" },
   { href: "/dashboard/privacy", label: "Privacy & data" },

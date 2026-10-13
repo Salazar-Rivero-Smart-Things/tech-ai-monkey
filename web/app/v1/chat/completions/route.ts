@@ -267,7 +267,7 @@ export async function POST(request: Request) {
 
   let token: string;
   try {
-    token = await createAgentToken(caller.userId);
+    token = await createAgentToken(caller.userId, { role: caller.role, email: caller.email });
   } catch {
     return openaiError("The agent signing secret is not configured.", 503, "api_error");
   }

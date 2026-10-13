@@ -88,6 +88,65 @@ export default async function HomePage() {
         </section>
 
         <section className="mx-auto max-w-5xl px-6 py-12">
+          <div className="rounded-2xl border border-blue-900/30 bg-blue-950/10 p-8 sm:p-12">
+            <h2 className="text-2xl font-bold sm:text-3xl text-blue-100">Pro-Level Code Generation</h2>
+            <p className="mt-4 text-zinc-400 text-lg max-w-3xl">
+              Our AI doesn't just print code into a chat window. It comes equipped with an isolated, private virtual machine (Sandbox) for every conversation, giving you the best of both worlds:
+            </p>
+            
+            <div className="mt-8 grid gap-8 sm:grid-cols-2">
+              <div>
+                <div className="flex items-center gap-2 font-semibold text-blue-300">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-900/50 text-xs">1</span>
+                  Quick snippets in chat
+                </div>
+                <p className="mt-2 text-sm text-zinc-400">
+                  For simple questions or single files, the AI outputs clean code blocks directly in the chat. Every block has one-click <strong className="text-zinc-300">Copy</strong> and <strong className="text-zinc-300">Download</strong> buttons.
+                </p>
+              </div>
+              
+              <div>
+                <div className="flex items-center gap-2 font-semibold text-purple-300">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-900/50 text-xs">2</span>
+                  Massive projects in Artifacts
+                </div>
+                <p className="mt-2 text-sm text-zinc-400">
+                  When you ask for a complex, multi-file project (like a full website), the AI works quietly in its private sandbox to bypass chat limits. When it's done, it bundles the entire project and sends it to your <strong className="text-zinc-300">Dashboard → Artifacts</strong> page, ready for you to download in one click!
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-6 py-12">
+          <div className="rounded-2xl border border-emerald-900/30 bg-emerald-950/10 p-8 sm:p-12">
+            <h2 className="text-2xl font-bold sm:text-3xl text-emerald-100">Guided Integrations & Skills</h2>
+            <p className="mt-4 text-zinc-400 text-lg max-w-3xl">
+              The AI comes pre-loaded with specialized skills to help you set up complex integrations safely. For example, simply ask it to <strong>"Connect my Google Calendar"</strong>, and it will patiently guide you through the 6-step OAuth setup without ever asking for your passwords or secrets:
+            </p>
+            
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { step: "1", title: "Create Cloud Project", desc: "Sets up your Google Cloud environment." },
+                { step: "2", title: "Enable API", desc: "Activates the Calendar API securely." },
+                { step: "3", title: "Consent Screen", desc: "Configures exactly what access your app needs." },
+                { step: "4", title: "Create Credentials", desc: "Generates your Client ID and safe secrets." },
+                { step: "5", title: "Connect to App", desc: "Links your new credentials to the integration." },
+                { step: "6", title: "Publish App", desc: "Optional step to bypass testing limits." }
+              ].map((s) => (
+                <div key={s.step} className="rounded-xl border border-zinc-800/50 bg-zinc-900/20 p-4">
+                  <div className="flex items-center gap-2 font-semibold text-emerald-300">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-900/50 text-xs">{s.step}</span>
+                    {s.title}
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-400">{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-5xl px-6 py-12">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {FEATURES.map((f) => (
               <div key={f.title} className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-5">

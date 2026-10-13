@@ -3,6 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { artifacts } from "@/lib/db/schema";
+import DownloadArtifactButton from "./DownloadArtifactButton";
 
 export default async function ArtifactsPage() {
   const session = await auth();
@@ -29,9 +30,12 @@ export default async function ArtifactsPage() {
       ) : (
         <ul className="space-y-3">
           {items.map((a) => (
-            <li key={a.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-              <div className="font-medium">{a.title}</div>
-              <div className="text-xs text-zinc-500">{a.kind}</div>
+            <li key={a.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 flex justify-between items-center">
+              <div>
+                <div className="font-medium">{a.title}</div>
+                <div className="text-xs text-zinc-500">{a.kind}</div>
+              </div>
+              <DownloadArtifactButton artifactId={a.id} artifactTitle={a.title} artifactContent={a.content ?? ""} />
             </li>
           ))}
         </ul>

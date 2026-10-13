@@ -324,6 +324,50 @@
 			"label": "Klargjør commit (konverter web, stage alt)",
 			"type": "shell",
 			"command": "cd ${workspaceFolder}; echo '=== fjern web som submodule/gitlink ==='; git rm --cached web 2>&1; rm -rf web/.git; echo '=== stage alt ==='; git add -A 2>&1; echo '=== hva blir med i commiten? (filer) ==='; git diff --cached --name-only | head -80; echo; echo '=== SJEKK: noen hemmelige .env-filer med? ==='; git diff --cached --name-only | grep -iE '\\.env|secret|credential' || echo 'INGEN hemmelige filer er med ✓'"
+		},
+		{
+			"label": "eve dev 2001 ollama (temp)",
+			"type": "shell",
+			"command": "cd ${workspaceFolder} && echo '--- ollama ---' && (curl -s --max-time 5 http://127.0.0.1:11434/api/tags | head -c 200; echo) && echo '--- starting dev on 2001 with ollama ---' && env OPENAI_COMPAT_MODEL= OLLAMA_MODEL=llama3.1:8b npx eve dev --port 2001 --no-ui",
+			"isBackground": true
+		},
+		{
+			"label": "eve invoke: learn skill ollama (temp)",
+			"type": "shell",
+			"command": "cd ${workspaceFolder} && npx eve invoke --url http://127.0.0.1:2001 \"Learn this skill and save it for me: when I ask for a status check, reply with exactly three lines starting OK:, WARN: and FAIL:. Name it 'Status check'. Use your learn_skill tool.\" 2>&1 | tail -30"
+		},
+		{
+			"label": "Diag: skills-status-1006",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-c",
+				"cd /run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey && echo '=== HEAD ===' && git --no-pager log --oneline -3 && echo '=== STATUS ===' && git status --short && echo '=== skills tree ===' && find skills -type f 2>/dev/null | head -40 && echo '=== gitignore skills ===' && grep -n skills .gitignore 2>/dev/null || echo '(no skills rule in .gitignore)' && echo '=== agent tools ===' && ls -1 agent/tools && echo '=== agent skills ===' && ls -1 agent/skills"
+			]
+		},
+		{
+			"label": "Diag: skills-state-1006b",
+			"type": "shell",
+			"command": "cd /run/media/hesriverp7/1CF66753F6672C68/MyGits/Tech-ai-monkey/tech-ai-monkey && echo '=== HEAD ===' && git --no-pager log --oneline -3 && echo '=== STATUS ===' && git status --short && echo '=== skills files ===' && find skills -type f 2>/dev/null | head -40 && echo '=== gitignore ===' && grep -n skills .gitignore 2>/dev/null; echo '=== tools ===' && ls -1 agent/tools && echo '=== agent/skills ===' && ls -1 agent/skills",
+			"args": []
+		},
+		{
+			"label": "Diag: hardware-1006",
+			"type": "shell",
+			"command": "echo '=== CPU ===' && lscpu | grep -E 'Model name|^CPU\\(s\\)|MHz|Thread|Core|Socket' && echo '=== RAM ===' && free -h && echo '=== GPU ===' && (nvidia-smi --query-gpu=name,memory.total,driver.version --format=csv 2>/dev/null || echo 'no nvidia-smi') && echo '=== ollama ps ===' && (ollama ps 2>/dev/null || echo 'ollama not reachable') && echo '=== load ===' && uptime",
+			"args": []
+		},
+		{
+			"label": "Diag: skills-diff-1006",
+			"type": "shell",
+			"command": "git --no-pager diff --stat && echo '========== agent-auth.ts ==========' && git --no-pager diff web/lib/agent-auth.ts && echo '========== chat route ==========' && git --no-pager diff web/app/api/chat/route.ts | head -60",
+			"args": []
+		},
+		{
+			"label": "Verify: eve build 1006",
+			"type": "shell",
+			"command": "npm run build 2>&1 | tail -25",
+			"args": []
 		}
 	]
 }

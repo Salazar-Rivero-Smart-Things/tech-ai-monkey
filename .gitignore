@@ -10,5 +10,7 @@ dist/
 .env*
 !.env.example
 .agent-memory/
+# Personal learned skills stay on the machine; skills/global/ is committed.
+skills/users/
 .build/
 .tmp*

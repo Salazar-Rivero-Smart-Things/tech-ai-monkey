@@ -62,7 +62,7 @@ async function proxyRequest(request: Request, context: RouteContext) {
 
   let token: string;
   try {
-    token = await createAgentToken(userId);
+    token = await createAgentToken(userId, { role: caller.role, email: caller.email });
   } catch {
     return jsonError("The agent signing secret is not configured.", 503);
   }
@@ -91,6 +91,8 @@ async function proxyRequest(request: Request, context: RouteContext) {
     const value = upstream.headers.get(name);
     if (value) headers.set(name, value);
   }
+  headers.set("Cache-Control", "no-cache, no-transform");
+  headers.set("X-Accel-Buffering", "no");
 
   const isStream = request.method === "GET" && path.at(-1) === "stream";
   if (!isStream || !upstream.body || !upstream.ok) {

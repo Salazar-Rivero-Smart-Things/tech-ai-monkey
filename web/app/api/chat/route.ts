@@ -61,7 +61,10 @@ export async function POST(req: Request) {
 
   let token: string;
   try {
-    token = await createAgentToken(userId);
+    token = await createAgentToken(userId, {
+      role: session?.user?.role,
+      email: session?.user?.email,
+    });
   } catch {
     return jsonError("The agent signing secret is not configured.", 503);
   }
@@ -69,47 +72,76 @@ export async function POST(req: Request) {
   const base = new URL(agentUrl);
   const basePath = base.pathname.replace(/\/+$/, "");
 
-  // 1) Create a session and deliver the first message in one call.
-  let create: Response;
-  try {
-    create = await fetch(`${base.origin}${basePath}/eve/v1/session`, {
-      method: "POST",
-      headers: {
-        authorization: `Bearer ${token}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ message: text }),
-      cache: "no-store",
-      signal: req.signal,
-    });
-  } catch {
-    return jsonError("Could not reach the AI agent.", 502);
-  }
+  const existingSessionId = typeof body.sessionId === "string" && body.sessionId.trim() ? body.sessionId.trim() : null;
+  const continuationToken = typeof body.continuationToken === "string" ? body.continuationToken : undefined;
+  const startIndex = typeof body.startIndex === "number" ? body.startIndex : undefined;
 
-  if (!create.ok) {
-    return jsonError(`Agent error (${create.status}).`, 502);
-  }
+  let sessionId = existingSessionId ?? "";
 
-  let sessionId = "";
-  try {
-    const json = (await create.json()) as { sessionId?: string };
-    sessionId = json.sessionId ?? "";
-  } catch {
-    // ignore — handled below
+  if (existingSessionId) {
+    const payload: Record<string, unknown> = { message: text };
+    if (continuationToken) payload.continuationToken = continuationToken;
+
+    let continueRes: Response;
+    try {
+      continueRes = await fetch(`${base.origin}${basePath}/eve/v1/session/${encodeURIComponent(existingSessionId)}`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify(payload),
+        cache: "no-store",
+        signal: req.signal,
+      });
+    } catch {
+      return jsonError("Could not reach the AI agent.", 502);
+    }
+    if (!continueRes.ok) {
+      return jsonError(`Agent error (${continueRes.status}).`, 502);
+    }
+  } else {
+    // 1) Create a session and deliver the first message in one call.
+    let create: Response;
+    try {
+      create = await fetch(`${base.origin}${basePath}/eve/v1/session`, {
+        method: "POST",
+        headers: {
+          authorization: `Bearer ${token}`,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ message: text }),
+        cache: "no-store",
+        signal: req.signal,
+      });
+    } catch {
+      return jsonError("Could not reach the AI agent.", 502);
+    }
+
+    if (!create.ok) {
+      return jsonError(`Agent error (${create.status}).`, 502);
+    }
+
+    try {
+      const json = (await create.json()) as { sessionId?: string };
+      sessionId = json.sessionId ?? "";
+    } catch {
+      // ignore — handled below
+    }
+    if (!sessionId) return jsonError("Could not create a chat session.", 502);
   }
-  if (!sessionId) return jsonError("Could not create a chat session.", 502);
 
   // 2) Stream the reply back as Server-Sent Events.
   let upstream: Response;
+  const streamUrl = `${base.origin}${basePath}/eve/v1/session/${encodeURIComponent(sessionId)}/stream${
+    startIndex !== undefined ? `?startIndex=${startIndex}` : ""
+  }`;
   try {
-    upstream = await fetch(
-      `${base.origin}${basePath}/eve/v1/session/${encodeURIComponent(sessionId)}/stream`,
-      {
-        headers: { authorization: `Bearer ${token}` },
-        cache: "no-store",
-        signal: req.signal,
-      },
-    );
+    upstream = await fetch(streamUrl, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: req.signal,
+    });
   } catch {
     return jsonError("Could not reach the AI agent.", 502);
   }
@@ -146,6 +178,7 @@ export async function POST(req: Request) {
               data?: {
                 messageDelta?: string;
                 message?: string;
+                continuationToken?: string;
                 usage?: { inputTokens?: number; outputTokens?: number };
               };
             };
@@ -174,9 +207,12 @@ export async function POST(req: Request) {
               case "billing.error":
                 if (event.data?.message) send({ error: event.data.message });
                 break;
+              case "session.waiting":
+                send({ sessionId, continuationToken: event.data?.continuationToken });
+                done = true;
+                break;
               case "turn.completed":
               case "session.completed":
-              case "session.waiting":
                 done = true;
                 break;
               default:

@@ -10,6 +10,49 @@ type ChatMessage = {
   text: string;
 };
 
+function renderMessageText(text: string) {
+  const parts = text.split(/(```[\s\S]*?```)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("```") && part.endsWith("```")) {
+      const contentLines = part.slice(3, -3).split("\n");
+      const language = contentLines[0].trim();
+      const code = contentLines.slice(1).join("\n");
+
+      return (
+        <div key={i} className="my-2 overflow-hidden rounded-md border border-zinc-700 bg-black">
+          <div className="flex items-center justify-between bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400">
+            <span>{language || "code"}</span>
+            <div className="flex gap-3">
+              <button onClick={() => navigator.clipboard.writeText(code)} className="hover:text-white transition-colors">
+                Copy
+              </button>
+              <button onClick={() => {
+                const blob = new Blob([code], { type: "text/plain" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                let ext = language || "txt";
+                if (ext === "javascript") ext = "js";
+                if (ext === "typescript") ext = "ts";
+                if (ext === "python") ext = "py";
+                a.download = `file.${ext}`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }} className="hover:text-white transition-colors">
+                Download
+              </button>
+            </div>
+          </div>
+          <pre className="overflow-x-auto p-3 text-xs text-zinc-300">
+            <code>{code}</code>
+          </pre>
+        </div>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState<string | null>(null);
@@ -19,6 +62,7 @@ export default function Chat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
   const continuationRef = useRef<string | null>(null);
+  const eventCountRef = useRef(0);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
@@ -74,7 +118,11 @@ export default function Chat() {
   }
 
   async function streamReply(id: string) {
-    const res = await fetch(`/eve/v1/session/${id}/stream`);
+    const url =
+      eventCountRef.current > 0
+        ? `/eve/v1/session/${id}/stream?startIndex=${eventCountRef.current}`
+        : `/eve/v1/session/${id}/stream`;
+    const res = await fetch(url);
     if (!res.ok) throw new Error(await parseError(res));
     if (!res.body) return;
 
@@ -105,6 +153,7 @@ export default function Chat() {
         buffer = lines.pop() ?? "";
         for (const line of lines) {
           if (!line.trim()) continue;
+          eventCountRef.current++;
           let ev: { type?: string; data?: { messageDelta?: string; message?: string; continuationToken?: string } };
           try {
             ev = JSON.parse(line);
@@ -166,6 +215,7 @@ export default function Chat() {
   function newChat() {
     setSessionId(null);
     continuationRef.current = null;
+    eventCountRef.current = 0;
     setMessages([]);
     setStreaming(null);
     setInput("");
@@ -209,12 +259,12 @@ export default function Chat() {
                   : "bg-zinc-800"
             }`}
           >
-            {m.text}
+            {renderMessageText(m.text)}
           </div>
         ))}
         {streaming !== null && (
           <div className="max-w-[75%] whitespace-pre-wrap break-words rounded-xl bg-zinc-800 px-3 py-2 text-sm">
-            {streaming}
+            {renderMessageText(streaming)}
             <span className="ml-0.5 inline-block h-4 w-2 animate-pulse bg-zinc-400 align-middle" />
           </div>
         )}
