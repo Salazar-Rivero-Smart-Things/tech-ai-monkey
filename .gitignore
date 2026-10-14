@@ -14,3 +14,6 @@ dist/
 skills/users/
 .build/
 .tmp*
+# Books the owner drops in for the agent to teach from: copyrighted, never commit.
+books/*
+!books/README.md

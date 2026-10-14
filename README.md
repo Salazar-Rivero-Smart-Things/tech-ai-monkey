@@ -142,6 +142,7 @@ Ask it things like:
 - "Find out why my Next.js build fails with error X and give me the fix."
 - "Give me an API key for my Node server."
 - "Learn this: to deploy, run `scripts/preflight.sh` first, then `npm run build`."
+- "Les boken Atomic Habits og lær meg den." (drop the file in `books/` first)
 - "Delete this chat history."
 
 ## Skills (learning new abilities)
@@ -187,6 +188,27 @@ Only the instance owner can publish a skill for everybody; everyone else can
 still keep personal skills. The agent can also `list_skills` and `forget_skill`.
 
 See `docs/skills.md` for the file format.
+
+## Books (read a book, be taught it)
+
+Drop a book into `books/` on the server and ask in chat — *"Les boken \<tittel\> og
+lær meg den"*. The agent maps the book, teaches one part at a time with everyday
+analogies, asks a comprehension question after each part, and saves the notes as
+a study sheet artifact.
+
+| Tool | Purpose |
+| --- | --- |
+| `list_books` | What is in the library, and what is already converted in the sandbox |
+| `import_book` | Convert one book and copy it to `/workspace/books/<slug>.txt` |
+
+- `.txt`/`.md` are read as-is; `.pdf` goes through `pdftotext`; `.epub` is read
+  chapter by chapter in its OPF spine order. Conversion runs **on the host**,
+  because the sandbox image has no PDF/EPUB tooling.
+- A scanned PDF without a text layer yields nothing — it needs OCR first.
+- `books/` is git-ignored: books are usually copyrighted and this repo is public.
+  See `books/README.md`; override the folder with `EVE_BOOKS_DIR`.
+- The teaching behaviour is the *Book reader and tutor* skill
+  (`skills/global/book-reader-and-tutor.md`), so it is editable without a rebuild.
 
 ## Hook up your server (HTTP API)
 
@@ -498,6 +520,7 @@ agent/
   lib/jwt.ts                  # API-key minting helper
   lib/memory-store.ts         # cross-session memory storage
   lib/skills-store.ts         # learned-skills storage (global + per user)
+  lib/books.ts                # host-side book library (PDF/EPUB → text)
   tools/issue_api_key.ts      # "give me an API key"
   tools/delete_chat_history.ts# "delete my history"
   tools/remember.ts           # "remember this"
@@ -506,11 +529,14 @@ agent/
   tools/learn_skill.ts        # "learn this procedure"
   tools/list_skills.ts        # "what have you learned?"
   tools/forget_skill.ts       # delete a learned skill
+  tools/list_books.ts         # "which books can you teach me?"
+  tools/import_book.ts        # convert + copy a book into the sandbox
   skills/                     # built-in skills (deep-web-research, self-improvement…)
   skills/learned.ts           # serves learned skills per caller (dynamic)
 skills/                       # learned skills (global/ committed, users/ git-ignored)
   global/<slug>.md            # shared with everyone
   users/<id>/<slug>.md        # private to one user
+books/                        # book files to convert and teach from (git-ignored)
 public/index.html             # built-in web chat UI
 cli/                          # terminal client (bundled into the .deb / .exe)
   src/index.js                # command parsing (login, ask, chat, whoami)
