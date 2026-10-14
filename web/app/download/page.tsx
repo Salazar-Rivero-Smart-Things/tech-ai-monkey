@@ -133,6 +133,7 @@ export default async function DownloadPage() {
   const winPortable = artifacts.find((a) => a.name.endsWith(".exe") && a !== winSetup);
   const exe = winSetup ?? winPortable;
   const mac = artifacts.find((a) => a.name.endsWith(".pkg") || a.name.endsWith(".dmg"));
+  const macDmg = mac?.name.endsWith(".dmg") ?? false;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -187,16 +188,30 @@ tech-ai ask "hello"`
             title="macOS"
             subtitle={
               mac
-                ? "Signed and notarised installer for Apple Silicon and Intel"
-                : "Intel and Apple Silicon — a signed installer is on the way"
+                ? macDmg
+                  ? "Universal DMG for Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer"
+                  : "Installer for Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer"
+                : "Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer"
             }
             artifact={mac}
             checksum={mac ? checksums[mac.name] : undefined}
             comingSoon={!mac}
+            extra={
+              macDmg
+                ? "Open the downloaded disk image in Finder and follow the installation instructions inside."
+                : undefined
+            }
             command={
               mac
-                ? `# double-click the .pkg, or from Terminal:
-sudo installer -pkg ${mac.name} -target /
+                ? macDmg
+                  ? `# Open the disk image in Finder:
+open "${mac.name}"
+
+# Then sign in and use the CLI:
+tech-ai login
+tech-ai ask "hello"`
+                  : `# Install the package, then sign in:
+sudo installer -pkg "${mac.name}" -target /
 tech-ai login
 tech-ai ask "hello"`
                 : `# not available yet — see below for how to run it
@@ -208,8 +223,9 @@ tech-ai ask "hello"`
         <section className="mt-12">
           <h2 className="text-lg font-semibold text-zinc-100">What you can install it on</h2>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-            Both downloads are self-contained — the runtime is bundled, so you do <strong>not</strong>{" "}
-            need to install Node.js, Python or anything else first. 64-bit systems only.
+            The Linux and Windows downloads are self-contained — the runtime is bundled, so you do{" "}
+            <strong>not</strong> need to install Node.js, Python or anything else first. 64-bit
+            systems only.
           </p>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
@@ -292,6 +308,25 @@ sudo apt-get remove tech-ai   # uninstall`}</pre>
 
 # to uninstall, just delete the .exe`}</pre>
             </div>
+
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-5">
+              <h3 className="font-semibold text-zinc-100">
+                macOS — <span className="font-mono text-xs text-zinc-400">.dmg</span>
+              </h3>
+              <ul className="mt-3 space-y-2 text-sm leading-relaxed text-zinc-400">
+                <li>
+                  <span className="text-zinc-200">Architecture:</span> Universal build for Apple
+                  Silicon (M1, M2, M3 and M4)
+                </li>
+                <li>
+                  <span className="text-zinc-200">macOS:</span> Sequoia 15.7.9 and newer
+                </li>
+                <li>
+                  <span className="text-zinc-200">Install:</span> open the downloaded DMG in Finder
+                  and follow the instructions inside
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div className="mt-6 rounded-xl border border-zinc-800 bg-zinc-900/30 p-5 text-sm leading-relaxed text-zinc-400">
@@ -306,26 +341,24 @@ tech-ai login --email you@example.com --password '…'`}</pre>
           </div>
 
           {!mac && (
-          <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-sm leading-relaxed text-zinc-300">
-            <h3 className="font-semibold text-amber-200">macOS — coming soon</h3>
-            <p className="mt-2">
-              A macOS version is on the way, planned for <strong>macOS 12 Monterey or newer</strong>{" "}
-              and for both Apple Silicon (M-series) and Intel Macs. Apple requires the app to be
-              code-signed and notarised before it can be handed out, and that part is not finished
-              yet — which is why there is no download here.
-            </p>
-            <p className="mt-2">
-              Until then you can use exactly the same agent in the{" "}
-              <Link href="/dashboard/chat" className="text-blue-400 hover:underline">
-                web app
-              </Link>
-              , or run the CLI straight from source with Node.js 18+ installed:
-            </p>
-            <pre className="mt-3 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-3 font-mono text-xs text-zinc-300">{`git clone https://github.com/HollmanRivero/tech-ai-monkey.git
+            <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-sm leading-relaxed text-zinc-300">
+              <h3 className="font-semibold text-amber-200">macOS download unavailable</h3>
+              <p className="mt-2">
+                The macOS download is not currently present. When available, the supported release
+                targets Apple Silicon (M1 and newer) and macOS Sequoia 15.7.9 or newer.
+              </p>
+              <p className="mt-2">
+                You can still use the same agent in the{" "}
+                <Link href="/dashboard/chat" className="text-blue-400 hover:underline">
+                  web app
+                </Link>
+                , or run the CLI from source with Node.js 18+ installed:
+              </p>
+              <pre className="mt-3 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-3 font-mono text-xs text-zinc-300">{`git clone https://github.com/Salazar-Rivero-Smart-Things/tech-ai-monkey.git
 cd tech-ai-monkey
 node cli/src/index.js login
 node cli/src/index.js ask "hello"`}</pre>
-          </div>
+            </div>
           )}
         </section>
 
@@ -383,7 +416,8 @@ tech-ai whoami        # account + how many tokens are left`}</pre>
               :
             </p>
             <pre className="mt-3 overflow-x-auto rounded-md border border-zinc-800 bg-black/50 p-4 font-mono text-xs text-zinc-300">{`sha256sum ${deb?.name ?? "tech-ai_<version>_amd64.deb"}     # Linux
-certutil -hashfile ${exe?.name ?? "tech-ai_<version>_windows_x64.exe"} SHA256   # Windows`}</pre>
+certutil -hashfile ${exe?.name ?? "tech-ai_<version>_windows_x64.exe"} SHA256   # Windows
+shasum -a 256 ${mac?.name ?? "tech-ai_<version>_macos_universal.dmg"}  # macOS`}</pre>
           </div>
 
           <div>

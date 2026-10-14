@@ -1,0 +1,4 @@
+4a4706af75899e78313a38938bd578dc5dc5cce5572ca54aed6f0ed68a59a91a  tech-ai_1.0.0_amd64.deb
+ca8cd12a472e69d24ca5446c35096ce0916b85a026da69efd1660a29f164ee26  tech-ai_1.0.0_windows_x64.exe
+943121ec07cc60bc77287ac2b1a99eb91fe33c863dfeb7e516e9b0e8e915bf9b  tech-ai_1.0.0_windows_x64_setup.exe
+9cf09ec1b6ebfae98317cc90219647ecfc07a356a1a0e10b20fbd213141bffc4  tech-ai_1.0.0_macos_universal.dmg

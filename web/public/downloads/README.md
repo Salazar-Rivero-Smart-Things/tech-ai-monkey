@@ -1,7 +1,8 @@
 # CLI downloads
 
-This folder is served at `/downloads`. It is **git-ignored** — the files here
-are build output, not source.
+This folder is served at `/downloads`. Build artifacts are git-ignored by
+default; released downloads must be explicitly unignored and committed so the
+website deployment can serve them.
 
 Build them on the machine that serves the site:
 
@@ -16,7 +17,13 @@ That produces:
 | `tech-ai_<version>_amd64.deb` | Ubuntu / Debian, 64-bit x86 | Ubuntu 20.04 LTS+ / Debian 11+ tested; the package only needs `libc6 >= 2.17`, so it also installs on Debian 10 and Ubuntu 18.04. Adds an application-menu entry |
 | `tech-ai_<version>_windows_x64_setup.exe` | Windows, 64-bit x86 | Windows 10, Windows 11, Windows Server 2019+. Per-user NSIS install: Start-menu entry with the app icon, optional desktop shortcut, PATH entry, uninstaller |
 | `tech-ai_<version>_windows_x64.exe` | Windows, 64-bit x86 | The portable single file — no installation, no Start-menu entry, default Windows icon |
-| `checksums.txt` | — | SHA-256 for the files above |
+| `tech-ai_<version>_macos_universal.dmg` | macOS, Universal | Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer |
+| `checksums.txt` | — | SHA-256 for the released files |
+
+The macOS 1.0.0 disk image is served at
+`/downloads/tech-ai_1.0.0_macos_universal.dmg`. Its checksum is listed in
+`checksums.txt`. It is explicitly unignored in this folder's `.gitignore`;
+remember to repeat that exception for future releases.
 
 Everything is built by `bash scripts/build-cli.sh`, which also verifies what it produced.
 The icons come from `cli/assets/` (`python3 scripts/make-icons.py` regenerates them), and
@@ -28,10 +35,6 @@ requirements text in `web/app/download/page.tsx` too.
 
 ## Not built yet
 
-- **macOS** (`bun-darwin-arm64` / `bun-darwin-x64`) — the CLI code already
-  handles macOS (it uses `open` to launch the browser), so this is a packaging
-  job: compile both targets, wrap them in a `.pkg` or `.dmg`, then **code-sign
-  and notarise** with an Apple Developer ID. Planned for macOS 12+.
 - **Linux ARM64** (`bun-linux-arm64`) — for Raspberry Pi and ARM servers. Can be
   added to `scripts/build-cli.sh` as an extra target.
 
@@ -41,4 +44,5 @@ requirements text in `web/app/download/page.tsx` too.
 sha256sum tech-ai_1.0.0_amd64.deb
 dpkg-deb -f tech-ai_1.0.0_amd64.deb          # metadata (Depends, Arch, Version)
 objdump -f tech-ai_1.0.0_windows_x64.exe     # PE header -> x86-64 console app
+shasum -a 256 tech-ai_1.0.0_macos_universal.dmg
 ```
