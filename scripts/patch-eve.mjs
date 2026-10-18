@@ -24,7 +24,7 @@ const withSandboxHelper = (text) =>
 const RECOVERY_HELPERS = `
 \t#isStaleSandboxError(e) {
 \t\tlet t = String(e && e.message ? e.message : e);
-\t\treturn /AgentClient|Connection refused|ECONNREFUSED|os error 111|failed to connect|no such file or directory.*\\.sock|sandbox.*(not running|crashed|stopped|missing)/i.test(t);
+\t\treturn /AgentClient|Connection refused|ECONNREFUSED|os error 111|failed to connect|no such file or directory.*\\.sock|timed out|sandbox.*(not running|crashed|stopped|missing)/i.test(t);
 \t}
 \tasync #recoverSandbox() {
 \t\tconsole.warn(\`[eve:microsandbox] connection lost for \${this.#a}, recovering...\`);
@@ -56,6 +56,12 @@ const RECOVERY_HELPERS = `
 \t\t\treturn false;
 \t\t}
 \t}
+\t#withCommandTimeout(e) {
+\t\tlet ms = Number(process.env.SANDBOX_COMMAND_TIMEOUT_MS ?? 45e3) || 45e3, timer;
+\t\treturn Promise.race([e, new Promise((_, rej) => {
+\t\t\ttimer = setTimeout(() => rej(new Error(\`sandbox command timed out after \${Math.round(ms / 1e3)}s\`)), ms);
+\t\t})]).finally(() => clearTimeout(timer));
+\t}
 \t#wrapHandle(e) {
 \t\tthis.__microsandboxRawHandle = e;
 \t\tlet t = this, n = (r) => new Proxy(r, {
@@ -64,10 +70,10 @@ const RECOVERY_HELPERS = `
 \t\t\t\tif (typeof o !== \`function\`) return o;
 \t\t\t\treturn (...s) => {
 \t\t\t\t\tlet c = o.apply(i, s);
-\t\t\t\t\treturn c && typeof c.catch === \`function\` ? c.catch(async (l) => {
+\t\t\t\t\treturn c && typeof c.catch === \`function\` ? t.#withCommandTimeout(c).catch(async (l) => {
 \t\t\t\t\t\tif (!t.#isStaleSandboxError(l)) throw l;
 \t\t\t\t\t\tif (!(await t.#recoverSandbox())) throw l;
-\t\t\t\t\t\treturn t.__microsandboxRawHandle.fs()[a](...s);
+\t\t\t\t\t\treturn t.#withCommandTimeout(t.__microsandboxRawHandle.fs()[a](...s));
 \t\t\t\t\t}) : c;
 \t\t\t\t};
 \t\t\t}
@@ -79,16 +85,144 @@ const RECOVERY_HELPERS = `
 \t\t\t\tif (i === \`fs\`) return () => n(a.call(r));
 \t\t\t\treturn (...o) => {
 \t\t\t\t\tlet s = a.apply(r, o);
-\t\t\t\t\treturn s && typeof s.catch === \`function\` ? s.catch(async (c) => {
+\t\t\t\t\treturn s && typeof s.catch === \`function\` ? t.#withCommandTimeout(s).catch(async (c) => {
 \t\t\t\t\t\tif (!t.#isStaleSandboxError(c)) throw c;
 \t\t\t\t\t\tif (!(await t.#recoverSandbox())) throw c;
-\t\t\t\t\t\treturn t.__microsandboxRawHandle[i](...o);
+\t\t\t\t\t\treturn t.#withCommandTimeout(t.__microsandboxRawHandle[i](...o));
 \t\t\t\t\t}) : s;
 \t\t\t\t};
 \t\t\t}
 \t\t});
 \t}
 `;
+
+// Eldre bygg har recovery-helperen uten tidsgrense på sandkassekommandoer.
+// Den oppgraderes på stedet, slik at en VM som slutter å svare blir et
+// gjensynlig feilforsøk i stedet for en tur som henger i det uendelige.
+// Sandkasse-sesjonen som verktøyene bruker (bash, glob, grep, les/skriv fil) har
+// ingen tidsgrense. Blir VM-en stille – typisk når verten er tom for minne –
+// venter turen i det uendelige. Her får hvert kall en frist, så verktøyet
+// feiler, modellen får beskjed og kan svare i stedet for å henge.
+const SANDBOX_TIMEOUT_WRAPPER = `function withSandboxTimeouts(e) {
+\tlet ms = Number(process.env.SANDBOX_COMMAND_TIMEOUT_MS ?? 45e3) || 45e3;
+\treturn new Proxy(e, {
+\t\tget(t, p) {
+\t\t\tlet v = t[p];
+\t\t\tif (typeof v !== \`function\`) return v;
+\t\t\treturn (...a) => {
+\t\t\t\tlet r = v.apply(t, a);
+\t\t\t\tif (!r || typeof r.then !== \`function\`) return r;
+\t\t\t\tlet timer;
+\t\t\t\treturn Promise.race([r, new Promise((_, rej) => {
+\t\t\t\t\ttimer = setTimeout(() => rej(new Error(\`sandbox \${String(p)} timed out after \${Math.round(ms / 1e3)}s\`)), ms);
+\t\t\t\t})]).finally(() => clearTimeout(timer));
+\t\t\t};
+\t\t}
+\t});
+}
+`;
+
+// Selve gjenopprettingen kunne også henge: den lager en ny VM, og det kallet
+// hadde ingen frist. Da ble en tidsavbrutt kommando til en evig venting.
+// Selve opprettelsen av en ny sandkasse (før kommandoene i den) hadde heller
+// ingen frist. Den er nå bundet, så «opening sandbox session» feiler i stedet
+// for å stå og vente til evig tid.
+function patchSandboxCreateTimeout(code) {
+  if (!code.includes('createBackendHandleWithPrewarmRetry') || code.includes('Sandbox create timed out')) return code;
+
+  let out = code;
+  out = out.replace(
+    '\t\treturn await e.backend.create(e.createInput);\n\t} catch (t) {',
+    '\t\treturn await microsandboxTimeout(e.backend.create(e.createInput), 15e4, `Sandbox create timed out`);\n\t} catch (t) {',
+  );
+  out = out.replace(
+    'logDevelopmentSandbox(`eve: sandbox template is ready; retrying sandbox creation...`), await e.backend.create(e.createInput);',
+    'logDevelopmentSandbox(`eve: sandbox template is ready; retrying sandbox creation...`), await microsandboxTimeout(e.backend.create(e.createInput), 15e4, `Sandbox create timed out`);',
+  );
+
+  if (out !== code) console.log('La tidsgrense pa oppretting av sandkasse');
+  return out;
+}
+
+function boundRecoveryCreate(code) {
+  if (!code.includes('#recoverSandbox') || code.includes('Microsandbox create timed out')) return code;
+
+  let out = code.replace(
+    '\t\t\tlet n = await createMicrosandbox({',
+    '\t\t\tlet n = await microsandboxTimeout(createMicrosandbox({',
+  );
+  out = out.replace(
+    '\t\t\t\tworkdir: WORKSPACE_ROOT\n\t\t\t});\n\t\t\tthis.#i = this.#wrapHandle(n);',
+    '\t\t\t\tworkdir: WORKSPACE_ROOT\n\t\t\t}), 12e4, `Microsandbox create timed out`);\n\t\t\tthis.#i = this.#wrapHandle(n);',
+  );
+
+  if (out !== code) console.log('La tidsgrense på gjenoppretting av sandkasse');
+  return out;
+}
+
+function patchSandboxTimeouts(code) {
+  if (code.includes('withSandboxTimeouts')) return code;
+  if (!code.includes('async function requireSandboxSession')) return code;
+
+  let out = code;
+
+  // Framework-verktøyene (bash, glob, grep, read/write file)
+  out = out.replace(
+    'return t === void 0 ? r : bindSandboxAbortSignal(r, t);',
+    'return withSandboxTimeouts(t === void 0 ? r : bindSandboxAbortSignal(r, t));',
+  );
+
+  // Forfatterens runtime-kontekst (skills og egne verktøy)
+  out = out.replace(
+    '\tlet t = await e.get();\n\tif (t === null) throw Error(`The sandbox is not available in the current authored runtime context.`);\n\treturn t;',
+    '\tlet t = await e.get();\n\tif (t === null) throw Error(`The sandbox is not available in the current authored runtime context.`);\n\treturn withSandboxTimeouts(t);',
+  );
+
+  if (!out.includes('withSandboxTimeouts(')) return code;
+
+  out = out.replace('async function requireSandboxSession', SANDBOX_TIMEOUT_WRAPPER + '\nasync function requireSandboxSession');
+  console.log('La tidsgrense på alle sandkassekall');
+  return out;
+}
+
+function upgradeRecoveryHelpers(code) {
+  if (!code.includes('#recoverSandbox') || code.includes('withCommandTimeout')) return code;
+  let out = code;
+
+  out = out.replace(
+    'failed to connect|no such file or directory',
+    'failed to connect|timed out|no such file or directory',
+  );
+
+  const helper = `\t#withCommandTimeout(e) {
+\t\tlet ms = Number(process.env.SANDBOX_COMMAND_TIMEOUT_MS ?? 45e3) || 45e3, timer;
+\t\treturn Promise.race([e, new Promise((_, rej) => {
+\t\t\ttimer = setTimeout(() => rej(new Error(\`sandbox command timed out after \${Math.round(ms / 1e3)}s\`)), ms);
+\t\t})]).finally(() => clearTimeout(timer));
+\t}
+\t#wrapHandle(e) {`;
+  out = out.replace('\t#wrapHandle(e) {', helper);
+
+  out = out.replace(
+    'return c && typeof c.catch === `function` ? c.catch(async (l) => {',
+    'return c && typeof c.catch === `function` ? t.#withCommandTimeout(c).catch(async (l) => {',
+  );
+  out = out.replace(
+    'return t.__microsandboxRawHandle.fs()[a](...s);',
+    'return t.#withCommandTimeout(t.__microsandboxRawHandle.fs()[a](...s));',
+  );
+  out = out.replace(
+    'return s && typeof s.catch === `function` ? s.catch(async (c) => {',
+    'return s && typeof s.catch === `function` ? t.#withCommandTimeout(s).catch(async (c) => {',
+  );
+  out = out.replace(
+    'return t.__microsandboxRawHandle[i](...o);',
+    'return t.#withCommandTimeout(t.__microsandboxRawHandle[i](...o));',
+  );
+
+  if (out !== code) console.log('Oppgradert recovery-helper med tidsgrense for sandkassekommandoer');
+  return out;
+}
 
 function patchMicrosandboxRecovery(code) {
   if (code.includes('#recoverSandbox')) return code;
@@ -193,7 +327,12 @@ if (fs.existsSync(bundleFile)) {
     console.log("Patched MicrosandboxVm crash recovery in .output bundle!");
   }
 
-  fs.writeFileSync(bundleFile, withSandboxHelper(code));
+  fs.writeFileSync(
+    bundleFile,
+    patchSandboxCreateTimeout(
+      boundRecoveryCreate(patchSandboxTimeouts(withSandboxHelper(upgradeRecoveryHelpers(code)))),
+    ),
+  );
 }
 
 // 2. Patch node_modules/eve (source files before eve build)
@@ -237,7 +376,7 @@ if (fs.existsSync(runtimeFile)) {
     console.log("Patched MicrosandboxVm crash recovery in node_modules/eve runtime!");
   }
 
-  fs.writeFileSync(runtimeFile, withSandboxHelper(runtimeCode));
+  fs.writeFileSync(runtimeFile, withSandboxHelper(upgradeRecoveryHelpers(runtimeCode)));
 }
 
 // 3. Patch dev-environment.js in node_modules/eve

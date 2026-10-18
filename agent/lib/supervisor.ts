@@ -29,6 +29,12 @@ const INTERVAL_MS = Number(process.env.SUPERVISOR_INTERVAL_MS ?? 60_000) || 60_0
 const MAX_RUNNING_SANDBOXES = Number(process.env.MAX_RUNNING_SANDBOXES ?? 3) || 3;
 /** Never touch a VM younger than this: it may belong to an active chat. */
 const SANDBOX_MIN_AGE_MINUTES = Number(process.env.SANDBOX_MIN_AGE_MINUTES ?? 20) || 20;
+/**
+ * Tak som overstyrer aldersgrensen. Uten det kan mange nye chatter på kort tid
+ * fylle maskinen med VM-er som alle er «for unge til å røres», og da henger
+ * kommandoer i sandkassen fordi verten er tom for minne.
+ */
+const SANDBOX_HARD_MAX = Number(process.env.SANDBOX_HARD_MAX ?? MAX_RUNNING_SANDBOXES * 2) || MAX_RUNNING_SANDBOXES * 2;
 /** A turn with a half-finished step and no activity for this long is dead. */
 const ABANDONED_RUN_MINUTES = Number(process.env.ABANDONED_RUN_MINUTES ?? 15) || 15;
 
@@ -85,7 +91,12 @@ async function pruneSandboxes(root: string): Promise<PruneResult> {
     .filter((row) => row.status === "running" || row.status === "draining")
     .sort((a, b) => a.createdAt - b.createdAt);
   const excess = running.slice(0, Math.max(0, running.length - MAX_RUNNING_SANDBOXES));
-  const removable = excess.filter((row) => row.createdAt > 0 && row.createdAt < cutoff);
+
+  // Over hardtaket bryr vi oss ikke om alderen: da er verten i ferd med å gå tom.
+  const overHardMax = running.length > SANDBOX_HARD_MAX;
+  const removable = overHardMax
+    ? running.slice(0, Math.max(0, running.length - MAX_RUNNING_SANDBOXES))
+    : excess.filter((row) => row.createdAt > 0 && row.createdAt < cutoff);
   for (const row of removable) await removeSandbox(root, row.name);
 
   return {
