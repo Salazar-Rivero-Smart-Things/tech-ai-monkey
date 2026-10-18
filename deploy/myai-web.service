@@ -3,7 +3,7 @@
 # Deretter: sudo systemctl daemon-reload && sudo systemctl enable --now myai-web
 #
 # KREVER at web-appen er bygget først:  cd web && npm run build
-# NB: Juster User/Group og stiene hvis du har en annen bruker eller Node-versjon.
+# Bruker, Gruppe og Node-sti fylles ut automatisk av deploy/install-services.sh.
 
 [Unit]
 Description=MyAI web-app (Next.js, port 3000)
@@ -12,13 +12,13 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=hesriverp7
-Group=hesriverp7
+User=@@USER@@
+Group=@@GROUP@@
 WorkingDirectory=@@REPO@@/web
-Environment=PATH=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PATH=@@NODE_BIN@@:/usr/local/bin:/usr/bin:/bin
 Environment=PORT=3000
 Environment=NODE_ENV=production
-ExecStart=/home/hesriverp7/.nvm/versions/node/v24.21.0/bin/npm run start
+ExecStart=@@NODE_BIN@@/npm run start
 Restart=always
 RestartSec=5
 KillMode=mixed
