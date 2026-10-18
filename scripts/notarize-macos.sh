@@ -62,8 +62,18 @@ die() { printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 ON_MACOS=0
 [ "$(uname -s)" = "Darwin" ] && ON_MACOS=1
 
+# Local, git-ignored defaults: the tool and key this repo prepared.
+LOCAL_RCODESIGN="$REPO_DIR/.build/tools/rcodesign"
+if [ -x "$LOCAL_RCODESIGN" ] && ! command -v rcodesign >/dev/null 2>&1; then
+  PATH="$REPO_DIR/.build/tools:$PATH"
+fi
+DEFAULT_P12="$REPO_DIR/.build/apple/developer-id.p12"
+
 IDENTITY="${MACOS_SIGN_IDENTITY:-}"
 P12="${MACOS_SIGN_P12:-}"
+if [ -z "$P12" ] && [ -z "$IDENTITY" ] && [ -f "$DEFAULT_P12" ]; then
+  P12="$DEFAULT_P12"
+fi
 P12_PASSWORD="${MACOS_SIGN_P12_PASSWORD:-}"
 PROFILE="${NOTARY_PROFILE:-}"
 APPLE_ID="${NOTARY_APPLE_ID:-}"
@@ -179,12 +189,20 @@ elif [ "$have_rcodesign" = "1" ]; then
   log "Sender til Apple (rcodesign)"
   SDK_ARGS=()
   if [ -n "$API_KEY_FILE" ]; then
-    # rcodesign expects a JSON file with the key metadata when using a .p8.
+    # rcodesign reads a JSON file holding issuer_id, key_id and the ECDSA
+    # private key as base64 DER (not the raw .p8 PEM).
     if [ "${API_KEY_FILE##*.}" = "p8" ]; then
+      [ -n "$API_KEY_ID" ] && [ -n "$API_ISSUER" ] \
+        || die "NOTARY_API_KEY_ID og NOTARY_API_ISSUER må være satt sammen med .p8-filen"
       JSON="$API_KEY_FILE.json"
-      [ -f "$JSON" ] || cat > "$JSON" <<EOF
-{ "key_id": "$API_KEY_ID", "issuer_id": "$API_ISSUER", "key": "$(tr -d '\n' < "$API_KEY_FILE")" }
-EOF
+      DER_B64="$(openssl pkey -in "$API_KEY_FILE" -outform DER | base64 | tr -d '\n')"
+      python3 - "$JSON" "$API_KEY_ID" "$API_ISSUER" "$DER_B64" <<'PYJSON'
+import json, sys
+path, key_id, issuer_id, private_key = sys.argv[1:5]
+with open(path, "w") as fh:
+    json.dump({"issuer_id": issuer_id, "key_id": key_id, "private_key": private_key}, fh)
+PYJSON
+      chmod 600 "$JSON"
       SDK_ARGS=(--api-key-file "$JSON")
     else
       SDK_ARGS=(--api-key-file "$API_KEY_FILE")
