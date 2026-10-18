@@ -23,11 +23,32 @@ That produces:
 The macOS 2.0.0 disk image is served at
 `/downloads/tech-ai_2.0.0_macos_universal.dmg`. It contains a universal
 (Apple Silicon + Intel) `tech-ai` binary that is ad-hoc signed, but the disk
-image itself is **not notarised** with an Apple Developer ID. Users must
-right-click → Open the first time, or run
-`xattr -dr com.apple.quarantine "/Volumes/Tech AI monkey"`. Its checksum is
+image itself is **not notarised** with an Apple Developer ID. Its checksum is
 listed in `checksums.txt`. It is explicitly unignored in this folder's
 `.gitignore`; remember to repeat that exception for future releases.
+
+Installing on macOS without notarisation:
+
+```bash
+xattr -dr com.apple.quarantine "/Volumes/Tech AI monkey"
+bash "/Volumes/Tech AI monkey/Installer tech-ai.command"
+```
+
+On macOS 15 (Sequoia) and newer the old "right-click → Open" shortcut no
+longer works; double-clicking the installer is instead approved under
+System Settings → Privacy & Security → "Open Anyway".
+
+To ship a warning-free image, sign it with a **Developer ID Application**
+certificate (an "Apple Development" certificate is rejected by Apple's notary
+service) and notarise it:
+
+```bash
+bash scripts/notarize-macos.sh --check   # lists what is missing
+bash scripts/notarize-macos.sh           # sign + notarise + staple
+```
+
+The script works on macOS with `notarytool`, or on Linux with `rcodesign` and
+an App Store Connect API key. See `docs/macos-bygg-cli.txt`.
 
 Everything is built by `bash scripts/build-cli.sh`, which also verifies what it produced.
 The macOS image is built by `bash scripts/build-dmg.sh` (cross-compiled with Bun,

@@ -2,7 +2,7 @@
  TECH AI MONKEY — LAGE DEN SIGNERTE macOS-VERSJONEN AV CLI-EN
 ================================================================================
  Steg for steg. Du gjør alt dette PÅ MAC'EN din.
- Sist oppdatert 2026-10-05 · gjelder macOS 12 eller nyere
+ Sist oppdatert 2026-10-18 · gjelder macOS 12 eller nyere
 
  Du har Apple Developer-konto, så du kan gjøre dette helt ferdig.
 
@@ -11,6 +11,23 @@
  Apple. Uten dette får kunden "app cannot be opened because the developer
  cannot be verified", og må godkjenne den manuelt i Systeminnstillinger. Med
  signering + notarisering åpner den rett fram, uten advarsler.
+
+ AUTOMATISK VARIANT (ANBEFALT)
+ Alt i denne guiden er samlet i ett skript:
+
+     bash scripts/notarize-macos.sh --check     # hva mangler?
+     bash scripts/notarize-macos.sh             # signer + notariser + staple
+
+ Det bygger DMG-en på nytt med en signert binær (hardened runtime), signerer
+ diskbildet, sender det til Apple og stifter billetten fast. Du trenger bare
+ miljøvariablene som --check lister opp. Skriptet kan også kjøres på Linux med
+ rcodesign (cargo install --bin rcodesign apple-codesign) og en App Store
+ Connect API-nøkkel (.p8) — da slipper du Mac.
+
+ VIKTIG OM SERTIFIKATET
+ Bare "Developer ID Application" kan notariseres. Et "Apple Development"-
+ sertifikat (vanlig utviklersertifikat) blir avvist av Apples notaristjeneste,
+ og en .cer-fil alene er ubrukelig — du trenger .p12 med den private nøkkelen.
 
  HVOR LANG TID
  Første gang: 45-60 min. Selve notariseringen tar 2-15 minutter (Apple
