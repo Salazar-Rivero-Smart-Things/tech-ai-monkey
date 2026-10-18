@@ -564,6 +564,30 @@ ransomware eller brann.
 
 ---
 
+### Opprydding av sandkasser (viktig)
+
+Hver chat starter en Microsandbox-VM som blir stående (`EVE_PERSIST_SANDBOX=1`).
+Uten opprydding hoper de seg opp, RAM og swap blir fulle, og «opening sandbox
+session» henger til slutt. Hold maks 3 kjørende:
+
+```bash
+node scripts/prune-sandboxes.mjs                       # manuelt
+MAX_RUNNING_SANDBOXES=2 node scripts/prune-sandboxes.mjs
+DRY_RUN=1 node scripts/prune-sandboxes.mjs             # vis hva som ville skjedd
+```
+
+Legg den i cron hvert 10. minutt (ingen sudo):
+
+```cron
+*/10 * * * * cd /home/ai/tech-ai-monkey && MAX_RUNNING_SANDBOXES=3 \
+  /home/ai/.nvm/versions/node/v24.21.0/bin/node scripts/prune-sandboxes.mjs \
+  >> /home/ai/.cache/tech-ai-prune.log 2>&1
+```
+
+Skriptet rører bare `eve-sbx-ses-*`; test-VM-er og annet står urørt.
+
+---
+
 ## 14. Drift og vedlikehold
 
 ```bash
