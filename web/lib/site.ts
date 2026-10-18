@@ -1,9 +1,9 @@
 export const siteConfig = {
   name: "Tech AI monkey",
-  version: "1.0.0",
+  version: "1.1.6",
   tagline: "A fair-priced AI that keeps learning.",
-  modelName: process.env.MODEL_NAME ?? "Monkey",
-  modelVersion: process.env.MODEL_VERSION ?? "v1",
+  modelName: process.env.MODEL_NAME ?? "Monkey Argon",
+  modelVersion: process.env.MODEL_VERSION ?? "v1.1.6",
   companyName: process.env.COMPANY_NAME ?? "Salazar Rivero Smart Things",
   organizationNumber: process.env.ORGANIZATION_NUMBER ?? "933 853 195",
   taxCountry: "Norway",

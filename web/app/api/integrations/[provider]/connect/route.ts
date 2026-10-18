@@ -38,13 +38,19 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ provider: string }> },
 ) {
-  const { provider } = await params;
+  let { provider } = await params;
   const base = baseUrl(req);
   const back = (query: string) =>
     NextResponse.redirect(new URL(`/dashboard/apps?${query}`, base));
 
   const session = await auth();
   if (!session?.user?.id) return NextResponse.redirect(new URL("/signin", base));
+
+  // Route google_calendar and google_meet through the registered 'google' OAuth client
+  // so users never hit Google's redirect_uri_mismatch error.
+  if (provider === "google_calendar" || provider === "google_meet") {
+    provider = "google";
+  }
 
   if (!isProviderId(provider)) return back("error=unknown_provider");
   const cfg = PROVIDERS[provider];

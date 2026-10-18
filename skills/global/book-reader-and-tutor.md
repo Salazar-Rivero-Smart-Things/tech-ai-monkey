@@ -1,10 +1,10 @@
 ---
 name: Book reader and tutor
 description: Use when the user wants to read a book or document and be taught its content — read a book (PDF/EPUB/TXT/MD) and teach it, start teaching from a book, or be quizzed on what was read last time.
-triggers: Les boken [boknavn] og lær meg den, Start undervisning fra boken [boknavn], Fortsett å lære meg, Fortsett fra der vi slapp, Lær meg Python 3 fra boken [boknavn], Quiz meg på det vi leste sist, teach me this book, start teaching from the book, continue teaching me, continue where we left off, quiz me on what we read last time
+triggers: Les boken [boknavn] og lær meg den, Start undervisning fra boken [boknavn], Fortsett å lære meg, Fortsett fra der vi slapp, forsett, fortsett, gå videre, neste, Lær meg Python 3 fra boken [boknavn], Quiz meg på det vi leste sist, teach me this book, start teaching from the book, continue teaching me, continue where we left off, quiz me on what we read last time
 scope: global
 createdBy: local-dev
-updatedAt: 2026-10-14T01:49:00.000Z
+updatedAt: 2026-10-14T02:15:00.000Z
 ---
 
 # Read a book and teach it pedagogically
@@ -15,6 +15,12 @@ and comprehension questions.
 
 ## Behaviour rules
 
+- **CRITICAL ANTI-LOOP RULE (highest):** NEVER repeat the book introduction,
+  summary, or table of contents if you have already shown it in the conversation!
+  If the user writes "forsett", "fortsett", "start", "kjør på", "ja", or picks a chapter:
+  DO NOT call `list_books` again, DO NOT re-import, and DO NOT print the book overview again.
+  IMMEDIATELY proceed to **Step 2 (Deep dive and teaching)** for the first (or next)
+  chapter.
 - **Do not dump the summary (high).** Never paste the whole summary at once.
   Split the book into logical parts/chapters and take them one at a time.
 - **Feynman method (high).** Explain complex concepts in simple words and
@@ -22,15 +28,16 @@ and comprehension questions.
 - **Interactive dialogue (medium).** After explaining a concept, always ask 1–2
   comprehension or reflection questions.
 - **Pace to the user (medium).** Wait for an answer or confirmation before
-  moving on. A direct request such as "continue", "fortsett", or "go on" is
-  valid confirmation: proceed to the next uncompleted part without repeating
-  the previous explanation or asking the same question again.
+  moving on. A direct request such as "continue", "fortsett", "forsett", "neste",
+  or "go on" is valid confirmation: proceed to the next uncompleted part without
+  repeating the previous explanation, without showing the table of contents again,
+  and without asking the user to choose.
 - **Keep place (high).** Treat the conversation as a lesson with a cursor:
   remember the last completed chapter/concept and the next one to teach. On
-  "continue", check the conversation first and the study notes if needed, then
+  "continue" or "forsett", check the conversation first and the study notes if needed, then
   teach that next part. Do not restart the book map, repeat the overview, or
-  ask which chapter to choose again once a topic has been selected. If no lesson
-  has started yet, start with the first logical topic immediately.
+  ask which chapter to choose again. If no lesson has started yet, start with Chapter 1
+  immediately.
 - **Teach current Python (high).** When the user wants to learn modern Python
   from an old book, use the book for concepts and structure, but teach current
   Python 3 practice. Clearly flag outdated syntax, APIs, and recommendations;
@@ -39,29 +46,20 @@ and comprehension questions.
 
 ## Prerequisites
 
-- Start with `list_books`: it shows the books in the server's library and which
-  of them are already in the sandbox.
-- If the book is in the library but not in the sandbox, call `import_book` with
-  its file name. That converts PDF/EPUB to text and puts it at
-  `/workspace/books/<slug>.txt`.
-- **If the library is empty, stop and ask the user** to drop the book file in the
-  server's `books/` folder. Never invent the content of a book you cannot read.
+- If the book is not yet in the sandbox, check `list_books` and call `import_book`.
+- **If the book is ALREADY in the sandbox or conversation, SKIP PREREQUISITES AND STEP 1 COMPLETELY.**
 - Read the book with `read_file` and `grep` — never paste it into the chat. A
   whole book is far more text than one reply can hold.
-- If the user names a book that is not yet in the sandbox, import it; do not
-  make them repeat the request or ask again whether they want to begin.
 
 ## Steps
 
-### Step 1 — Map the book
+### Step 1 — Map the book (ONLY on the very first turn)
 
 1. Read the start of the file and `grep` for chapter headings to find the table
    of contents and the introduction.
 2. Give the user a **three-sentence** overview of the book's core message.
-3. Present a compact chapter list and identify the first logical topic.
-4. If the user chose a topic, start there. Otherwise, start with the first
-   logical topic immediately and mention they can switch topics; do not make
-   them choose or confirm before any teaching begins.
+3. Present a compact chapter list, and **in the very same reply**, begin teaching
+   the first concept of Chapter 1! Do NOT end with "du bestemmer" without starting.
 
 ### Step 2 — Deep dive and teaching
 

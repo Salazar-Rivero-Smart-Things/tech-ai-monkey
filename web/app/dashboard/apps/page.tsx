@@ -78,37 +78,6 @@ export default async function AppsPage({
           app happens through the provider&apos;s own secure login — this app never
           sees your password.
         </p>
-        <p className="mt-3 rounded-lg border border-amber-900 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-          Seeing <strong>“Google hasn&apos;t verified this app”</strong>? That warning
-          appears while our Google verification is pending. Click{" "}
-          <strong>Advanced</strong> → <strong>Go to tech-ai.tech (unsafe)</strong> to
-          continue. It is safe to proceed: access is read-only, and you can
-          disconnect at any time.
-        </p>
-        <p className="mt-3 rounded-lg border border-blue-900 bg-blue-950/30 px-3 py-3 text-xs text-blue-200">
-          <strong>Google connections are currently limited.</strong> While Google
-          completes our app verification, connecting <strong>Google services</strong> or{" "}
-          <strong>Google Workspace</strong> has to be approved by us manually.
-          <br />
-          <br />
-          Email{" "}
-          <a
-            className="underline"
-            href="mailto:support@tech-ai.tech?subject=New%20customer%20%E2%80%93%20Google%20access%20request"
-          >
-            support@tech-ai.tech
-          </a>{" "}
-          with: <em>(1)</em> that you are a new customer, <em>(2)</em> the email you
-          registered on tech-ai.tech, and <em>(3)</em> the Google account you want to
-          connect (only if it is different from your registered email). We will add
-          you and reply as soon as possible.
-          <br />
-          <br />
-          You can always reach customer service from this dashboard (see{" "}
-          <strong>Support</strong> in the menu) or on our{" "}
-          <a className="underline" href="/privacy">Privacy</a> and{" "}
-          <a className="underline" href="/terms">Terms</a> pages.
-        </p>
       </div>
 
       {note && (
@@ -128,10 +97,18 @@ export default async function AppsPage({
       {PROVIDER_IDS.map((id) => {
         const p = PROVIDERS[id];
         const current = byProvider.get(id);
-        const meta = (current?.metadata ?? {}) as IntegrationMetadata;
-        const connected = current?.status === "connected";
+        const googleAccount = byProvider.get("google") || byProvider.get("google_workspace");
+        const isGoogleSubService = id === "google_calendar" || id === "google_meet";
+        const connected =
+          current?.status === "connected" ||
+          (isGoogleSubService && googleAccount?.status === "connected");
+        const meta = (current?.metadata ??
+          (isGoogleSubService ? googleAccount?.metadata : null) ??
+          {}) as IntegrationMetadata;
         const configured = getCredentials(p) !== null;
-        const redirectUri = `${appUrl}/api/integrations/${id}/callback`;
+        const redirectUri = isGoogleSubService
+          ? `${appUrl}/api/integrations/google/callback`
+          : `${appUrl}/api/integrations/${id}/callback`;
 
         return (
           <div
@@ -206,41 +183,58 @@ export default async function AppsPage({
 
             <form
               action={saveIntegrationPermission}
-              className="space-y-3 border-t border-zinc-800 pt-4"
+              className="space-y-2.5 border-t border-zinc-800/80 pt-3 text-xs"
             >
               <input type="hidden" name="provider" value={id} />
-              <div className="text-xs uppercase tracking-wide text-zinc-500">
-                Permission
-                <span className="ml-2 normal-case text-zinc-400">
-                  {current ? (current.permission === "no" ? "Declined" : "Allowed") : "Not set"}
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-500">
+                  Permission:{" "}
+                  <span className="normal-case text-zinc-300 font-normal">
+                    {current
+                      ? current.permission === "no"
+                        ? "Declined"
+                        : current.permission === "yes_this_project"
+                        ? "This project only"
+                        : "Allowed"
+                      : "Not set"}
+                  </span>
                 </span>
+                <button
+                  type="submit"
+                  className="rounded bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-500 transition-colors"
+                >
+                  Save
+                </button>
               </div>
-              <div className="flex flex-wrap gap-2">
+
+              <div className="flex flex-wrap gap-1.5">
                 {[
                   ["yes", "Yes, you can"],
-                  ["yes_this_project", "Yes, for this project"],
+                  ["yes_this_project", "For this project"],
                   ["no", "No"],
                 ].map(([value, label]) => (
-                  <label key={value} className="flex items-center gap-1.5 text-sm">
+                  <label
+                    key={value}
+                    className="flex cursor-pointer items-center gap-1 rounded-md border border-zinc-800 bg-zinc-950/70 px-2.5 py-1 text-xs text-zinc-300 hover:border-zinc-700 hover:text-white has-[:checked]:border-blue-500 has-[:checked]:bg-blue-950/50 has-[:checked]:text-blue-300 transition-colors"
+                  >
                     <input
                       type="radio"
                       name="permission"
                       value={value}
                       defaultChecked={current?.permission === value}
+                      className="h-3 w-3 accent-blue-500"
                     />
                     {label}
                   </label>
                 ))}
               </div>
+
               <input
                 name="note"
-                placeholder="Add a note (optional)"
+                placeholder="Note (optional)"
                 defaultValue={current?.permissionNote ?? ""}
-                className="w-full rounded-lg border border-zinc-700 bg-zinc-900 px-4 py-2.5"
+                className="w-full rounded border border-zinc-800 bg-zinc-950/60 px-3 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:border-blue-500 focus:outline-none"
               />
-              <button className="rounded-lg bg-blue-600 px-4 py-2 font-medium hover:bg-blue-500">
-                Save permission
-              </button>
             </form>
           </div>
         );

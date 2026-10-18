@@ -40,6 +40,45 @@ if (fs.existsSync(bundleFile)) {
     console.log("Patched shutdown in .output bundle!");
   }
 
+  // Add liveness probe + auto-recovery to connectMicrosandbox in .output bundle (idempotent)
+  const connectBundleRegex = /async\s+function\s+connectMicrosandbox\s*\(\s*e\s*\)\s*\{[\s\S]*?(?=async\s+function\s+restoreMicrosandboxSessionSnapshot\s*\()/;
+  const newConnectBundle = `async function connectMicrosandbox(e) {
+\tlet t;
+\ttry {
+\t\tt = await e.module.Sandbox.get(e.metadata.sandboxName);
+\t} catch (t) {
+\t\tif (!isMicrosandboxNotFoundError(t)) throw t;
+\t\treturn e.metadata.stateSnapshotName === void 0 ? null : await restoreMicrosandboxSessionSnapshot(e);
+\t}
+\tif (t.status !== \`running\` && t.status !== \`draining\` && e.metadata.stateSnapshotName !== void 0) return await restoreMicrosandboxSessionSnapshot(e);
+\ttry {
+\t\tlet n = t.status === \`running\` || t.status === \`draining\` ? await t.connectWithTimeout(5e3) : await t.startDetached();
+\t\tawait Promise.race([
+\t\t\t(async () => {
+\t\t\t\tawait n.execWith(\`bash\`, (b) => b.args([\`-c\`, \`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));
+\t\t\t\tawait n.fs().exists(WORKSPACE_ROOT);
+\t\t\t})(),
+\t\t\tnew Promise((_, rej) => setTimeout(() => rej(new Error(\`Microsandbox probe timed out\`)), 4e3))
+\t\t]);
+\t\treturn new MicrosandboxVm({
+\t\t\tmodule: e.module,
+\t\t\toptions: e.options,
+\t\t\tsessionKey: e.sessionKey,
+\t\t\ttags: e.tags
+\t\t}, n, e.metadata.sandboxName, e.metadata.networkPolicy, e.metadataPath, e.metadata.optionsHash, e.metadata.stateSnapshotName);
+\t} catch (err) {
+\t\tconsole.warn(\`[eve:microsandbox] Stale sandbox \${e.metadata.sandboxName} (\${err?.message}), recreating...\`);
+\t\tawait removeSandboxIfExists(e.module, e.metadata.sandboxName).catch(() => {});
+\t\treturn null;
+\t}
+}\n`;
+
+  if (connectBundleRegex.test(code)) {
+    code = code.replace(connectBundleRegex, newConnectBundle);
+    patchedCount++;
+    console.log("Patched connectMicrosandbox liveness probe in .output bundle!");
+  }
+
   fs.writeFileSync(bundleFile, code);
 }
 
@@ -67,6 +106,16 @@ if (fs.existsSync(runtimeFile)) {
     console.log("Patched shutdown in node_modules/eve runtime!");
   }
 
+  const connectRuntimeRegex = /async function connectMicrosandbox\(e\)\{[\s\S]*?(?=async function restoreMicrosandboxSessionSnapshot\(e\))/;
+
+  const newConnectRuntime = `async function connectMicrosandbox(e){let t;try{t=await e.module.Sandbox.get(e.metadata.sandboxName)}catch(t){if(!isMicrosandboxNotFoundError$1(t))throw t;return e.metadata.stateSnapshotName===void 0?null:await restoreMicrosandboxSessionSnapshot(e)}if(t.status!==\`running\`&&t.status!==\`draining\`&&e.metadata.stateSnapshotName!==void 0)return await restoreMicrosandboxSessionSnapshot(e);try{let n=t.status===\`running\`||t.status===\`draining\`?await t.connectWithTimeout(5e3):await t.startDetached();await Promise.race([(async()=>{await n.execWith(\`bash\`,b=>b.args([\`-c\`,\`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));await n.fs().exists(WORKSPACE_ROOT)})(),new Promise((_,rej)=>setTimeout(()=>rej(new Error(\`Microsandbox probe timed out\`)),4e3))]);return new MicrosandboxVm({module:e.module,options:e.options,sessionKey:e.sessionKey,tags:e.tags},n,e.metadata.sandboxName,e.metadata.networkPolicy,e.metadataPath,e.metadata.optionsHash,e.metadata.stateSnapshotName)}catch(err){console.warn(\`[eve:microsandbox] Stale sandbox \${e.metadata.sandboxName} (\${err?.message}), recreating...\`);await removeSandboxIfExists(e.module,e.metadata.sandboxName).catch(()=>{});return null}}`;
+
+  if (connectRuntimeRegex.test(runtimeCode)) {
+    runtimeCode = runtimeCode.replace(connectRuntimeRegex, newConnectRuntime);
+    patchedCount++;
+    console.log("Patched connectMicrosandbox in node_modules/eve runtime!");
+  }
+
   fs.writeFileSync(runtimeFile, runtimeCode);
 }
 
@@ -74,7 +123,7 @@ if (fs.existsSync(runtimeFile)) {
 const devEnvFile = 'node_modules/eve/dist/src/internal/application/dev-environment.js';
 if (fs.existsSync(devEnvFile)) {
   let devEnvCode = fs.readFileSync(devEnvFile, 'utf8');
-  if (devEnvCode.includes('return process.env[EVE_DEV_ENV_FLAG]===`1`')) {
+  if (devEnvCode.includes('return process.env[EVE_DEV_ENV_FLAG]===`1`') && !devEnvCode.includes('EVE_PERSIST_SANDBOX')) {
     devEnvCode = devEnvCode.replace(
       'return process.env[EVE_DEV_ENV_FLAG]===`1`',
       'return process.env[EVE_DEV_ENV_FLAG]===`1` || process.env.EVE_PERSIST_SANDBOX===`1` || true'

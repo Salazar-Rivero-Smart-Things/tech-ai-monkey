@@ -9,7 +9,12 @@
 // only works once the matching client id/secret are set in the environment.
 // ---------------------------------------------------------------------------
 
-export type ProviderId = "slack" | "google_workspace" | "google";
+export type ProviderId =
+  | "slack"
+  | "google_workspace"
+  | "google"
+  | "google_calendar"
+  | "google_meet";
 
 export interface ProviderConfig {
   id: ProviderId;
@@ -90,8 +95,51 @@ export const PROVIDERS: Record<ProviderId, ProviderConfig> = {
       "openid",
       "email",
       "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
       "https://www.googleapis.com/auth/drive.readonly",
       "https://www.googleapis.com/auth/gmail.readonly",
+    ],
+    scopeSeparator: " ",
+    authorizeEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenEndpoint: "https://oauth2.googleapis.com/token",
+    extraAuthParams: { access_type: "offline", prompt: "consent" },
+  },
+  google_calendar: {
+    id: "google_calendar",
+    name: "Google Calendar",
+    description: "Google Calendar events and reminders sync.",
+    clientIdEnv: "GOOGLE_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_CLIENT_SECRET",
+    clientIdFallbackEnv: "AUTH_GOOGLE_ID",
+    clientSecretFallbackEnv: "AUTH_GOOGLE_SECRET",
+    setupUrl: "https://console.cloud.google.com/apis/credentials",
+    docsUrl: "https://developers.google.com/identity/protocols/oauth2/web-server",
+    scopes: [
+      "openid",
+      "email",
+      "https://www.googleapis.com/auth/calendar.readonly",
+      "https://www.googleapis.com/auth/calendar.events",
+    ],
+    scopeSeparator: " ",
+    authorizeEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",
+    tokenEndpoint: "https://oauth2.googleapis.com/token",
+    extraAuthParams: { access_type: "offline", prompt: "consent" },
+  },
+  google_meet: {
+    id: "google_meet",
+    name: "Google Meet",
+    description: "Generate appointment links and create video meeting spaces.",
+    clientIdEnv: "GOOGLE_CLIENT_ID",
+    clientSecretEnv: "GOOGLE_CLIENT_SECRET",
+    clientIdFallbackEnv: "AUTH_GOOGLE_ID",
+    clientSecretFallbackEnv: "AUTH_GOOGLE_SECRET",
+    setupUrl: "https://console.cloud.google.com/apis/credentials",
+    docsUrl: "https://developers.google.com/meet",
+    scopes: [
+      "openid",
+      "email",
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/calendar.readonly",
     ],
     scopeSeparator: " ",
     authorizeEndpoint: "https://accounts.google.com/o/oauth2/v2/auth",

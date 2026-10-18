@@ -95,16 +95,19 @@ export async function continueSession(apiBase, token, sessionId, message, contin
  * Resolves when the turn ends.
  */
 export async function streamReply(apiBase, token, sessionId, handlers = {}) {
+  const startIndex = Number(handlers.startIndex ?? 0);
+  const query = startIndex > 0 ? `?startIndex=${startIndex}` : "";
   const res = await request(
-    `${apiBase}/eve/v1/session/${encodeURIComponent(sessionId)}/stream`,
+    `${apiBase}/eve/v1/session/${encodeURIComponent(sessionId)}/stream${query}`,
     { token },
   );
-  if (!res.body) return;
+  if (!res.body) return { eventCount: 0 };
 
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let settled = false;
+  let eventCount = 0;
 
   const finish = (event) => {
     if (settled) return;
@@ -124,6 +127,7 @@ export async function streamReply(apiBase, token, sessionId, handlers = {}) {
 
     for (const line of lines) {
       if (!line.trim()) continue;
+      eventCount += 1;
       let event;
       try {
         event = JSON.parse(line);
@@ -143,6 +147,8 @@ export async function streamReply(apiBase, token, sessionId, handlers = {}) {
           finish("waiting");
           break;
         case "turn.failed":
+        case "turn.cancelled":
+        case "session.failed":
           handlers.onError?.(String(data.message ?? "The turn failed."));
           finish("failed");
           break;
@@ -150,12 +156,15 @@ export async function streamReply(apiBase, token, sessionId, handlers = {}) {
           handlers.onNotice?.(String(data.message ?? "Billing problem."));
           break;
         case "turn.completed":
+          // Wait for session.waiting so startIndex and continuationToken stay in sync
+          break;
         case "session.completed":
           finish("completed");
           break;
         default:
           break;
       }
+      if (settled) break;
     }
   }
 
@@ -164,4 +173,6 @@ export async function streamReply(apiBase, token, sessionId, handlers = {}) {
   } catch {
     // already closed
   }
+  return { eventCount };
 }
+

@@ -148,16 +148,18 @@ function handleApiError(error) {
   process.exit(1);
 }
 
-/** Stream one turn and print it, returning { sessionId, continuationToken }. */
-async function runTurn(apiBase, token, { sessionId, continuationToken, message }) {
+/** Stream one turn and print it, returning { sessionId, continuationToken, startIndex }. */
+async function runTurn(apiBase, token, { sessionId, continuationToken, startIndex = 0, message }) {
   let nextContinuation = continuationToken ?? null;
   let createdSession = sessionId;
+  let nextStartIndex = Number(startIndex ?? 0);
 
   if (!createdSession) {
     const created = await createSession(apiBase, token, message);
     createdSession = created?.sessionId ?? null;
     if (!createdSession) throw new Error("The server did not create a session.");
     nextContinuation = created.continuationToken ?? nextContinuation;
+    nextStartIndex = 0;
   } else {
     const continued = await continueSession(
       apiBase,
@@ -172,7 +174,8 @@ async function runTurn(apiBase, token, { sessionId, continuationToken, message }
   let streamed = "";
   let final = "";
 
-  await streamReply(apiBase, token, createdSession, {
+  const streamStats = await streamReply(apiBase, token, createdSession, {
+    startIndex: nextStartIndex,
     onDelta: (text) => {
       streamed += text;
       stdout.write(text);
@@ -192,6 +195,8 @@ async function runTurn(apiBase, token, { sessionId, continuationToken, message }
     },
   });
 
+  nextStartIndex += Number(streamStats?.eventCount ?? 0);
+
   if (final && !streamed) {
     stdout.write(final);
   } else if (final && final.startsWith(streamed) && final.length > streamed.length) {
@@ -199,7 +204,11 @@ async function runTurn(apiBase, token, { sessionId, continuationToken, message }
   }
   stdout.write("\n");
 
-  return { sessionId: createdSession, continuationToken: nextContinuation };
+  return {
+    sessionId: createdSession,
+    continuationToken: nextContinuation,
+    startIndex: nextStartIndex,
+  };
 }
 
 async function commandLogin(flags, positional) {
@@ -310,6 +319,7 @@ async function commandChat(flags) {
   const rl = createInterface({ input: stdin, output: stdout });
   let sessionId = null;
   let continuationToken = null;
+  let startIndex = 0;
 
   try {
     while (true) {
@@ -319,6 +329,7 @@ async function commandChat(flags) {
       if (input === "/new") {
         sessionId = null;
         continuationToken = null;
+        startIndex = 0;
         say(dim("  started a new conversation"));
         continue;
       }
@@ -328,10 +339,12 @@ async function commandChat(flags) {
         const result = await runTurn(apiBase, token, {
           sessionId,
           continuationToken,
+          startIndex,
           message: input,
         });
         sessionId = result.sessionId;
         continuationToken = result.continuationToken;
+        startIndex = result.startIndex ?? startIndex;
       } catch (error) {
         if (error instanceof ApiError) {
           fail(error.message);

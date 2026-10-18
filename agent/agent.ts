@@ -2,33 +2,21 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { defineAgent } from "eve";
 
 // ---------------------------------------------------------------------------
-// Modellvalg
+// Tech AI Monkey – Modellkjerne v1.1.6 (Monkey Argon / Qwen 3.8 Hybrid Core)
 //
-// Rekkefølge – første som er konfigurert vinner:
-//
-//   1. AGENT_MODEL        Ren modellstreng, f.eks. "openai/gpt-5.4-fast".
-//                         Rutes automatisk via Vercel AI Gateway (bruker
-//                         AI_GATEWAY_API_KEY / VERCEL_OIDC_TOKEN). Se alle
-//                         modellene: curl -s https://ai-gateway.vercel.sh/v1/models
-//
-//   2. OPENAI_COMPAT_*    Hvilken som helst OpenAI-kompatibel leverandør – Groq,
-//                         Cerebras, OpenRouter, Together, vLLM … Alt du trenger
-//                         er baseURL + modell-id + API-nøkkel:
-//                           OPENAI_COMPAT_BASE_URL=https://api.groq.com/openai/v1
-//                           OPENAI_COMPAT_MODEL=llama-3.3-70b-versatile
-//                           OPENAI_COMPAT_API_KEY=gsk_...
-//                           OPENAI_COMPAT_CONTEXT_TOKENS=131072   (valgfritt)
-//
-//   3. OLLAMA_MODEL       Lokal Ollama (snarvei), f.eks. "llama3.1:8b".
-//                         Ollama ignorerer API-nøkkelen, men klienten krever en.
-//
+// Rekkefølge & hybrid ruting:
+//   1. AGENT_MODEL        Ren modellstreng via Vercel AI Gateway
+//                         (f.eks. "google/gemini-4-argon" eller "alibaba/qwen3.8-max-prime").
+//   2. OPENAI_COMPAT_*    Qwen 3.8 ("qwen/qwen3.8-27b") eller annen OpenAI-kompatibel
+//                         kjerne, med automatisk sanntids-failover til DeepSeek V3
+//                         ("deepseek-chat") ved store kontekstvinduer eller 429/413-grenser.
+//   3. OLLAMA_MODEL       Lokal Ollama-modell.
 //   4. DEEPSEEK_API_KEY   DeepSeek direkte ("deepseek-chat").
-//                         Hent/roter: https://platform.deepseek.com/api_keys
-//
-//   5. (ingenting satt)   Gratis fallback via AI Gateway.
-//
-// SIKKERHET: nøkler skal ligge i `.env` (git-ignorert), ALDRI her.
+//   5. Fallback           "poolside/laguna-s-2.1-free" via AI Gateway.
 // ---------------------------------------------------------------------------
+
+export const AGENT_VERSION = "v1.1.6";
+export const AGENT_CORE_CODENAME = "Monkey Argon v1.1.6 (Qwen 3.8 Hybrid Core)";
 
 /** Heltall fra miljøvariabel hvis positivt, ellers fallback. */
 function positiveInt(value: string | undefined, fallback: number): number {
@@ -36,21 +24,98 @@ function positiveInt(value: string | undefined, fallback: number): number {
   return Number.isFinite(n) && n > 0 ? n : fallback;
 }
 
-// 1) AI Gateway – ren modellstreng (kjenner sin egen metadata).
 const gatewayModel = process.env.AGENT_MODEL?.trim() || null;
-
-// 2) Generisk OpenAI-kompatibel leverandør.
 const compatModel = process.env.OPENAI_COMPAT_MODEL?.trim() || null;
-const compatBaseUrl = process.env.OPENAI_COMPAT_BASE_URL ?? "http://127.0.0.1:11434/v1";
+const compatBaseUrl = (process.env.OPENAI_COMPAT_BASE_URL ?? "http://127.0.0.1:11434/v1").replace(
+  /\/+$/,
+  "",
+);
+const compatApiKey = process.env.OPENAI_COMPAT_API_KEY || "not-needed";
+const deepseekApiKey = process.env.DEEPSEEK_API_KEY?.trim() || null;
+
+let primaryCooldownUntil = 0;
+
+/**
+ * Smart hybrid fetch: bruker primærmodellen (f.eks. Qwen 3.8 på Groq) for raske
+ * kall, og ruter sømløst over til DeepSeek når konteksten er stor eller
+ * primærleverandøren treffer rate-limit (429/413) eller nettverksfeil.
+ */
+const hybridFetch: typeof fetch = async (input, init) => {
+  const rawBody = typeof init?.body === "string" ? init.body : "";
+  const now = Date.now();
+
+  const forwardToDeepSeek = async () => {
+    if (!deepseekApiKey) {
+      return fetch(input, init);
+    }
+    let rewrittenBody = rawBody;
+    if (rawBody) {
+      try {
+        const parsed = JSON.parse(rawBody) as Record<string, unknown>;
+        parsed.model = "deepseek-chat";
+        if (typeof parsed.max_tokens === "number" && parsed.max_tokens > 8192) {
+          parsed.max_tokens = 8192;
+        }
+        rewrittenBody = JSON.stringify(parsed);
+      } catch {
+        // behold eksisterende body
+      }
+    }
+    const headers = new Headers(init?.headers);
+    headers.set("authorization", `Bearer ${deepseekApiKey}`);
+    headers.set("content-type", "application/json");
+    return fetch("https://api.deepseek.com/v1/chat/completions", {
+      ...init,
+      headers,
+      body: rewrittenBody,
+    });
+  };
+
+  // Hvis Groq er på kort cooldown eller payloaden overstiger Groqs on-demand ITPM-grense (~26 KB),
+  // ruter vi direkte til DeepSeek-kjernen så verktøy-løkker aldri feiler.
+  if (deepseekApiKey && (now < primaryCooldownUntil || rawBody.length > 26_000)) {
+    return forwardToDeepSeek();
+  }
+
+  let primaryInit = init;
+  if (rawBody && compatBaseUrl.includes("groq.com")) {
+    try {
+      const parsed = JSON.parse(rawBody) as Record<string, unknown>;
+      if (typeof parsed.max_tokens === "number" && parsed.max_tokens > 950) {
+        parsed.max_tokens = 950;
+        primaryInit = { ...init, body: JSON.stringify(parsed) };
+      }
+    } catch {
+      // behold original init
+    }
+  }
+
+  try {
+    const res = await fetch(input, primaryInit);
+    if (!res.ok && deepseekApiKey && (res.status === 429 || res.status === 413 || res.status >= 500 || res.status === 400)) {
+      if (res.status === 429 || res.status === 413) {
+        primaryCooldownUntil = Date.now() + 25_000;
+      }
+      return forwardToDeepSeek();
+    }
+    return res;
+  } catch (err) {
+    if (deepseekApiKey) {
+      return forwardToDeepSeek();
+    }
+    throw err;
+  }
+};
+
 const compat = compatModel
   ? createOpenAICompatible({
-      name: process.env.OPENAI_COMPAT_NAME?.trim() || "openai-compat",
+      name: process.env.OPENAI_COMPAT_NAME?.trim() || "monkey-argon-qwen",
       baseURL: compatBaseUrl,
-      apiKey: process.env.OPENAI_COMPAT_API_KEY || "not-needed",
+      apiKey: compatApiKey,
+      fetch: deepseekApiKey ? hybridFetch : undefined,
     }).chatModel(compatModel)
   : null;
 
-// 3) Ollama-snarvei (samme maskin).
 const ollamaModel = process.env.OLLAMA_MODEL?.trim() || null;
 const ollama = ollamaModel
   ? createOpenAICompatible({
@@ -60,8 +125,6 @@ const ollama = ollamaModel
     }).chatModel(ollamaModel)
   : null;
 
-// 4) DeepSeek direkte.
-const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
 const deepseek = deepseekApiKey
   ? createOpenAICompatible({
       name: "deepseek",
@@ -71,33 +134,34 @@ const deepseek = deepseekApiKey
   : null;
 
 if (gatewayModel) {
-  console.log(`[agent] modell: ${gatewayModel} (Vercel AI Gateway)`);
+  console.log(`[agent] ${AGENT_CORE_CODENAME} -> modell: ${gatewayModel} (Vercel AI Gateway)`);
 } else if (compat) {
-  console.log(`[agent] modell: ${compatModel} (OpenAI-kompatibel via ${compatBaseUrl})`);
+  console.log(
+    `[agent] ${AGENT_CORE_CODENAME} -> modell: ${compatModel} (${compatBaseUrl}${
+      deepseekApiKey ? " + deepseek-chat hybrid failover" : ""
+    })`,
+  );
 } else if (ollama) {
-  console.log(`[agent] modell: ${ollamaModel} (lokal Ollama)`);
+  console.log(`[agent] ${AGENT_CORE_CODENAME} -> modell: ${ollamaModel} (lokal Ollama)`);
 } else if (deepseek) {
-  console.log("[agent] modell: deepseek-chat (direkte via DEEPSEEK_API_KEY)");
+  console.log(`[agent] ${AGENT_CORE_CODENAME} -> modell: deepseek-chat (direkte via DEEPSEEK_API_KEY)`);
 } else {
   console.log(
-    "[agent] modell: poolside/laguna-s-2.1-free (Vercel AI Gateway – fallback)",
+    `[agent] ${AGENT_CORE_CODENAME} -> modell: poolside/laguna-s-2.1-free (Vercel AI Gateway – fallback)`,
   );
 }
 
 export default defineAgent({
   model: gatewayModel ?? compat ?? ollama ?? deepseek ?? "poolside/laguna-s-2.1-free",
-  // Modeller utenom AI Gateway mangler metadata, så kontekstvinduet må
-  // deklareres eksplisitt – ellers nekter `eve build` å kompilere
-  // compaction-steget. Gatewayen kjenner sitt eget vindu, så der står det
-  // udefinert.
   modelContextWindowTokens: gatewayModel
     ? undefined
     : compat
-      ? positiveInt(process.env.OPENAI_COMPAT_CONTEXT_TOKENS, 32_768)
+      ? positiveInt(process.env.OPENAI_COMPAT_CONTEXT_TOKENS, 131_072)
       : ollama
         ? positiveInt(process.env.OLLAMA_CONTEXT_TOKENS, 8_192)
         : deepseek
           ? 65_536
           : undefined,
 });
+
 

@@ -218,6 +218,53 @@ export const integrations = pgTable(
   (table) => [index("integration_userId_idx").on(table.userId)],
 );
 
+export const workflows = pgTable(
+  "workflow",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    description: text("description"),
+    schedule: text("schedule").notNull().default("manual"), // manual | hourly | daily | weekly
+    scheduleTime: text("scheduleTime").default("08:00"), // e.g. "08:00"
+    prompt: text("prompt").notNull(),
+    actionType: text("actionType").notNull().default("email"), // email | artifact | both
+    emailRecipient: text("emailRecipient"),
+    emailSubject: text("emailSubject"),
+    enabled: boolean("enabled").notNull().default(true),
+    lastRunAt: timestamp("lastRunAt", { mode: "date" }),
+    lastStatus: text("lastStatus"), // success | failed | running
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [index("workflow_userId_idx").on(table.userId)],
+);
+
+export const workflowRuns = pgTable(
+  "workflowRun",
+  {
+    id: text("id").primaryKey(),
+    workflowId: text("workflowId")
+      .notNull()
+      .references(() => workflows.id, { onDelete: "cascade" }),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: text("status").notNull().default("running"), // running | success | failed
+    output: text("output"),
+    emailSent: boolean("emailSent").notNull().default(false),
+    error: text("error"),
+    startedAt: timestamp("startedAt", { mode: "date" }).notNull().defaultNow(),
+    completedAt: timestamp("completedAt", { mode: "date" }),
+  },
+  (table) => [
+    index("workflowRun_workflowId_idx").on(table.workflowId),
+    index("workflowRun_userId_idx").on(table.userId),
+  ],
+);
+
 // ---------------------------------------------------------------------------
 // CLI access.
 //

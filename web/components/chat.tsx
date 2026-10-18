@@ -172,20 +172,24 @@ export default function Chat() {
               }
               break;
             case "turn.failed":
+            case "turn.cancelled":
+            case "session.failed":
               if (ev.data?.message) addMessage("error", ev.data.message);
               finish();
-              break;
+              return;
             case "billing.error":
               if (ev.data?.message) addMessage("error", ev.data.message);
               break;
             case "session.waiting":
               if (ev.data?.continuationToken) continuationRef.current = ev.data.continuationToken;
               finish();
-              break;
+              return;
             case "turn.completed":
+              // Wait for session.waiting (which follows turn.completed and carries continuationToken)
+              break;
             case "session.completed":
               finish();
-              break;
+              return;
             default:
               break;
           }

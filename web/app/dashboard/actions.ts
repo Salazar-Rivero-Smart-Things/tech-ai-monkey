@@ -8,6 +8,7 @@ import { auth, signOut } from "@/auth";
 import { db } from "@/lib/db";
 import { deleteUserData } from "@/lib/account";
 import { notebooks, integrations, artifacts } from "@/lib/db/schema";
+import { createGoogleCalendarEvent } from "@/lib/integrations/google-calendar";
 
 async function requireUserId(): Promise<string> {
   const session = await auth();
@@ -21,8 +22,38 @@ export async function addNotebookItem(formData: FormData) {
   const userId = await requireUserId();
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return;
-  const notes = String(formData.get("notes") ?? "").trim();
+  const notesRaw = String(formData.get("notes") ?? "").trim();
   const remindRaw = String(formData.get("remindAt") ?? "").trim();
+  const createMeet = formData.get("createMeet") === "on";
+  const syncGoogle = formData.get("syncGoogle") === "on";
+
+  let notes = notesRaw;
+
+  if (remindRaw && (syncGoogle || createMeet)) {
+    const startDate = new Date(remindRaw);
+    try {
+      const gcal = await createGoogleCalendarEvent(userId, {
+        title,
+        notes: notes || undefined,
+        start: startDate,
+        createMeetLink: createMeet,
+      });
+      if (gcal.ok && gcal.meetLink) {
+        notes = notes
+          ? `${notes}\n\nGoogle Meet: ${gcal.meetLink}`
+          : `Google Meet: ${gcal.meetLink}`;
+      }
+    } catch (err) {
+      console.error("[actions] Google Calendar event sync error:", err);
+    }
+  }
+
+  if (createMeet && !notes.includes("meet.google.com")) {
+    const meetUrl = "https://meet.google.com/new";
+    notes = notes
+      ? `${notes}\n\nGoogle Meet: ${meetUrl}`
+      : `Google Meet: ${meetUrl}`;
+  }
 
   await db.insert(notebooks).values({
     id: randomUUID(),

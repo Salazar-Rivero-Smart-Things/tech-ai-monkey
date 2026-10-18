@@ -132,28 +132,33 @@ export async function GET(
     secret: encryptSecret(JSON.stringify(result.raw)),
   };
 
-  const [existing] = await db
-    .select({ id: integrations.id })
-    .from(integrations)
-    .where(and(eq(integrations.userId, session.user.id), eq(integrations.provider, provider)))
-    .limit(1);
+  const providersToUpdate =
+    provider === "google" ? ["google", "google_calendar", "google_meet"] : [provider];
 
-  if (existing) {
-    await db
-      .update(integrations)
-      .set({ status: "connected", metadata, updatedAt: new Date() })
-      .where(eq(integrations.id, existing.id));
-  } else {
-    await db.insert(integrations).values({
-      id: randomUUID(),
-      userId: session.user.id,
-      provider,
-      status: "connected",
-      permission: "yes",
-      metadata,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+  for (const p of providersToUpdate) {
+    const [existing] = await db
+      .select({ id: integrations.id })
+      .from(integrations)
+      .where(and(eq(integrations.userId, session.user.id), eq(integrations.provider, p)))
+      .limit(1);
+
+    if (existing) {
+      await db
+        .update(integrations)
+        .set({ status: "connected", metadata, updatedAt: new Date() })
+        .where(eq(integrations.id, existing.id));
+    } else {
+      await db.insert(integrations).values({
+        id: randomUUID(),
+        userId: session.user.id,
+        provider: p,
+        status: "connected",
+        permission: "yes",
+        metadata,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+    }
   }
 
   return back(`connected=${provider}`);

@@ -10,7 +10,7 @@ const NAV = [
   { href: "/dashboard/artifacts", label: "Artifacts" },
   { href: "/dashboard/workflows", label: "Workflows" },
   { href: "/dashboard/apps", label: "Apps to connect" },
-  { href: "/dashboard/notebook", label: "Notebook" },
+  { href: "/dashboard/notebook", label: "Google Calendar" },
   { href: "/dashboard/skills", label: "Skills" },
   { href: "/dashboard/subscription", label: "Subscription" },
   { href: "/dashboard/api-keys", label: "API keys" },

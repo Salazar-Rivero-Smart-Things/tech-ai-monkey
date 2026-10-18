@@ -14,7 +14,7 @@ function jsonError(message: string, status: number) {
 
 function isTerminalEvent(type: unknown) {
   return [
-    "turn.completed",
+    "session.waiting",
     "turn.failed",
     "turn.cancelled",
     "session.failed",
