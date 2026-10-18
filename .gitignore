@@ -17,3 +17,14 @@ skills/users/
 # Books the owner drops in for the agent to teach from: copyrighted, never commit.
 books/*
 !books/README.md
+
+# Apple signing material: Team ID, CSR and any certificate/key files
+APPLE_DEV_ID.TXT
+APPLE_DEV_ID.csr
+*.cer
+*.p12
+AuthKey_*.p8
+
+# Videos dropped in for the agent to analyse: large and usually private.
+videos/*
+!videos/README.md

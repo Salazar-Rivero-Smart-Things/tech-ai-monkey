@@ -2,11 +2,11 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { defineAgent } from "eve";
 
 // ---------------------------------------------------------------------------
-// Tech AI Monkey – Modellkjerne v2.0.0 (Monkey Argon / Qwen 3.8 Hybrid Core)
+// Tech AI Monkey – Modellkjerne tech-ai.tech monkey v2.0 (Qwen 3.8 Hybrid Core)
 //
 // Rekkefølge & hybrid ruting:
 //   1. AGENT_MODEL        Ren modellstreng via Vercel AI Gateway
-//                         (f.eks. "google/gemini-4-argon" eller "alibaba/qwen3.8-max-prime").
+//                         (f.eks. "google/gemini-3-pro" eller "alibaba/qwen3.8-max-prime").
 //   2. OPENAI_COMPAT_*    Qwen 3.8 ("qwen/qwen3.8-27b") eller annen OpenAI-kompatibel
 //                         kjerne, med automatisk sanntids-failover til DeepSeek V3
 //                         ("deepseek-chat") ved store kontekstvinduer eller 429/413-grenser.
@@ -16,7 +16,7 @@ import { defineAgent } from "eve";
 // ---------------------------------------------------------------------------
 
 export const AGENT_VERSION = "v2.0.0";
-export const AGENT_CORE_CODENAME = "Monkey Argon v2.0.0 (Qwen 3.8 Hybrid Core)";
+export const AGENT_CORE_CODENAME = "tech-ai.tech monkey v2.0";
 
 /** Heltall fra miljøvariabel hvis positivt, ellers fallback. */
 function positiveInt(value: string | undefined, fallback: number): number {
@@ -109,7 +109,7 @@ const hybridFetch: typeof fetch = async (input, init) => {
 
 const compat = compatModel
   ? createOpenAICompatible({
-      name: process.env.OPENAI_COMPAT_NAME?.trim() || "monkey-argon-qwen",
+      name: process.env.OPENAI_COMPAT_NAME?.trim() || "tech-ai-monkey",
       baseURL: compatBaseUrl,
       apiKey: compatApiKey,
       fetch: deepseekApiKey ? hybridFetch : undefined,

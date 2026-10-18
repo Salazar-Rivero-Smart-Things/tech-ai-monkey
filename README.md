@@ -1,6 +1,6 @@
 # Tech AI monkey
 
-> **Live:** <https://tech-ai.tech> · **v2.0.0 (Monkey Argon / Qwen 3.8 Hybrid Core)**  
+> **Live:** <https://tech-ai.tech> · **v2.0.0 (tech-ai.tech monkey v2.0 / Qwen 3.8 Hybrid Core)**  
 > © Salazar Rivero Smart Things (org. 933 853 195, Norge)
 
 **Tech AI monkey** er en selvlærende, kryssplattform AI-agent (macOS, Linux og Windows) med web-dashboard, terminal-CLI og API.

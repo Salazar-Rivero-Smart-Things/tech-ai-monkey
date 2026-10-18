@@ -71,6 +71,17 @@ DEFAULT_P12="$REPO_DIR/.build/apple/developer-id.p12"
 
 IDENTITY="${MACOS_SIGN_IDENTITY:-}"
 P12="${MACOS_SIGN_P12:-}"
+
+# On a Mac with Xcode signed in, the Developer ID certificate lives in the
+# login keychain. Use it automatically when it is the only one present.
+if [ -z "$IDENTITY" ] && [ -z "$P12" ] && [ "$ON_MACOS" = "1" ]; then
+  DETECTED="$(security find-identity -v -p codesigning 2>/dev/null \
+    | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)"
+  if [ -n "$DETECTED" ]; then
+    IDENTITY="$DETECTED"
+    log "Fant sertifikat i nøkkelringen: $IDENTITY"
+  fi
+fi
 if [ -z "$P12" ] && [ -z "$IDENTITY" ] && [ -f "$DEFAULT_P12" ]; then
   P12="$DEFAULT_P12"
 fi

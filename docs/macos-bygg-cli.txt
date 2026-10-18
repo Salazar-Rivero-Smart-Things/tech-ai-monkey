@@ -18,6 +18,20 @@
      bash scripts/notarize-macos.sh --check     # hva mangler?
      bash scripts/notarize-macos.sh             # signer + notariser + staple
 
+ På en Mac kan du bruke én-kommando-varianten, som også sjekker Xcode-verktøy,
+ finner sertifikatet i nøkkelringen og oppdaterer checksums.txt:
+
+     bash scripts/macos-release.sh --check
+     bash scripts/macos-release.sh
+
+ Vil du ha hele prosjektet ferdig pakket for en USB-pinne (uten hemmeligheter
+ og uten tunge mapper), lag den på Linux-maskinen med:
+
+     bash scripts/prepare-macos-usb.sh
+     # -> .build/usb/tech-ai-monkey-macos.zip
+
+ Se docs/macos-usb-release.md for steg-for-steg på Mac'en.
+
  Det bygger DMG-en på nytt med en signert binær (hardened runtime), signerer
  diskbildet, sender det til Apple og stifter billetten fast. Du trenger bare
  miljøvariablene som --check lister opp. Skriptet kan også kjøres på Linux med

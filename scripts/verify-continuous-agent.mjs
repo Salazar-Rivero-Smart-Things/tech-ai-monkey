@@ -73,7 +73,7 @@ async function readTurnEvents(sessionId, token, startIndex = 0) {
 
 async function run() {
   console.log('====================================================================');
-  console.log(' TECH AI MONKEY v2.0.0 (MONKEY ARGON / QWEN 3.8 HYBRID CORE)');
+  console.log(' TECH AI MONKEY v2.0.0 (TECH-AI.TECH MONKEY V2.0 / QWEN 3.8 HYBRID CORE)');
   console.log(' MULTITASK- & MULTIPROSJEKT-TEST I VIRTUELL MASKIN (5 OPPGAVER)');
   console.log('====================================================================');
 
