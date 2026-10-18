@@ -20,10 +20,14 @@ That produces:
 | `tech-ai_<version>_macos_universal.dmg` | macOS, Universal | Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer |
 | `checksums.txt` | — | SHA-256 for the released files |
 
-The macOS 1.0.0 disk image is served at
-`/downloads/tech-ai_1.0.0_macos_universal.dmg`. Its checksum is listed in
-`checksums.txt`. It is explicitly unignored in this folder's `.gitignore`;
-remember to repeat that exception for future releases.
+The macOS 1.1.6 disk image is served at
+`/downloads/tech-ai_1.1.6_macos_universal.dmg`. It contains a universal
+(Apple Silicon + Intel) `tech-ai` binary that is ad-hoc signed, but the disk
+image itself is **not notarised** with an Apple Developer ID. Users must
+right-click → Open the first time, or run
+`xattr -dr com.apple.quarantine "/Volumes/Tech AI monkey"`. Its checksum is
+listed in `checksums.txt`. It is explicitly unignored in this folder's
+`.gitignore`; remember to repeat that exception for future releases.
 
 Everything is built by `bash scripts/build-cli.sh`, which also verifies what it produced.
 The icons come from `cli/assets/` (`python3 scripts/make-icons.py` regenerates them), and
@@ -41,8 +45,8 @@ requirements text in `web/app/download/page.tsx` too.
 ## Verifying
 
 ```bash
-sha256sum tech-ai_1.0.0_amd64.deb
-dpkg-deb -f tech-ai_1.0.0_amd64.deb          # metadata (Depends, Arch, Version)
-objdump -f tech-ai_1.0.0_windows_x64.exe     # PE header -> x86-64 console app
-shasum -a 256 tech-ai_1.0.0_macos_universal.dmg
+sha256sum tech-ai_1.1.6_amd64.deb
+dpkg-deb -f tech-ai_1.1.6_amd64.deb          # metadata (Depends, Arch, Version)
+objdump -f tech-ai_1.1.6_windows_x64.exe     # PE header -> x86-64 console app
+shasum -a 256 tech-ai_1.1.6_macos_universal.dmg
 ```
