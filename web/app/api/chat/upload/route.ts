@@ -26,6 +26,8 @@ const VIDEO_EXTS = [
   "m2ts",
 ];
 
+const DOC_EXTS = ["txt", "md", "markdown", "rtf", "doc", "docx", "pdf"];
+
 const MAX_BYTES = 200 * 1024 * 1024;
 
 /** Walk up from cwd looking for the repo root (has agent/ and web/). */
@@ -78,11 +80,12 @@ export async function POST(request: Request) {
   const ext = extname(originalName).slice(1).toLowerCase();
   const isImage = IMAGE_EXTS.includes(ext);
   const isVideo = VIDEO_EXTS.includes(ext);
-  if (!isImage && !isVideo) {
+  const isDocument = DOC_EXTS.includes(ext);
+  if (!isImage && !isVideo && !isDocument) {
     return NextResponse.json(
       {
         ok: false,
-        error: `Unsupported file type ".${ext}". Images: ${IMAGE_EXTS.join(", ")}. Videos: ${VIDEO_EXTS.join(", ")}.`,
+        error: `Unsupported file type ".${ext}". Images: ${IMAGE_EXTS.join(", ")}. Videos: ${VIDEO_EXTS.join(", ")}. Documents: ${DOC_EXTS.join(", ")}.`,
       },
       { status: 415 },
     );
@@ -105,7 +108,7 @@ export async function POST(request: Request) {
     file: {
       storedAs,
       originalName,
-      kind: isImage ? "image" : "video",
+      kind: isImage ? "image" : isVideo ? "video" : "document",
       sizeBytes: file.size,
     },
   });

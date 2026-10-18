@@ -31,3 +31,6 @@ videos/*
 
 # Files the web chat uploads for the agent (images/videos)
 uploads/
+
+# Images created by the generate_image tool (served at /generated/)
+web/public/generated/

@@ -8,22 +8,51 @@ type ChatMessage = {
   id: number;
   role: Role;
   text: string;
-  attachment?: { name: string; kind: "image" | "video" };
+  attachment?: { name: string; kind: AttachmentKind };
 };
+
+type AttachmentKind = "image" | "video" | "document";
 
 type Attachment = {
   storedAs: string;
   originalName: string;
-  kind: "image" | "video";
+  kind: AttachmentKind;
   sizeBytes: number;
 };
 
+const KIND_ICON: Record<AttachmentKind, string> = { image: "🖼️", video: "🎬", document: "📄" };
+
 const ACCEPTED_FILES =
-  ".png,.jpg,.jpeg,.webp,.gif,.mp4,.m4v,.mov,.avi,.mkv,.webm,.wmv,.mpg,.mpeg,.3gp,.ogv,.ts,.mts,.m2ts";
+  ".png,.jpg,.jpeg,.webp,.gif,.mp4,.m4v,.mov,.avi,.mkv,.webm,.wmv,.mpg,.mpeg,.3gp,.ogv,.ts,.mts,.m2ts," +
+  ".txt,.md,.markdown,.rtf,.doc,.docx,.pdf";
 
 function humanSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
   return `${Math.round(bytes / 1024)} KB`;
+}
+
+const MARKDOWN_IMAGE = /!\[([^\]]*)\]\((\/[^)\s]+|https?:\/\/[^)\s]+)\)/g;
+
+function renderInline(text: string, keyPrefix: string) {
+  const nodes: React.ReactNode[] = [];
+  let last = 0;
+  for (const match of text.matchAll(MARKDOWN_IMAGE)) {
+    const start = match.index ?? 0;
+    if (start > last) nodes.push(text.slice(last, start));
+    nodes.push(
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        key={`${keyPrefix}-img-${start}`}
+        src={match[2]}
+        alt={match[1]}
+        className="my-2 max-h-80 rounded-lg border border-zinc-700"
+        loading="lazy"
+      />,
+    );
+    last = start + match[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes.length ? nodes : [text];
 }
 
 function renderMessageText(text: string) {
@@ -65,7 +94,13 @@ function renderMessageText(text: string) {
         </div>
       );
     }
-    return <span key={i}>{part}</span>;
+    return (
+      <span key={i}>
+        {renderInline(part, `p${i}`).map((node, j) =>
+          typeof node === "string" ? <span key={j}>{node}</span> : node,
+        )}
+      </span>
+    );
   });
 }
 
@@ -247,10 +282,14 @@ export default function Chat() {
     const att = attachment;
     if ((!typed && !att) || busy || uploading) return;
 
+    const tool =
+      att?.kind === "image" ? "analyze_image" : att?.kind === "video" ? "analyze_video" : "analyze_document";
+    const kindWord =
+      att?.kind === "image" ? "bilde" : att?.kind === "video" ? "video" : "dokument";
     const text = att
-      ? `${typed || "Se på vedlagt fil."}\n\n[Vedlagt: ${att.storedAs} — ${
-          att.kind === "image" ? "bilde" : "video"
-        }, ${humanSize(att.sizeBytes)}. Bruk ${att.kind === "image" ? "analyze_image" : "analyze_video"} med file "${att.storedAs}".]`
+      ? `${typed || "Se på vedlagt fil."}\n\n[Vedlagt: ${att.storedAs} — ${kindWord}, ${humanSize(
+          att.sizeBytes,
+        )}. Bruk ${tool} med file "${att.storedAs}".]`
       : typed;
 
     setBusy(true);
@@ -317,7 +356,7 @@ export default function Chat() {
           >
             {m.attachment && (
               <span className="mb-1 flex items-center gap-1.5 rounded-md bg-black/25 px-2 py-1 text-xs">
-                <span aria-hidden>{m.attachment.kind === "image" ? "🖼️" : "🎬"}</span>
+                <span aria-hidden>{KIND_ICON[m.attachment.kind]}</span>
                 <span className="truncate max-w-[16rem]">{m.attachment.name}</span>
               </span>
             )}
@@ -334,7 +373,7 @@ export default function Chat() {
 
       {attachment && (
         <div className="mt-3 flex items-center gap-2 self-start rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300">
-          <span aria-hidden>{attachment.kind === "image" ? "🖼️" : "🎬"}</span>
+          <span aria-hidden>{KIND_ICON[attachment.kind]}</span>
           <span className="max-w-[18rem] truncate">{attachment.originalName}</span>
           <span className="text-zinc-500">{humanSize(attachment.sizeBytes)}</span>
           <button
