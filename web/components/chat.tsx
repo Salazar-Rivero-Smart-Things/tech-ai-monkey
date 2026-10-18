@@ -104,6 +104,15 @@ function renderMessageText(text: string) {
   });
 }
 
+/** Gi opp en tur som ikke sender et eneste tegn på denne tiden. */
+const STREAM_IDLE_TIMEOUT_MS = 150_000;
+/** Absolutt tak for én tur, uansett aktivitet. */
+const STREAM_TOTAL_TIMEOUT_MS = 20 * 60_000;
+/** Selve innsendingen skal svare raskt; ellers er agenten tett. */
+const SEND_TIMEOUT_MS = 90_000;
+
+type RetryPayload = { raw: string; display: string; attachment?: ChatMessage["attachment"] };
+
 export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState<string | null>(null);
@@ -112,6 +121,7 @@ export default function Chat() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [retry, setRetry] = useState<RetryPayload | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
@@ -171,6 +181,15 @@ export default function Chat() {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ message: text }),
+        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+      }).catch((err: unknown) => {
+        throw new Error(
+          err instanceof Error && err.name === "TimeoutError"
+            ? "Agenten svarte ikke på forespørselen. Prøv igjen."
+            : err instanceof Error
+              ? err.message
+              : "Fikk ikke kontakt med agenten.",
+        );
       });
       if (!res.ok) throw new Error(await parseError(res));
       const body = (await res.json()) as { sessionId?: string; continuationToken?: string };
@@ -187,6 +206,15 @@ export default function Chat() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    }).catch((err: unknown) => {
+      throw new Error(
+        err instanceof Error && err.name === "TimeoutError"
+          ? "Agenten svarte ikke på forespørselen. Prøv igjen."
+          : err instanceof Error
+            ? err.message
+            : "Fikk ikke kontakt med agenten.",
+      );
     });
     if (!res.ok) throw new Error(await parseError(res));
     const body = (await res.json()) as { continuationToken?: string };
@@ -199,30 +227,59 @@ export default function Chat() {
       eventCountRef.current > 0
         ? `/eve/v1/session/${id}/stream?startIndex=${eventCountRef.current}`
         : `/eve/v1/session/${id}/stream`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(await parseError(res));
-    if (!res.body) return;
+
+    // En tur som aldri svarer skal gi en synlig feil med «Prøv igjen», ikke en
+    // evig spinner. Watchdogen avbryter strømmen og lar brukeren sende på nytt.
+    const abort = new AbortController();
+    const startedAt = Date.now();
+    let lastActivity = Date.now();
+    let timedOut: string | null = null;
+    const watchdog = setInterval(() => {
+      if (Date.now() - startedAt > STREAM_TOTAL_TIMEOUT_MS) {
+        timedOut = "Agenten brukte for lang tid på denne forespørselen.";
+      } else if (Date.now() - lastActivity > STREAM_IDLE_TIMEOUT_MS) {
+        timedOut = "Agenten sluttet å svare. Du kan prøve igjen.";
+      }
+      if (timedOut) abort.abort();
+    }, 5_000);
+
+    const res = await fetch(url, { signal: abort.signal }).catch((err: unknown) => {
+      clearInterval(watchdog);
+      throw err;
+    });
+    if (!res.ok) {
+      clearInterval(watchdog);
+      throw new Error(await parseError(res));
+    }
+    if (!res.body) {
+      clearInterval(watchdog);
+      return;
+    }
 
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buffer = "";
     let acc = "";
     let finished = false;
+    let sawTerminal = false;
 
     setStreaming("");
 
     const finish = () => {
       if (finished) return;
       finished = true;
+      clearInterval(watchdog);
       if (acc.trim()) addMessage("agent", acc);
       setStreaming(null);
     };
 
+    let failure: string | null = null;
+
     try {
-      while (true) {
+      outer: while (true) {
         const { done, value } = await reader.read();
+        lastActivity = Date.now();
         if (done) {
-          finish();
           break;
         }
         buffer += decoder.decode(value, { stream: true });
@@ -251,30 +308,40 @@ export default function Chat() {
             case "turn.failed":
             case "turn.cancelled":
             case "session.failed":
-              if (ev.data?.message) addMessage("error", ev.data.message);
-              finish();
-              return;
+              sawTerminal = true;
+              failure = ev.data?.message || "Agenten klarte ikke å fullføre denne forespørselen.";
+              break outer;
             case "billing.error":
               if (ev.data?.message) addMessage("error", ev.data.message);
               break;
             case "session.waiting":
               if (ev.data?.continuationToken) continuationRef.current = ev.data.continuationToken;
-              finish();
-              return;
+              sawTerminal = true;
+              break outer;
             case "turn.completed":
               // Wait for session.waiting (which follows turn.completed and carries continuationToken)
               break;
             case "session.completed":
-              finish();
-              return;
+              sawTerminal = true;
+              break outer;
             default:
               break;
           }
         }
       }
-    } catch {
-      finish();
+    } catch (err) {
+      if (!timedOut) {
+        finish();
+        throw err instanceof Error ? err : new Error("Tilkoblingen til agenten ble brutt.");
+      }
     }
+
+    finish();
+    if (!failure) {
+      if (timedOut) failure = timedOut;
+      else if (!sawTerminal) failure = "Agenten avsluttet uten å fullføre svaret. Prøv igjen.";
+    }
+    if (failure) throw new Error(failure);
   }
 
   async function send() {
@@ -292,15 +359,27 @@ export default function Chat() {
         )}. Bruk ${tool} med file "${att.storedAs}".]`
       : typed;
 
-    setBusy(true);
     setInput("");
     setAttachment(null);
-    addMessage("user", typed || "Se på vedlagt fil.", att ? { name: att.originalName, kind: att.kind } : undefined);
+    await dispatch({
+      raw: text,
+      display: typed || "Se på vedlagt fil.",
+      attachment: att ? { name: att.originalName, kind: att.kind } : undefined,
+    });
+  }
+
+  /** Én tur mot agenten. Alle feil ender i en synlig melding + «Prøv igjen». */
+  async function dispatch(payload: RetryPayload) {
+    if (busy) return;
+    setBusy(true);
+    setRetry(null);
+    addMessage("user", payload.display, payload.attachment);
     try {
-      const id = await sendTurn(sessionId, text);
+      const id = await sendTurn(sessionId, payload.raw);
       await streamReply(id);
     } catch (err) {
-      addMessage("error", err instanceof Error ? err.message : "Something went wrong.");
+      addMessage("error", err instanceof Error ? err.message : "Noe gikk galt.");
+      setRetry(payload);
     } finally {
       setBusy(false);
     }
@@ -314,6 +393,7 @@ export default function Chat() {
     setStreaming(null);
     setInput("");
     setAttachment(null);
+    setRetry(null);
   }
 
   return (
@@ -384,6 +464,19 @@ export default function Chat() {
             className="rounded px-1 text-zinc-400 hover:text-white disabled:opacity-50"
           >
             ×
+          </button>
+        </div>
+      )}
+
+      {retry && !busy && (
+        <div className="mt-3 flex items-center gap-2 self-start rounded-lg border border-red-900 bg-red-950/40 px-3 py-1.5 text-xs text-red-300">
+          <span>Agenten stoppet før svaret var ferdig.</span>
+          <button
+            type="button"
+            onClick={() => void dispatch(retry)}
+            className="rounded border border-red-700 px-2 py-0.5 font-medium text-red-200 hover:bg-red-900/60"
+          >
+            Prøv igjen
           </button>
         </div>
       )}

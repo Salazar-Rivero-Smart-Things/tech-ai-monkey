@@ -8,6 +8,9 @@
 Description=MyAI eve-agent (port 2000)
 After=network-online.target
 Wants=network-online.target
+# Start aldri å gi opp: krasjer agenten skal den bare starte på nytt, i det
+# uendelige. Uten dette gir systemd opp etter 5 feil på 10 s.
+StartLimitIntervalSec=0
 
 [Service]
 Type=simple
@@ -20,8 +23,9 @@ Environment=NODE_ENV=production
 EnvironmentFile=@@REPO@@/.env
 ExecStart=@@NODE_BIN@@/npm run start
 Restart=always
-RestartSec=5
+RestartSec=3
 KillMode=mixed
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target

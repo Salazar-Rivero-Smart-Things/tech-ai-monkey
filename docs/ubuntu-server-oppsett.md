@@ -564,11 +564,37 @@ ransomware eller brann.
 
 ---
 
-### Opprydding av sandkasser (viktig)
+### Opprydding skjer av seg selv
 
 Hver chat starter en Microsandbox-VM som blir stående (`EVE_PERSIST_SANDBOX=1`).
 Uten opprydding hoper de seg opp, RAM og swap blir fulle, og «opening sandbox
-session» henger til slutt. Hold maks 3 kjørende:
+session» henger til slutt.
+
+**Agenten rydder selv.** `agent/lib/supervisor.ts` starter sammen med agenten og
+kjører hvert minutt, i samme prosess. Ingenting skal installeres, og det finnes
+ingen cron-jobb eller skript kunden må huske på. Den gjør to ting:
+
+1. Fjerner Microsandbox-VM-er som har krasjet eller stoppet, og holder maks 3
+   kjørende (de nyeste blir stående).
+2. Fjerner turer som aldri ble ferdige – en halvferdig tur kan ellers blokkere
+   nye kommandoer. En sesjon som bare venter på neste melding regnes som frisk
+   og blir aldri rørt.
+
+Standardverdier, som kan overstyres i `.env` eller i service-filen:
+
+| Variabel | Standard | Betydning |
+|---|---|---|
+| `SUPERVISOR_INTERVAL_MS` | `60000` | Hvor ofte det ryddes |
+| `MAX_RUNNING_SANDBOXES` | `3` | Maks samtidige VM-er |
+| `SANDBOX_MIN_AGE_MINUTES` | `20` | VM-er yngre enn dette røres ikke |
+| `ABANDONED_RUN_MINUTES` | `15` | En tur uten aktivitet så lenge regnes som død |
+| `SUPERVISOR_DISABLED` | – | Sett til `1` for å skru av |
+
+Alt logges med `[supervisor]` i `journalctl -u myai-agent`. Er alt i orden er
+den stille og gir bare et livstegn hvert 10. minutt.
+
+Trenger du å rydde manuelt (f.eks. etter mye testing) finnes det et lite
+hjelpeskript:
 
 ```bash
 node scripts/prune-sandboxes.mjs                       # manuelt
@@ -576,17 +602,7 @@ MAX_RUNNING_SANDBOXES=2 node scripts/prune-sandboxes.mjs
 DRY_RUN=1 node scripts/prune-sandboxes.mjs             # vis hva som ville skjedd
 ```
 
-Legg den i cron hvert 10. minutt (ingen sudo):
-
-```cron
-*/10 * * * * cd /home/ai/tech-ai-monkey && MAX_RUNNING_SANDBOXES=3 MIN_AGE_MINUTES=10 \
-  /home/ai/.nvm/versions/node/v24.21.0/bin/node scripts/prune-sandboxes.mjs \
-  >> /home/ai/.cache/tech-ai-prune.log 2>&1
-```
-
-`MIN_AGE_MINUTES` hindrer at en VM som nettopp er tatt i bruk fjernes — da
-ville agenten bare laget en ny med en gang. Skriptet rører bare
-`eve-sbx-ses-*`; test-VM-er og annet står urørt.
+Det rører bare `eve-sbx-ses-*`; test-VM-er og annet står urørt.
 
 ---
 

@@ -2,6 +2,22 @@ import fs from 'fs';
 
 let patchedCount = 0;
 
+// Creating a fresh Microsandbox VM can hang forever when the host is short on
+// memory. Bound it so a turn fails (and can be retried) instead of freezing.
+const SANDBOX_HELPER = `async function microsandboxTimeout(p, ms, label) {
+\tlet timer;
+\ttry {
+\t\treturn await Promise.race([p, new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(label)), ms); })]);
+\t} finally {
+\t\tclearTimeout(timer);
+\t}
+}
+`;
+
+const withSandboxHelper = (text) =>
+  text.includes('function microsandboxTimeout(') ? text : SANDBOX_HELPER + text;
+
+
 // Wrap MicrosandboxVm's native handle so a crashed VM is recovered and the
 // failed operation is retried instead of failing the whole turn with
 // "[AgentClient] ... Connection refused".
@@ -13,8 +29,8 @@ const RECOVERY_HELPERS = `
 \tasync #recoverSandbox() {
 \t\tconsole.warn(\`[eve:microsandbox] connection lost for \${this.#a}, recovering...\`);
 \t\ttry {
-\t\t\tlet t = await this.#e.module.Sandbox.get(this.#a);
-\t\t\tlet n = t.status === \`running\` || t.status === \`draining\` ? await t.connectWithTimeout(5e3) : await t.startDetached();
+\t\t\tlet t = await microsandboxTimeout(this.#e.module.Sandbox.get(this.#a), 3e4, \`Microsandbox lookup timed out\`);
+\t\t\tlet n = t.status === \`running\` || t.status === \`draining\` ? await t.connectWithTimeout(5e3) : await microsandboxTimeout(t.startDetached(), 12e4, \`Microsandbox start timed out\`);
 \t\t\tawait n.execWith(\`bash\`, (e) => e.args([\`-c\`, \`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));
 \t\t\tthis.#i = this.#wrapHandle(n);
 \t\t\treturn true;
@@ -136,14 +152,14 @@ if (fs.existsSync(bundleFile)) {
   const newConnectBundle = `async function connectMicrosandbox(e) {
 \tlet t;
 \ttry {
-\t\tt = await e.module.Sandbox.get(e.metadata.sandboxName);
+\t\tt = await microsandboxTimeout(e.module.Sandbox.get(e.metadata.sandboxName), 3e4, \`Microsandbox lookup timed out\`);
 \t} catch (t) {
 \t\tif (!isMicrosandboxNotFoundError(t)) throw t;
 \t\treturn e.metadata.stateSnapshotName === void 0 ? null : await restoreMicrosandboxSessionSnapshot(e);
 \t}
 \tif (t.status !== \`running\` && t.status !== \`draining\` && e.metadata.stateSnapshotName !== void 0) return await restoreMicrosandboxSessionSnapshot(e);
 \ttry {
-\t\tlet n = t.status === \`running\` || t.status === \`draining\` ? await t.connectWithTimeout(5e3) : await t.startDetached();
+\t\tlet n = t.status === \`running\` || t.status === \`draining\` ? await t.connectWithTimeout(5e3) : await microsandboxTimeout(t.startDetached(), 12e4, \`Microsandbox start timed out\`);
 \t\tawait Promise.race([
 \t\t\t(async () => {
 \t\t\t\tawait n.execWith(\`bash\`, (b) => b.args([\`-c\`, \`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));
@@ -177,7 +193,7 @@ if (fs.existsSync(bundleFile)) {
     console.log("Patched MicrosandboxVm crash recovery in .output bundle!");
   }
 
-  fs.writeFileSync(bundleFile, code);
+  fs.writeFileSync(bundleFile, withSandboxHelper(code));
 }
 
 // 2. Patch node_modules/eve (source files before eve build)
@@ -206,7 +222,7 @@ if (fs.existsSync(runtimeFile)) {
 
   const connectRuntimeRegex = /async function connectMicrosandbox\(e\)\{[\s\S]*?(?=async function restoreMicrosandboxSessionSnapshot\(e\))/;
 
-  const newConnectRuntime = `async function connectMicrosandbox(e){let t;try{t=await e.module.Sandbox.get(e.metadata.sandboxName)}catch(t){if(!isMicrosandboxNotFoundError$1(t))throw t;return e.metadata.stateSnapshotName===void 0?null:await restoreMicrosandboxSessionSnapshot(e)}if(t.status!==\`running\`&&t.status!==\`draining\`&&e.metadata.stateSnapshotName!==void 0)return await restoreMicrosandboxSessionSnapshot(e);try{let n=t.status===\`running\`||t.status===\`draining\`?await t.connectWithTimeout(5e3):await t.startDetached();await Promise.race([(async()=>{await n.execWith(\`bash\`,b=>b.args([\`-c\`,\`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));await n.fs().exists(WORKSPACE_ROOT)})(),new Promise((_,rej)=>setTimeout(()=>rej(new Error(\`Microsandbox probe timed out\`)),4e3))]);return new MicrosandboxVm({module:e.module,options:e.options,sessionKey:e.sessionKey,tags:e.tags},n,e.metadata.sandboxName,e.metadata.networkPolicy,e.metadataPath,e.metadata.optionsHash,e.metadata.stateSnapshotName)}catch(err){console.warn(\`[eve:microsandbox] Stale sandbox \${e.metadata.sandboxName} (\${err?.message}), recreating...\`);await removeSandboxIfExists(e.module,e.metadata.sandboxName).catch(()=>{});return null}}`;
+  const newConnectRuntime = `async function connectMicrosandbox(e){let t;try{t=await microsandboxTimeout(e.module.Sandbox.get(e.metadata.sandboxName),3e4,\`Microsandbox lookup timed out\`)}catch(t){if(!isMicrosandboxNotFoundError$1(t))throw t;return e.metadata.stateSnapshotName===void 0?null:await restoreMicrosandboxSessionSnapshot(e)}if(t.status!==\`running\`&&t.status!==\`draining\`&&e.metadata.stateSnapshotName!==void 0)return await restoreMicrosandboxSessionSnapshot(e);try{let n=t.status===\`running\`||t.status===\`draining\`?await t.connectWithTimeout(5e3):await microsandboxTimeout(t.startDetached(),12e4,\`Microsandbox start timed out\`);await Promise.race([(async()=>{await n.execWith(\`bash\`,b=>b.args([\`-c\`,\`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));await n.fs().exists(WORKSPACE_ROOT)})(),new Promise((_,rej)=>setTimeout(()=>rej(new Error(\`Microsandbox probe timed out\`)),4e3))]);return new MicrosandboxVm({module:e.module,options:e.options,sessionKey:e.sessionKey,tags:e.tags},n,e.metadata.sandboxName,e.metadata.networkPolicy,e.metadataPath,e.metadata.optionsHash,e.metadata.stateSnapshotName)}catch(err){console.warn(\`[eve:microsandbox] Stale sandbox \${e.metadata.sandboxName} (\${err?.message}), recreating...\`);await removeSandboxIfExists(e.module,e.metadata.sandboxName).catch(()=>{});return null}}`;
 
   if (connectRuntimeRegex.test(runtimeCode)) {
     runtimeCode = runtimeCode.replace(connectRuntimeRegex, newConnectRuntime);
@@ -221,7 +237,7 @@ if (fs.existsSync(runtimeFile)) {
     console.log("Patched MicrosandboxVm crash recovery in node_modules/eve runtime!");
   }
 
-  fs.writeFileSync(runtimeFile, runtimeCode);
+  fs.writeFileSync(runtimeFile, withSandboxHelper(runtimeCode));
 }
 
 // 3. Patch dev-environment.js in node_modules/eve

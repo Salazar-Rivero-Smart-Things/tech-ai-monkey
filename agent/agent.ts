@@ -1,6 +1,8 @@
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { defineAgent } from "eve";
 
+import { startSupervisor } from "./lib/supervisor";
+
 // ---------------------------------------------------------------------------
 // Tech AI Monkey – tech-ai.tech monkey v2.0 (DeepSeek Flash Vision)
 //
@@ -50,6 +52,10 @@ const model = createOpenAICompatible({
 }).chatModel(MODEL_ID);
 
 console.log(`[agent] ${AGENT_CORE_CODENAME} -> modell: ${MODEL_ID} (${BASE_URL})`);
+
+// Selvhelbredelse ligger i selve agenten: ingen cron-jobb eller skript kunden
+// må huske å kjøre. Se agent/lib/supervisor.ts.
+startSupervisor();
 
 export default defineAgent({
   model,
