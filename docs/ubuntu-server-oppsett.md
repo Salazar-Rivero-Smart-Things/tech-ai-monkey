@@ -579,12 +579,14 @@ DRY_RUN=1 node scripts/prune-sandboxes.mjs             # vis hva som ville skjed
 Legg den i cron hvert 10. minutt (ingen sudo):
 
 ```cron
-*/10 * * * * cd /home/ai/tech-ai-monkey && MAX_RUNNING_SANDBOXES=3 \
+*/10 * * * * cd /home/ai/tech-ai-monkey && MAX_RUNNING_SANDBOXES=3 MIN_AGE_MINUTES=10 \
   /home/ai/.nvm/versions/node/v24.21.0/bin/node scripts/prune-sandboxes.mjs \
   >> /home/ai/.cache/tech-ai-prune.log 2>&1
 ```
 
-Skriptet rører bare `eve-sbx-ses-*`; test-VM-er og annet står urørt.
+`MIN_AGE_MINUTES` hindrer at en VM som nettopp er tatt i bruk fjernes — da
+ville agenten bare laget en ny med en gang. Skriptet rører bare
+`eve-sbx-ses-*`; test-VM-er og annet står urørt.
 
 ---
 

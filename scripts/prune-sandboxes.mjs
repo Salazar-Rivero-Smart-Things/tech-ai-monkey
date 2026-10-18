@@ -8,10 +8,11 @@
 //
 //   1. fjerner alle krasjede og stoppede eve-sbx-ses-* VM-er
 //   2. beholder de N nyeste kjørende VM-ene (standard 3) og fjerner resten
+//      som har stått ubrukt lenger enn MIN_AGE_MINUTES (standard 10)
 //
 // Kjøres fra cron hvert 10. minutt, eller manuelt:
 //     node scripts/prune-sandboxes.mjs
-//     MAX_RUNNING_SANDBOXES=2 node scripts/prune-sandboxes.mjs
+//     MAX_RUNNING_SANDBOXES=2 MIN_AGE_MINUTES=0 node scripts/prune-sandboxes.mjs
 //     DRY_RUN=1 node scripts/prune-sandboxes.mjs
 //
 // Bare sandkasser som heter eve-sbx-ses-* røres; test-VM-er og annet står.
@@ -23,6 +24,9 @@ import { fileURLToPath } from "node:url";
 
 const REPO_DIR = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const MAX_RUNNING = Number(process.env.MAX_RUNNING_SANDBOXES ?? 3);
+// Ikke fjern en VM som nettopp er tatt i bruk: da ville agenten bare laget en
+// ny med en gang. Bare VM-er som har stått urørt en stund ryddes.
+const MIN_AGE_MINUTES = Number(process.env.MIN_AGE_MINUTES ?? 10);
 const DRY_RUN = process.env.DRY_RUN === "1";
 
 const localCli = join(REPO_DIR, "node_modules", ".bin", "microsandbox");
@@ -91,9 +95,17 @@ const running = rows
   .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 
 const excess = running.slice(0, Math.max(0, running.length - MAX_RUNNING));
-for (const row of excess) remove(row.name);
+const cutoff = Date.now() - MIN_AGE_MINUTES * 60_000;
+const removable = excess.filter((row) => {
+  const created = Date.parse(row.createdAt);
+  return Number.isFinite(created) && created < cutoff;
+});
+for (const row of removable) remove(row.name);
 
-const kept = running.length - excess.length;
+const kept = running.length - removable.length;
+const tooNew = excess.length - removable.length;
 console.log(
-  `${stamp}  ${rows.length} sandkasser: fjernet ${dead.length} døde og ${excess.length} gamle, beholdt ${kept} (maks ${MAX_RUNNING})`,
+  `${stamp}  ${rows.length} sandkasser: fjernet ${dead.length} døde og ${removable.length} gamle, ` +
+    `beholdt ${kept} (maks ${MAX_RUNNING}` +
+    `${tooNew > 0 ? `, ${tooNew} for nye til å røre (<${MIN_AGE_MINUTES} min)` : ""})`,
 );
