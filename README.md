@@ -5,6 +5,8 @@
 
 **Tech AI monkey** er en selvlærende, kryssplattform AI-agent (macOS, Linux og Windows) med web-dashboard, terminal-CLI og API.
 
+- **Video:** agenten kan se på skjermopptak og videoer (FFmpeg) og beskrive hva som skjer, med tidsstempler.
+
 ---
 
 ## Pris & Gratis kvote (240 000 gratis hver annen uke)
