@@ -49,6 +49,10 @@ export default defineTool({
       .boolean()
       .optional()
       .describe("Set false to only get metadata and stills, without calling the vision model"),
+    keepFrames: z
+      .boolean()
+      .optional()
+      .describe("Copy the stills into /workspace/videos/frames/ as well (default false)"),
   }),
   async execute(input, ctx) {
     const tools = await ffmpegTools();
@@ -121,9 +125,14 @@ export default defineTool({
 
       let sandboxFrames: string[] = [];
       let sandboxError: string | null = null;
-      if (sandbox) {
+      if (input.keepFrames === true && sandbox) {
         try {
-          sandboxFrames = await copyFramesToSandbox(sandbox, slug, frames);
+          sandboxFrames = await Promise.race([
+            copyFramesToSandbox(sandbox, slug, frames),
+            new Promise<string[]>((_, reject) =>
+              setTimeout(() => reject(new Error("tidsavbrudd ved kopiering til sandkassen")), 20_000),
+            ),
+          ]);
         } catch (error) {
           sandboxError = error instanceof Error ? error.message : String(error);
         }
@@ -156,7 +165,9 @@ export default defineTool({
               visionMissing:
                 "Ingen bildemodell er konfigurert (VIDEO_VISION_MODEL eller OPENAI_COMPAT_*), så du får bare metadata og stillbilder.",
             }),
-        note: "Stills are available in /workspace/videos/frames/<name>/ — open them with read_file or include them in an artifact when the user wants to see them.",
+        note: input.keepFrames
+          ? "The description above is computed on the host. Stills were also copied to /workspace/videos/frames/<name>/ as binary JPEGs — do NOT open them with read_file (it fails on binary data); the description already contains what they show."
+          : "The description above is computed on the host; no files were written to the sandbox.",
       };
     } finally {
       await removeTempDir(tempDir);
