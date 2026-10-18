@@ -73,7 +73,7 @@ async function readTurnEvents(sessionId, token, startIndex = 0) {
 
 async function run() {
   console.log('====================================================================');
-  console.log(' TECH AI MONKEY v1.1.6 (MONKEY ARGON / QWEN 3.8 HYBRID CORE)');
+  console.log(' TECH AI MONKEY v2.0.0 (MONKEY ARGON / QWEN 3.8 HYBRID CORE)');
   console.log(' MULTITASK- & MULTIPROSJEKT-TEST I VIRTUELL MASKIN (5 OPPGAVER)');
   console.log('====================================================================');
 
@@ -172,7 +172,7 @@ async function run() {
     headers: { authorization: `Bearer ${token5}`, 'content-type': 'application/json' },
     body: JSON.stringify({
       message:
-        'Bruk nå verktøyet save_artifact med title "Node Kryssplattform App v1.1.6", description "Kryssplattform Node.js-modul testet i VM", projectType "script" og directory "/workspace/prosjekt3_node_app". Gi deretter en kort bekreftelse på at alle 3 prosjektene (/workspace/prosjekt1_sysdiag, /workspace/prosjekt2_data_engine, /workspace/prosjekt3_node_app) er ferdige.',
+        'Bruk nå verktøyet save_artifact med title "Node Kryssplattform App v2.0.0", description "Kryssplattform Node.js-modul testet i VM", projectType "script" og directory "/workspace/prosjekt3_node_app". Gi deretter en kort bekreftelse på at alle 3 prosjektene (/workspace/prosjekt1_sysdiag, /workspace/prosjekt2_data_engine, /workspace/prosjekt3_node_app) er ferdige.',
       continuationToken,
     }),
   });

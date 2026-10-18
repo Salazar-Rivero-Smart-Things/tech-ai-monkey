@@ -23,15 +23,15 @@ const MODELS = [
   {
     id: "tech-ai-monkey",
     object: "model",
-    version: "v1.1.6",
+    version: "v2.0.0",
     core: "qwen3.8-argon-hybrid",
     created: CREATED,
     owned_by: "tech-ai",
   },
   {
-    id: "tech-ai-monkey-v1.1.6",
+    id: "tech-ai-monkey-v2.0.0",
     object: "model",
-    version: "v1.1.6",
+    version: "v2.0.0",
     core: "qwen3.8-argon-hybrid",
     created: CREATED,
     owned_by: "tech-ai",
@@ -39,7 +39,7 @@ const MODELS = [
   {
     id: "tech-ai-monkey-argon",
     object: "model",
-    version: "v1.1.6",
+    version: "v2.0.0",
     core: "qwen3.8-argon-hybrid",
     created: CREATED,
     owned_by: "tech-ai",

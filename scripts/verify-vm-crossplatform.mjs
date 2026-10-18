@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Pre-build & End-to-End Verification Suite for Tech AI Monkey v1.1.6 (Monkey Argon / Qwen 3.8 Hybrid Core)
+ * Pre-build & End-to-End Verification Suite for Tech AI Monkey v2.0.0 (Monkey Argon / Qwen 3.8 Hybrid Core)
  *
  * Tests:
  *  1. Isolated Microsandbox Virtual Machine #1 (macOS / Darwin simulation + cross-platform processs_tool)
@@ -324,7 +324,7 @@ async function withVm(name, fn) {
 
 async function main() {
   console.log("=======================================================================");
-  console.log("PRE-BUILD VM & KRYSSPLATTFORM-TESTSUITE — TECH AI MONKEY v1.1.6 (ARGON)");
+  console.log("PRE-BUILD VM & KRYSSPLATTFORM-TESTSUITE — TECH AI MONKEY v2.0.0 (ARGON)");
   console.log("=======================================================================");
 
   // ---------------------------------------------------------------------------
@@ -461,9 +461,9 @@ console.log("Host inside VM:", os.platform(), os.release());
   });
 
   // ---------------------------------------------------------------------------
-  // Test 4: Verifiser Qwen 3.8 / Monkey Argon v1.1.6 hybrid-kjernen
+  // Test 4: Verifiser Qwen 3.8 / Monkey Argon v2.0.0 hybrid-kjernen
   // ---------------------------------------------------------------------------
-  console.log("\n---> Tester Monkey Argon v1.1.6 (Qwen 3.8 + DeepSeek Hybrid Core)...");
+  console.log("\n---> Tester Monkey Argon v2.0.0 (Qwen 3.8 + DeepSeek Hybrid Core)...");
   const t0 = performance.now();
   const groqRes = await fetch(`${process.env.OPENAI_COMPAT_BASE_URL}/chat/completions`, {
     method: "POST",
@@ -476,7 +476,7 @@ console.log("Host inside VM:", os.platform(), os.release());
       messages: [
         {
           role: "user",
-          content: "Svar på én linje på norsk: Bekreft at Qwen 3.8 Argon-kjernen for Tech AI Monkey v1.1.6 er aktiv.",
+          content: "Svar på én linje på norsk: Bekreft at Qwen 3.8 Argon-kjernen for Tech AI Monkey v2.0.0 er aktiv.",
         },
       ],
       max_tokens: 64,

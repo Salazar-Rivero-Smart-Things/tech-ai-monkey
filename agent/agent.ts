@@ -2,7 +2,7 @@ import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { defineAgent } from "eve";
 
 // ---------------------------------------------------------------------------
-// Tech AI Monkey – Modellkjerne v1.1.6 (Monkey Argon / Qwen 3.8 Hybrid Core)
+// Tech AI Monkey – Modellkjerne v2.0.0 (Monkey Argon / Qwen 3.8 Hybrid Core)
 //
 // Rekkefølge & hybrid ruting:
 //   1. AGENT_MODEL        Ren modellstreng via Vercel AI Gateway
@@ -15,8 +15,8 @@ import { defineAgent } from "eve";
 //   5. Fallback           "poolside/laguna-s-2.1-free" via AI Gateway.
 // ---------------------------------------------------------------------------
 
-export const AGENT_VERSION = "v1.1.6";
-export const AGENT_CORE_CODENAME = "Monkey Argon v1.1.6 (Qwen 3.8 Hybrid Core)";
+export const AGENT_VERSION = "v2.0.0";
+export const AGENT_CORE_CODENAME = "Monkey Argon v2.0.0 (Qwen 3.8 Hybrid Core)";
 
 /** Heltall fra miljøvariabel hvis positivt, ellers fallback. */
 function positiveInt(value: string | undefined, fallback: number): number {
