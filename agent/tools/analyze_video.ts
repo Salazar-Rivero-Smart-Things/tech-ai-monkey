@@ -8,6 +8,7 @@ import {
   extractFrames,
   ffmpegTools,
   findHostVideo,
+  findUpload,
   makeTempDir,
   probeVideo,
   pullSandboxVideo,
@@ -87,16 +88,26 @@ export default defineTool({
         if (!query) {
           throw new Error("Oppgi enten file (fra videobiblioteket) eller path (inne i /workspace).");
         }
-        const video = await findHostVideo(query);
-        if (!video) {
-          throw new Error(
-            `Fant ingen video som heter "${query}". Kall list_videos for å se hva som ligger i biblioteket.`,
-          );
+        // Attachments from the chat (+) land in the uploads folder; the video
+        // library lives in videos/. Try both.
+        const upload = await findUpload(query);
+        if (upload && upload.kind === "video") {
+          videoPath = upload.path;
+          slug = upload.file.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9-_]+/g, "-").toLowerCase();
+          title = upload.originalName;
+          source = `upload:${upload.file}`;
+        } else {
+          const video = await findHostVideo(query);
+          if (!video) {
+            throw new Error(
+              `Fant ingen video som heter "${query}". Den kan ligge i opplastingsmappen (fra +-knappen) eller i videobiblioteket. Kall list_videos for biblioteket, eller be brukeren laste opp på nytt.`,
+            );
+          }
+          videoPath = video.path;
+          slug = video.slug;
+          title = video.file;
+          source = video.path;
         }
-        videoPath = video.path;
-        slug = video.slug;
-        title = video.file;
-        source = video.path;
       }
 
       const info = await probeVideo(videoPath);

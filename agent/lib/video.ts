@@ -49,6 +49,9 @@ export const VIDEO_FORMATS = [
 /** Where extracted stills land inside the sandbox, relative to /workspace. */
 export const SANDBOX_VIDEOS_DIR = "videos";
 
+/** Image formats the chat accepts as attachments. */
+export const IMAGE_FORMATS = ["png", "jpg", "jpeg", "webp", "gif"] as const;
+
 /** Refuse to load anything bigger than this into memory from the sandbox. */
 export const MAX_SANDBOX_VIDEO_BYTES = 512 * 1024 * 1024;
 
@@ -120,6 +123,70 @@ export function videosDir(): string {
   if (override) return resolve(override);
   const root = findRepoRoot(process.cwd()) ?? process.cwd();
   return join(root, "videos");
+}
+
+/** Folder the web chat writes uploaded attachments into. */
+export function uploadsDir(): string {
+  const override = process.env.EVE_UPLOADS_DIR?.trim();
+  if (override) return resolve(override);
+  const root = findRepoRoot(process.cwd()) ?? process.cwd();
+  return join(root, "uploads");
+}
+
+export interface UploadedFile {
+  /** Stored file name, e.g. "1730390000-skjermbilde.png". */
+  file: string;
+  /** Original name from the user's computer. */
+  originalName: string;
+  format: string;
+  kind: "image" | "video" | "other";
+  path: string;
+  sizeBytes: number;
+}
+
+/** Find an uploaded attachment by stored name, original name or slug. */
+export async function findUpload(query: string): Promise<UploadedFile | null> {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return null;
+  const base = needle.split("/").pop() ?? needle;
+
+  let entries: string[];
+  try {
+    entries = await readdir(uploadsDir());
+  } catch {
+    return null;
+  }
+
+  for (const file of entries) {
+    const lower = file.toLowerCase();
+    const format = extname(file).slice(1).toLowerCase();
+    const matches =
+      lower === base ||
+      lower.includes(base) ||
+      lower.replace(/^\d+-/, "") === base;
+    if (!matches) continue;
+    const path = join(uploadsDir(), file);
+    try {
+      const info = await stat(path);
+      if (!info.isFile()) continue;
+      const kind: UploadedFile["kind"] = (IMAGE_FORMATS as readonly string[]).includes(format)
+        ? "image"
+        : (VIDEO_FORMATS as readonly string[]).includes(format)
+          ? "video"
+          : "other";
+      return {
+        file,
+        originalName: file.replace(/^\d+-/, ""),
+        format,
+        kind,
+        path,
+        sizeBytes: info.size,
+      };
+    } catch {
+      // ignore unreadable entries
+    }
+  }
+  return null;
 }
 
 function titleFromFile(file: string): string {
@@ -386,6 +453,8 @@ export async function describeFrames(
     question?: string;
     durationSeconds?: number | null;
     title?: string;
+    /** "image" describes one still instead of a video. */
+    mode?: "video" | "image";
   } = {},
 ): Promise<FrameDescription | null> {
   const endpoint = visionEndpoint();
@@ -400,16 +469,30 @@ export async function describeFrames(
     })),
   );
 
-  const duration = options.durationSeconds ? `Videoens lengde er ${timestamp(options.durationSeconds)}. ` : "";
-  const legend = frames.map((frame, index) => `Bilde ${index + 1}: ${timestamp(frame.atSeconds)}`).join(", ");
   const question = options.question?.trim();
-  const prompt = [
-    `${duration}Dette er ${frames.length} bilder hentet fra en video${options.title ? ` kalt "${options.title}"` : ""}.`,
-    `Rekkefølge og tidspunkt — ${legend}.`,
-    question
-      ? `Svar på dette: ${question}`
-      : "Beskriv hva som skjer i videoen: hva som vises, hvilke handlinger som utføres, tekst som er lesbar på skjermen, og hvordan innholdet endrer seg fra bilde til bilde. Svar på norsk, kort og konkret.",
-  ].join("\n");
+  const isImage = options.mode === "image";
+  const prompt = isImage
+    ? [
+        `Dette er et bilde${options.title ? ` kalt "${options.title}"` : ""}.`,
+        question
+          ? `Svar på dette: ${question}`
+          : "Beskriv bildet: hva som vises, handlinger, og lesbar tekst (ta med feilmeldinger ordrett). Svar på norsk, kort og konkret.",
+      ].join("\n")
+    : (() => {
+        const duration = options.durationSeconds
+          ? `Videoens lengde er ${timestamp(options.durationSeconds)}. `
+          : "";
+        const legend = frames
+          .map((frame, index) => `Bilde ${index + 1}: ${timestamp(frame.atSeconds)}`)
+          .join(", ");
+        return [
+          `${duration}Dette er ${frames.length} bilder hentet fra en video${options.title ? ` kalt "${options.title}"` : ""}.`,
+          `Rekkefølge og tidspunkt — ${legend}.`,
+          question
+            ? `Svar på dette: ${question}`
+            : "Beskriv hva som skjer i videoen: hva som vises, hvilke handlinger som utføres, tekst som er lesbar på skjermen, og hvordan innholdet endrer seg fra bilde til bilde. Svar på norsk, kort og konkret.",
+        ].join("\n");
+      })();
 
   const configuredMax = Number(process.env.VIDEO_VISION_MAX_TOKENS);
   // Groq's on-demand tier enforces a low output-tokens-per-minute limit, so the

@@ -8,7 +8,23 @@ type ChatMessage = {
   id: number;
   role: Role;
   text: string;
+  attachment?: { name: string; kind: "image" | "video" };
 };
+
+type Attachment = {
+  storedAs: string;
+  originalName: string;
+  kind: "image" | "video";
+  sizeBytes: number;
+};
+
+const ACCEPTED_FILES =
+  ".png,.jpg,.jpeg,.webp,.gif,.mp4,.m4v,.mov,.avi,.mkv,.webm,.wmv,.mpg,.mpeg,.3gp,.ogv,.ts,.mts,.m2ts";
+
+function humanSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
 
 function renderMessageText(text: string) {
   const parts = text.split(/(```[\s\S]*?```)/g);
@@ -59,6 +75,9 @@ export default function Chat() {
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const idRef = useRef(0);
   const continuationRef = useRef<string | null>(null);
@@ -68,9 +87,32 @@ export default function Chat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, streaming]);
 
-  function addMessage(role: Role, text: string) {
+  function addMessage(role: Role, text: string, att?: ChatMessage["attachment"]) {
     const id = ++idRef.current;
-    setMessages((prev) => [...prev, { id, role, text }]);
+    setMessages((prev) => [...prev, { id, role, text, attachment: att }]);
+  }
+
+  async function uploadFile(file: File) {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/chat/upload", { method: "POST", body: form });
+      const body = (await res.json().catch(() => ({}))) as {
+        ok?: boolean;
+        error?: string;
+        file?: Attachment;
+      };
+      if (!res.ok || !body.ok || !body.file) {
+        throw new Error(body.error || `${res.status} ${res.statusText}`);
+      }
+      setAttachment(body.file);
+    } catch (err) {
+      addMessage("error", err instanceof Error ? err.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   }
 
   async function parseError(res: Response): Promise<string> {
@@ -201,11 +243,20 @@ export default function Chat() {
   }
 
   async function send() {
-    const text = input.trim();
-    if (!text || busy) return;
+    const typed = input.trim();
+    const att = attachment;
+    if ((!typed && !att) || busy || uploading) return;
+
+    const text = att
+      ? `${typed || "Se på vedlagt fil."}\n\n[Vedlagt: ${att.storedAs} — ${
+          att.kind === "image" ? "bilde" : "video"
+        }, ${humanSize(att.sizeBytes)}. Bruk ${att.kind === "image" ? "analyze_image" : "analyze_video"} med file "${att.storedAs}".]`
+      : typed;
+
     setBusy(true);
     setInput("");
-    addMessage("user", text);
+    setAttachment(null);
+    addMessage("user", typed || "Se på vedlagt fil.", att ? { name: att.originalName, kind: att.kind } : undefined);
     try {
       const id = await sendTurn(sessionId, text);
       await streamReply(id);
@@ -223,6 +274,7 @@ export default function Chat() {
     setMessages([]);
     setStreaming(null);
     setInput("");
+    setAttachment(null);
   }
 
   return (
@@ -263,6 +315,12 @@ export default function Chat() {
                   : "bg-zinc-800"
             }`}
           >
+            {m.attachment && (
+              <span className="mb-1 flex items-center gap-1.5 rounded-md bg-black/25 px-2 py-1 text-xs">
+                <span aria-hidden>{m.attachment.kind === "image" ? "🖼️" : "🎬"}</span>
+                <span className="truncate max-w-[16rem]">{m.attachment.name}</span>
+              </span>
+            )}
             {renderMessageText(m.text)}
           </div>
         ))}
@@ -274,13 +332,50 @@ export default function Chat() {
         )}
       </div>
 
+      {attachment && (
+        <div className="mt-3 flex items-center gap-2 self-start rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300">
+          <span aria-hidden>{attachment.kind === "image" ? "🖼️" : "🎬"}</span>
+          <span className="max-w-[18rem] truncate">{attachment.originalName}</span>
+          <span className="text-zinc-500">{humanSize(attachment.sizeBytes)}</span>
+          <button
+            type="button"
+            onClick={() => setAttachment(null)}
+            disabled={busy}
+            aria-label="Remove attachment"
+            className="rounded px-1 text-zinc-400 hover:text-white disabled:opacity-50"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
           void send();
         }}
-        className="mt-4 flex gap-2"
+        className="mt-4 flex items-end gap-2"
       >
+        <input
+          ref={fileRef}
+          type="file"
+          accept={ACCEPTED_FILES}
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) void uploadFile(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={busy || uploading}
+          title="Attach an image or video"
+          aria-label="Attach an image or video"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-zinc-700 text-xl leading-none hover:bg-zinc-900 disabled:opacity-50"
+        >
+          {uploading ? "…" : "+"}
+        </button>
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -296,7 +391,7 @@ export default function Chat() {
         />
         <button
           type="submit"
-          disabled={busy || !input.trim()}
+          disabled={busy || uploading || (!input.trim() && !attachment)}
           className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium hover:bg-blue-500 disabled:opacity-50"
         >
           {busy ? "Thinking…" : "Send"}

@@ -28,3 +28,6 @@ AuthKey_*.p8
 # Videos dropped in for the agent to analyse: large and usually private.
 videos/*
 !videos/README.md
+
+# Files the web chat uploads for the agent (images/videos)
+uploads/
