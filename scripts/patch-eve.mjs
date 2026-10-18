@@ -2,6 +2,97 @@ import fs from 'fs';
 
 let patchedCount = 0;
 
+// Wrap MicrosandboxVm's native handle so a crashed VM is recovered and the
+// failed operation is retried instead of failing the whole turn with
+// "[AgentClient] ... Connection refused".
+const RECOVERY_HELPERS = `
+\t#isStaleSandboxError(e) {
+\t\tlet t = String(e && e.message ? e.message : e);
+\t\treturn /AgentClient|Connection refused|ECONNREFUSED|os error 111|failed to connect|no such file or directory.*\\.sock|sandbox.*(not running|crashed|stopped|missing)/i.test(t);
+\t}
+\tasync #recoverSandbox() {
+\t\tconsole.warn(\`[eve:microsandbox] connection lost for \${this.#a}, recovering...\`);
+\t\ttry {
+\t\t\tlet t = await this.#e.module.Sandbox.get(this.#a);
+\t\t\tlet n = t.status === \`running\` || t.status === \`draining\` ? await t.connectWithTimeout(5e3) : await t.startDetached();
+\t\t\tawait n.execWith(\`bash\`, (e) => e.args([\`-c\`, \`true\`]).cwd(WORKSPACE_ROOT).user(MICROSANDBOX_USER));
+\t\t\tthis.#i = this.#wrapHandle(n);
+\t\t\treturn true;
+\t\t} catch {}
+\t\ttry {
+\t\t\tawait removeSandboxIfExists(this.#e.module, this.#a);
+\t\t\tlet t = createProviderName(\`eve-sbx-ses\`, \`\${this.#e.sessionKey}:\${randomUUID()}\`);
+\t\t\tlet n = await createMicrosandbox({
+\t\t\t\tfromSnapshot: this.#o,
+\t\t\t\tmodule: this.#e.module,
+\t\t\t\tname: t,
+\t\t\t\tnetworkPolicy: this.#n,
+\t\t\t\toptions: this.#e.options,
+\t\t\t\ttags: this.#e.tags,
+\t\t\t\tuser: MICROSANDBOX_USER,
+\t\t\t\tworkdir: WORKSPACE_ROOT
+\t\t\t});
+\t\t\tthis.#i = this.#wrapHandle(n);
+\t\t\tthis.#a = t;
+\t\t\tthis.#t !== void 0 && this.#r !== void 0 && await this.writeMetadata(this.#t, this.#r);
+\t\t\treturn true;
+\t\t} catch {
+\t\t\treturn false;
+\t\t}
+\t}
+\t#wrapHandle(e) {
+\t\tthis.__microsandboxRawHandle = e;
+\t\tlet t = this, n = (r) => new Proxy(r, {
+\t\t\tget(i, a) {
+\t\t\t\tlet o = i[a];
+\t\t\t\tif (typeof o !== \`function\`) return o;
+\t\t\t\treturn (...s) => {
+\t\t\t\t\tlet c = o.apply(i, s);
+\t\t\t\t\treturn c && typeof c.catch === \`function\` ? c.catch(async (l) => {
+\t\t\t\t\t\tif (!t.#isStaleSandboxError(l)) throw l;
+\t\t\t\t\t\tif (!(await t.#recoverSandbox())) throw l;
+\t\t\t\t\t\treturn t.__microsandboxRawHandle.fs()[a](...s);
+\t\t\t\t\t}) : c;
+\t\t\t\t};
+\t\t\t}
+\t\t});
+\t\treturn new Proxy(e, {
+\t\t\tget(r, i) {
+\t\t\t\tlet a = r[i];
+\t\t\t\tif (typeof a !== \`function\`) return a;
+\t\t\t\tif (i === \`fs\`) return () => n(a.call(r));
+\t\t\t\treturn (...o) => {
+\t\t\t\t\tlet s = a.apply(r, o);
+\t\t\t\t\treturn s && typeof s.catch === \`function\` ? s.catch(async (c) => {
+\t\t\t\t\t\tif (!t.#isStaleSandboxError(c)) throw c;
+\t\t\t\t\t\tif (!(await t.#recoverSandbox())) throw c;
+\t\t\t\t\t\treturn t.__microsandboxRawHandle[i](...o);
+\t\t\t\t\t}) : s;
+\t\t\t\t};
+\t\t\t}
+\t\t});
+\t}
+`;
+
+function patchMicrosandboxRecovery(code) {
+  if (code.includes('#recoverSandbox')) return code;
+
+  const ctorRegex = /constructor\(e\s*,\s*t\s*,\s*n\s*,\s*r\s*,\s*i\s*,\s*a\s*,\s*o\)\s*\{[^}]*\}/;
+  if (!ctorRegex.test(code)) return code;
+
+  let patched = code.replace(ctorRegex, (match) => match + RECOVERY_HELPERS);
+
+  const handleRegex = /this\.#i\s*=\s*t(?=\s*[,;}])/;
+  if (!handleRegex.test(patched)) return code;
+  patched = patched.replace(handleRegex, 'this.#i = this.#wrapHandle(t)');
+
+  const networkRegex = /this\.#i\s*=\s*(await createMicrosandbox\(\{[\s\S]*?\}\))/;
+  if (!networkRegex.test(patched)) return code;
+  patched = patched.replace(networkRegex, (match, created) => `this.#i = this.#wrapHandle(${created})`);
+
+  return patched;
+}
+
 // 1. Patch .output/server/_libs/eve+zod.mjs (production bundle)
 const bundleFile = '.output/server/_libs/eve+zod.mjs';
 if (fs.existsSync(bundleFile)) {
@@ -79,6 +170,13 @@ if (fs.existsSync(bundleFile)) {
     console.log("Patched connectMicrosandbox liveness probe in .output bundle!");
   }
 
+  const bundleWithRecovery = patchMicrosandboxRecovery(code);
+  if (bundleWithRecovery !== code) {
+    code = bundleWithRecovery;
+    patchedCount++;
+    console.log("Patched MicrosandboxVm crash recovery in .output bundle!");
+  }
+
   fs.writeFileSync(bundleFile, code);
 }
 
@@ -114,6 +212,13 @@ if (fs.existsSync(runtimeFile)) {
     runtimeCode = runtimeCode.replace(connectRuntimeRegex, newConnectRuntime);
     patchedCount++;
     console.log("Patched connectMicrosandbox in node_modules/eve runtime!");
+  }
+
+  const runtimeWithRecovery = patchMicrosandboxRecovery(runtimeCode);
+  if (runtimeWithRecovery !== runtimeCode) {
+    runtimeCode = runtimeWithRecovery;
+    patchedCount++;
+    console.log("Patched MicrosandboxVm crash recovery in node_modules/eve runtime!");
   }
 
   fs.writeFileSync(runtimeFile, runtimeCode);
