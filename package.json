@@ -17,14 +17,14 @@
   "dependencies": {
     "@ai-sdk/openai-compatible": "latest",
     "ai": "latest",
-    "eve": "^0.27.11",
+    "eve": "^0.83.0",
     "jose": "latest",
     "zod": "latest"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "just-bash": "^3.6.0",
-    "microsandbox": "^0.5.10",
+    "microsandbox": "^0.7.9",
     "typescript": "latest"
   },
   "overrides": {
