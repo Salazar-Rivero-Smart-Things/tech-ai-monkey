@@ -86,23 +86,31 @@ export default function VsCodeDocsPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-bold">Use {siteConfig.name} in VS Code</h1>
+        <h1 className="text-3xl font-bold">Use {siteConfig.name} (Ollama Engine) in VS Code</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          VS Code can talk to any endpoint that speaks the OpenAI Chat Completions API. This
-          instance exposes exactly that, so the same agent you chat with on this site can appear as
-          a model in the VS Code model picker — using your own API key, no Copilot plan required.
+          {siteConfig.name} runs on its own independent <strong>Ollama</strong> brain (no OpenAI or
+          DeepSeek dependency) with continuous automatic API-key rotation. You can connect VS Code
+          directly to this Ollama-powered agent — or download Ollama yourself on the{" "}
+          <Link href="/download" className="text-emerald-400 hover:underline">
+            Download &amp; Ollama page
+          </Link>
+          .
         </p>
 
-        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-500/5 p-5 text-sm leading-relaxed text-zinc-300">
-          <h2 className="font-semibold text-amber-200">Works in Ask mode, not Agent mode</h2>
+        <div className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-sm leading-relaxed text-zinc-300">
+          <h2 className="font-semibold text-emerald-200">
+            Powered by Ollama — Continuous Automatic Key Rotation
+          </h2>
           <p className="mt-2">
-            The agent runs its own tools (web research, memory, notebooks) on the server, so its
-            answers already include that work. VS Code&apos;s <em>Agent</em> mode instead asks the
-            model to call <em>VS Code&apos;s</em> tools, which this endpoint does not expose. Keep{" "}
+            Unlike external OpenAI or DeepSeek endpoints that stop working when an external provider
+            key expires, {siteConfig.name} runs its own local Ollama model (
+            <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">tech-ai-monkey</code>) and
+            automatically refreshes its internal engine token every 10 minutes. In VS Code, keep{" "}
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">
               &quot;toolCalling&quot;: false
             </code>{" "}
-            and use it in regular chat (Ask). For agentic coding work, keep using a Copilot model.
+            and use it in Ask mode because the agent runs its own sandbox and research tools on the
+            server.
           </p>
         </div>
 

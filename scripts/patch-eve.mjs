@@ -243,6 +243,140 @@ function patchMicrosandboxRecovery(code) {
   return patched;
 }
 
+function patchDirectLocalSandbox(code) {
+  if (code.includes('createDirectLocalVm')) return code;
+  const regex = /async\s+function\s+prewarmMicrosandboxTemplate\s*\(\s*i\s*\)\s*\{[\s\S]*?(?=function\s+createHandle(?:\$\d+)?\s*\()/;
+  if (!regex.test(code)) return code;
+  const replacement = `async function createDirectLocalVm(appRootInput, sessionKeyInput) {
+\tconst fsMod = await import("node:fs/promises");
+\tconst pathMod = await import("node:path");
+\tconst cpMod = await import("node:child_process");
+\tconst appRoot = appRootInput || process.cwd();
+\tconst wsRoot = pathMod.join(appRoot, ".eve", "workspaces", "shared");
+\tawait fsMod.mkdir(wsRoot, { recursive: true });
+\tconst mapPath = (p) => {
+\t\tconst clean = String(p || "/workspace").replace(/^\\/workspace\\/?/, "");
+\t\tconst resolved = pathMod.resolve(wsRoot, clean);
+\t\treturn resolved.startsWith(wsRoot) ? resolved : wsRoot;
+\t};
+\treturn {
+\t\tid: String(sessionKeyInput || "shared"),
+\t\tasync setNetworkPolicy() {},
+\t\tasync captureState(hash) {
+\t\t\treturn {
+\t\t\t\tnetworkPolicy: "allow-all",
+\t\t\t\toptionsHash: hash,
+\t\t\t\tsandboxName: "local-workspace",
+\t\t\t\tversion: 2
+\t\t\t};
+\t\t},
+\t\tasync shutdown() {},
+\t\tasync readFileBytes(p) {
+\t\t\ttry {
+\t\t\t\treturn Buffer.from(await fsMod.readFile(mapPath(p)));
+\t\t\t} catch {
+\t\t\t\treturn null;
+\t\t\t}
+\t\t},
+\t\tasync removePath(opts) {
+\t\t\tawait fsMod.rm(mapPath(opts.path), {
+\t\t\t\tforce: !!opts.force,
+\t\t\t\trecursive: !!opts.recursive
+\t\t\t}).catch(() => {});
+\t\t},
+\t\tasync writeFiles(files) {
+\t\t\tfor (const f of files) {
+\t\t\t\tconst target = mapPath(f.path);
+\t\t\t\tawait fsMod.mkdir(pathMod.dirname(target), { recursive: true });
+\t\t\t\tawait fsMod.writeFile(target, f.content);
+\t\t\t}
+\t\t},
+\t\tasync spawn(opts) {
+\t\t\tif (opts.abortSignal?.aborted) {
+\t\t\t\tthrow new DOMException("The operation was aborted.", "AbortError");
+\t\t\t}
+\t\t\tconst cwd = opts.workingDirectory ? mapPath(opts.workingDirectory) : wsRoot;
+\t\t\tawait fsMod.mkdir(cwd, { recursive: true }).catch(() => {});
+\t\t\tconst child = cpMod.spawn("bash", ["-lc", opts.command], {
+\t\t\t\tcwd,
+\t\t\t\tenv: { ...process.env, ...opts.env, HOME: wsRoot }
+\t\t\t});
+\t\t\tlet outCtrl, errCtrl, resolveExit;
+\t\t\tconst exitPromise = new Promise((r) => { resolveExit = r; });
+\t\t\tconst stdout = new ReadableStream({ start(c) { outCtrl = c; } });
+\t\t\tconst stderr = new ReadableStream({ start(c) { errCtrl = c; } });
+\t\t\tchild.stdout.on("data", (d) => { try { outCtrl.enqueue(new Uint8Array(d)); } catch {} });
+\t\t\tchild.stderr.on("data", (d) => { try { errCtrl.enqueue(new Uint8Array(d)); } catch {} });
+\t\t\tchild.on("close", (code) => {
+\t\t\t\ttry { outCtrl.close(); } catch {}
+\t\t\t\ttry { errCtrl.close(); } catch {}
+\t\t\t\tresolveExit(code ?? 0);
+\t\t\t});
+\t\t\tchild.on("error", () => {
+\t\t\t\ttry { outCtrl.close(); } catch {}
+\t\t\t\ttry { errCtrl.close(); } catch {}
+\t\t\t\tresolveExit(1);
+\t\t\t});
+\t\t\tif (opts.abortSignal) {
+\t\t\t\topts.abortSignal.addEventListener("abort", () => { child.kill("SIGKILL"); }, { once: true });
+\t\t\t}
+\t\t\treturn {
+\t\t\t\tstdout,
+\t\t\t\tstderr,
+\t\t\t\tasync wait() {
+\t\t\t\t\tconst exitCode = await exitPromise;
+\t\t\t\t\treturn { exitCode };
+\t\t\t\t},
+\t\t\t\tasync kill() {
+\t\t\t\t\tchild.kill("SIGKILL");
+\t\t\t\t}
+\t\t\t};
+\t\t}
+\t};
+}
+async function prewarmMicrosandboxTemplate(i) {
+\tconst vm = await createDirectLocalVm(i?.prewarmInput?.runtimeContext?.appRoot, "shared");
+\tconst session = buildSandboxSession(createMicrosandboxInternalSession(vm), async () => {});
+\tif (i?.prewarmInput?.seedFiles?.length > 0) {
+\t\tawait writeSandboxSeedFiles(session, i.prewarmInput.seedFiles);
+\t}
+\treturn { reused: !0 };
+}
+async function createMicrosandboxHandle(e) {
+\tconst sessionKey = String(e?.createInput?.sessionKey ?? "shared");
+\tconst vm = await createDirectLocalVm(e?.createInput?.runtimeContext?.appRoot, sessionKey);
+\treturn createHandle(vm, e.backendName, e.optionsHash, () => {});
+}
+`;
+  const out = code.replace(regex, replacement);
+  if (out !== code) console.log('Aktivert direkte lokal sandkasse (0 ms oppstart, 0 VM RAM, fryser aldri)');
+  return out;
+}
+
+function patchWarmSharedSandbox(code) {
+  if (code.includes('eve-sbx-shared-warm')) return code;
+  const regex = /async\s+function\s+createPreparedMicrosandbox\s*\(\s*e\s*\)\s*\{/;
+  if (!regex.test(code)) return code;
+  const replacement = `async function createPreparedMicrosandbox(e) {
+\tlet warmName = "eve-sbx-shared-warm";
+\ttry {
+\t\tconst fsMod = await import("node:fs");
+\t\tif (fsMod.existsSync(".eve/warm-sandbox-name")) {
+\t\t\tconst saved = fsMod.readFileSync(".eve/warm-sandbox-name", "utf8").trim();
+\t\t\tif (saved) warmName = saved;
+\t\t}
+\t\tlet sbx = await microsandboxTimeout(e.module.Sandbox.get(warmName), 5e3, "Warm lookup timeout");
+\t\tif (sbx && (sbx.status === "running" || sbx.status === "draining")) {
+\t\t\tlet h = await sbx.connectWithTimeout(5e3);
+\t\t\treturn new MicrosandboxVm({ module: e.module, options: e.options, sessionKey: e.sessionKey, tags: e.tags }, h, warmName, e.networkPolicy);
+\t\t}
+\t} catch {}
+\te = { ...e, name: warmName };`;
+  const out = code.replace(regex, replacement);
+  if (out !== code) console.log('Aktivert gjenbruk av varm delt sandkasse (eve-sbx-shared-warm)');
+  return out;
+}
+
 // 1. Patch .output/server/_libs/eve+zod.mjs (production bundle)
 const bundleFile = '.output/server/_libs/eve+zod.mjs';
 if (fs.existsSync(bundleFile)) {
@@ -329,10 +463,24 @@ if (fs.existsSync(bundleFile)) {
 
   fs.writeFileSync(
     bundleFile,
-    patchSandboxCreateTimeout(
-      boundRecoveryCreate(patchSandboxTimeouts(withSandboxHelper(upgradeRecoveryHelpers(code)))),
+    patchDirectLocalSandbox(
+      patchWarmSharedSandbox(
+        patchSandboxCreateTimeout(
+          boundRecoveryCreate(patchSandboxTimeouts(withSandboxHelper(upgradeRecoveryHelpers(code)))),
+        ),
+      ),
     ),
   );
+}
+
+const lifecycleFile = 'node_modules/eve/dist/src/execution/sandbox/bindings/microsandbox-lifecycle.js';
+if (fs.existsSync(lifecycleFile)) {
+  const lcCode = fs.readFileSync(lifecycleFile, 'utf8');
+  const patchedLc = patchDirectLocalSandbox(lcCode);
+  if (patchedLc !== lcCode) {
+    fs.writeFileSync(lifecycleFile, patchedLc);
+    patchedCount++;
+  }
 }
 
 // 2. Patch node_modules/eve (source files before eve build)
@@ -376,7 +524,7 @@ if (fs.existsSync(runtimeFile)) {
     console.log("Patched MicrosandboxVm crash recovery in node_modules/eve runtime!");
   }
 
-  fs.writeFileSync(runtimeFile, withSandboxHelper(upgradeRecoveryHelpers(runtimeCode)));
+  fs.writeFileSync(runtimeFile, patchWarmSharedSandbox(withSandboxHelper(upgradeRecoveryHelpers(runtimeCode))));
 }
 
 // 3. Patch dev-environment.js in node_modules/eve

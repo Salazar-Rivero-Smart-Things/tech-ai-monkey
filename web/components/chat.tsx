@@ -24,7 +24,7 @@ const KIND_ICON: Record<AttachmentKind, string> = { image: "🖼️", video: "�
 
 const ACCEPTED_FILES =
   ".png,.jpg,.jpeg,.webp,.gif,.mp4,.m4v,.mov,.avi,.mkv,.webm,.wmv,.mpg,.mpeg,.3gp,.ogv,.ts,.mts,.m2ts," +
-  ".txt,.md,.markdown,.rtf,.doc,.docx,.pdf";
+  ".txt,.md,.markdown,.rtf,.doc,.docx,.pdf,.php,.html,.css,.js,.ts,.json,.sql";
 
 function humanSize(bytes: number): string {
   if (bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
@@ -60,31 +60,33 @@ function renderMessageText(text: string) {
   return parts.map((part, i) => {
     if (part.startsWith("```") && part.endsWith("```")) {
       const contentLines = part.slice(3, -3).split("\n");
-      const language = contentLines[0].trim();
+      const rawLang = contentLines[0].trim().toLowerCase();
       const code = contentLines.slice(1).join("\n");
+      const isPhp = rawLang === "php" || code.includes("<?php");
+      const displayLang = isPhp ? "php" : rawLang || "code";
 
       return (
         <div key={i} className="my-2 overflow-hidden rounded-md border border-zinc-700 bg-black">
           <div className="flex items-center justify-between bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400">
-            <span>{language || "code"}</span>
+            <span>{displayLang}</span>
             <div className="flex gap-3">
               <button onClick={() => navigator.clipboard.writeText(code)} className="hover:text-white transition-colors">
                 Copy
               </button>
               <button onClick={() => {
-                const blob = new Blob([code], { type: "text/plain" });
+                const blob = new Blob([code], { type: "text/plain;charset=utf-8" });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement("a");
                 a.href = url;
-                let ext = language || "txt";
+                let ext = isPhp ? "php" : rawLang || "txt";
                 if (ext === "javascript") ext = "js";
                 if (ext === "typescript") ext = "ts";
                 if (ext === "python") ext = "py";
-                a.download = `file.${ext}`;
+                a.download = ext === "php" || ext === "html" ? `index.${ext}` : `file.${ext}`;
                 a.click();
                 URL.revokeObjectURL(url);
               }} className="hover:text-white transition-colors">
-                Download
+                {isPhp ? "Download .php" : "Download"}
               </button>
             </div>
           </div>

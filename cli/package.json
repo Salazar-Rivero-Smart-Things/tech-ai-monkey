@@ -1,6 +1,6 @@
 {
   "name": "tech-ai-cli",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "private": true,
   "description": "Command-line client for Tech AI monkey (tech-ai.tech)",
   "type": "module",

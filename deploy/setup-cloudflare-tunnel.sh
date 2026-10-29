@@ -67,6 +67,8 @@ ingress:
     service: ${APP}
     originRequest:
       httpHostHeader: ${HOST1}
+  - hostname: ntfy.tech-ai.tech
+    service: http://127.0.0.1:2586
   - service: http_status:404
 EOF
 

@@ -97,13 +97,22 @@
 </head>
 <body>
   <header>
-    <span class="title">Tech AI Monkey</span>
+    <span class="title">Tech AI Monkey <span style="font-size:0.75em;padding:3px 8px;border-radius:999px;background:#064e3b;color:#6ee7b7;border:1px solid #059669;margin-left:8px;">Ollama Local Engine · Auto-Key Active</span></span>
+    <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" style="font-size:0.85em;padding:7px 10px;border-radius:8px;background:#065f46;color:#ecfdf5;text-decoration:none;border:1px solid #10b981;">Last ned Ollama</a>
     <input id="apiKey" class="key" type="password" placeholder="API key (optional in local dev)" />
     <button id="saveKey" title="Save API key to this browser">Save key</button>
     <button id="newChat">New chat</button>
     <button id="clearHistory" class="danger">Clear history</button>
     <button id="resetChat" class="danger">Reset chat</button>
   </header>
+  <details style="margin:6px 16px 0;padding:8px 12px;border-radius:8px;background:#111827;border:1px solid #1f2937;font-size:0.82em;color:#9ca3af;">
+    <summary style="cursor:pointer;color:#6ee7b7;font-weight:600;">Slik fungerer den uavhengige Ollama-hjernen (Ingen OpenAI / DeepSeek nødvendig)</summary>
+    <div style="margin-top:8px;line-height:1.5;">
+      <strong>1. 100 % selvstendig motor:</strong> Agenten kjører lokalt på <code>http://127.0.0.1:11434/v1</code> med modellen <code>tech-ai-monkey</code> (<code>llama3.1:8b</code>) via Ollama — 0 kr per token.<br/>
+      <strong>2. Kontinuerlig nøkkelrotasjon:</strong> Agenten fornyer automatisk sin interne Ollama-nøkkel (<code>sk-ollama-live-…</code>) hvert 10. minutt og sjekker helsen hvert minutt, slik at den aldri stopper opp.<br/>
+      <strong>3. Last ned Ollama:</strong> Linux: <code>curl -fsSL https://ollama.com/install.sh | sh &amp;&amp; ollama pull llama3.1:8b</code> · <a href="https://ollama.com/download/OllamaSetup.exe" target="_blank" style="color:#60a5fa;">Windows (.exe)</a> · <a href="https://ollama.com/download/Ollama-darwin.zip" target="_blank" style="color:#60a5fa;">macOS (.zip)</a>
+    </div>
+  </details>
   <div class="hint" id="status">Starting…</div>
   <main id="log"></main>
   <footer>
@@ -118,8 +127,9 @@ const sendBtn = document.getElementById('send');
 const apiKeyEl = document.getElementById('apiKey');
 const statusEl = document.getElementById('status');
 
-let sessionId = localStorage.getItem('agentSessionId') || null;
+let sessionId = null;
 let continuationToken = null;
+let eventCount = 0;
 let apiKey = localStorage.getItem('agentApiKey') || '';
 apiKeyEl.value = apiKey;
 
@@ -161,8 +171,7 @@ async function sendMessage() {
     let id = sessionId;
     let res;
     if (!id) {
-      // First message: create the session and dispatch the turn in one call.
-      // The eve channel requires a JSON body on POST /eve/v1/session.
+      eventCount = 0;
       res = await fetch('/eve/v1/session', {
         method: 'POST',
         headers: authHeaders({ 'content-type': 'application/json' }),
@@ -176,7 +185,6 @@ async function sendMessage() {
       sessionId = id;
       localStorage.setItem('agentSessionId', sessionId);
     } else {
-      // Follow-up: continue the session with the current continuation token.
       const payload = { message: text };
       if (continuationToken) payload.continuationToken = continuationToken;
       res = await fetch(`/eve/v1/session/${id}`, {
@@ -197,7 +205,10 @@ async function sendMessage() {
 }
 
 async function streamReply(id) {
-  const res = await fetch(`/eve/v1/session/${id}/stream`, { headers: authHeaders() });
+  const streamUrl = eventCount > 0
+    ? `/eve/v1/session/${id}/stream?startIndex=${eventCount}`
+    : `/eve/v1/session/${id}/stream`;
+  const res = await fetch(streamUrl, { headers: authHeaders() });
   if (!res.ok) throw new Error(await parseError(res));
 
   const bubble = addMsg('', 'agent');
@@ -207,12 +218,50 @@ async function streamReply(id) {
   let done = false;
 
   const finish = () => {
+    if (done) return;
     done = true;
     setStatus(sessionId ? 'Session ' + sessionId : '');
-    if (!bubble.textContent.trim()) bubble.textContent = '(no response)';
+    const raw = bubble.textContent || '';
+    if (!raw.trim()) {
+      bubble.textContent = '(no response)';
+      return;
+    }
+    const fenceMatch = raw.match(/```([a-zA-Z0-9_-]*)\n([\s\S]*?)(?:```|$)/);
+    if (fenceMatch || raw.includes('<?php')) {
+      const lang = (fenceMatch ? fenceMatch[1] : 'php').trim().toLowerCase();
+      const code = fenceMatch ? fenceMatch[2] : raw.slice(raw.indexOf('<?php'));
+      const isPhp = lang === 'php' || code.includes('<?php');
+      const ext = isPhp ? 'php' : (lang === 'html' ? 'html' : (lang === 'javascript' ? 'js' : (lang || 'txt')));
+      const fileName = (ext === 'php' || ext === 'html') ? `index.${ext}` : `file.${ext}`;
+      const bar = document.createElement('div');
+      bar.style.cssText = 'margin-top:10px;padding-top:8px;border-top:1px solid #273244;display:flex;gap:8px;';
+      const copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Kopier kode';
+      copyBtn.style.cssText = 'font-size:0.8em;padding:5px 10px;background:#1f2937;border-color:#374151;';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(code);
+        copyBtn.textContent = 'Kopiert!';
+        setTimeout(() => { copyBtn.textContent = 'Kopier kode'; }, 1500);
+      };
+      const dlBtn = document.createElement('button');
+      dlBtn.textContent = `Last ned ${fileName}`;
+      dlBtn.style.cssText = 'font-size:0.8em;padding:5px 10px;background:#065f46;color:#ecfdf5;border-color:#10b981;';
+      dlBtn.onclick = () => {
+        const blob = new Blob([code], { type: 'text/plain;charset=utf-8' });
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = u;
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(u);
+      };
+      bar.appendChild(copyBtn);
+      bar.appendChild(dlBtn);
+      bubble.appendChild(bar);
+    }
   };
 
-  while (!done) {
+  outer: while (!done) {
     const { done: readDone, value } = await reader.read();
     if (readDone) break;
     buffer += decoder.decode(value, { stream: true });
@@ -220,6 +269,7 @@ async function streamReply(id) {
     buffer = lines.pop();
     for (const line of lines) {
       if (!line.trim()) continue;
+      eventCount++;
       let ev;
       try { ev = JSON.parse(line); } catch (_) { continue; }
       switch (ev.type) {
@@ -232,23 +282,28 @@ async function streamReply(id) {
           }
           break;
         case 'turn.failed':
+        case 'turn.cancelled':
+        case 'session.failed':
           if (ev.data?.message) addMsg('Turn failed: ' + ev.data.message, 'error');
           finish();
-          break;
+          break outer;
         case 'session.waiting':
           if (ev.data?.continuationToken) continuationToken = ev.data.continuationToken;
           finish();
-          break;
+          break outer;
         case 'turn.completed':
+          // Wait for session.waiting which immediately follows turn.completed
+          break;
         case 'session.completed':
           finish();
-          break;
+          break outer;
         default:
           break;
       }
       log.scrollTop = log.scrollHeight;
     }
   }
+  finish();
 }
 
 sendBtn.addEventListener('click', sendMessage);
@@ -265,6 +320,7 @@ document.getElementById('saveKey').addEventListener('click', () => {
 document.getElementById('newChat').addEventListener('click', () => {
   sessionId = null;
   continuationToken = null;
+  eventCount = 0;
   localStorage.removeItem('agentSessionId');
   log.innerHTML = '';
   addMsg('Started a new chat.', 'system');

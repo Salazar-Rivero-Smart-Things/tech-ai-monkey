@@ -26,7 +26,7 @@ const VIDEO_EXTS = [
   "m2ts",
 ];
 
-const DOC_EXTS = ["txt", "md", "markdown", "rtf", "doc", "docx", "pdf"];
+const DOC_EXTS = ["txt", "md", "markdown", "rtf", "doc", "docx", "pdf", "php", "html", "css", "js", "ts", "json", "sql"];
 
 const MAX_BYTES = 200 * 1024 * 1024;
 

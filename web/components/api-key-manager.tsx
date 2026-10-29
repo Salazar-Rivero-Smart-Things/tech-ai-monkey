@@ -167,14 +167,30 @@ export default function ApiKeyManager({ unlimited }: { unlimited: boolean }) {
       )}
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5 text-sm text-zinc-400">
-        <h2 className="text-base font-semibold text-zinc-100">Command line</h2>
-        <p className="mt-2">Download the CLI and sign in:</p>
-        <pre className="mt-3 overflow-x-auto rounded bg-black/50 p-3 font-mono text-xs text-zinc-300">{`tech-ai login                 # browser (Google or e-mail)
+        <h2 className="text-base font-semibold text-zinc-100">
+          Ollama Engine &amp; Command Line
+        </h2>
+        <p className="mt-2">
+          Tech AI monkey runs on its own independent <strong>Ollama</strong> brain (no OpenAI or
+          DeepSeek dependency) with automatic continuous key rotation every 10 minutes so the agent
+          never stops.
+        </p>
+        <p className="mt-2">Download Ollama or the CLI and sign in:</p>
+        <pre className="mt-3 overflow-x-auto rounded bg-black/50 p-3 font-mono text-xs text-zinc-300">{`# Install Ollama locally (Linux):
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull llama3.1:8b
+
+# Or use the Tech AI monkey CLI:
+tech-ai login                 # browser (Google or e-mail)
 tech-ai login --key tai_...   # paste an API key
 tech-ai ask "hello"
 tech-ai chat`}</pre>
         <p className="mt-3">
-          Get the installer at <a className="text-blue-400 hover:underline" href="/download">/download</a>.
+          Get Ollama and the CLI installer at{" "}
+          <a className="text-emerald-400 hover:underline" href="/download">
+            /download
+          </a>
+          .
         </p>
       </div>
     </div>

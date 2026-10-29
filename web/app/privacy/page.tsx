@@ -86,14 +86,9 @@ export default function PrivacyPage() {
                     <td className="py-2">Name, email and payment/billing data (we never store full card numbers)</td>
                   </tr>
                   <tr>
-                    <td className="py-2 pr-3 whitespace-nowrap">DeepSeek (Hangzhou, China)</td>
-                    <td className="py-2 pr-3">The AI model that generates the agent&apos;s answers</td>
-                    <td className="py-2">The text (prompt) you send to the agent</td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 pr-3 whitespace-nowrap">Vercel Inc. (USA)</td>
-                    <td className="py-2 pr-3">AI Gateway — used only as fallback if our primary model provider is unavailable</td>
-                    <td className="py-2">The text (prompt) in that fallback request</td>
+                    <td className="py-2 pr-3 whitespace-nowrap">{siteConfig.companyName} — Local Ollama Engine (Norway)</td>
+                    <td className="py-2 pr-3">Self-hosted AI model (Ollama) that generates the agent&apos;s answers locally</td>
+                    <td className="py-2">The text (prompt) you send to the agent — processed 100% on our own server in Norway</td>
                   </tr>
                   <tr>
                     <td className="py-2 pr-3 whitespace-nowrap">one.com (Denmark/EU)</td>
@@ -108,17 +103,12 @@ export default function PrivacyPage() {
           <div>
             <h2 className="text-lg font-semibold text-zinc-100">5. Transfers outside the EEA</h2>
             <p className="mt-2">
-              Your account data is stored in our own database on a server in Norway and does not
-              leave the EEA. A few sub-processors are outside the EEA (Cloudflare, Slack, Stripe,
-              PayPal and Vercel in the USA, and DeepSeek in China). Those transfers rely on the EU
-              Standard Contractual Clauses and the additional safeguards required by the GDPR.
-            </p>
-            <p className="mt-2">
-              Only the minimum leaves the EEA: the <strong>text you type in a chat</strong> is sent
-              to DeepSeek to produce an answer. Please do not paste sensitive personal data (health
-              information, your social security number or similar) into the chat. If you prefer not
-              to use a provider outside the EEA, contact us and we will disable the external AI
-              provider for your account.
+              Your account data and AI chat prompts are processed and stored on our own server in
+              Norway using our local <strong>Ollama</strong> AI engine — your chat prompts are{" "}
+              <strong>never</strong> sent to external AI providers such as OpenAI or DeepSeek. A few
+              optional infrastructure sub-processors are outside the EEA (Cloudflare, Slack, Stripe,
+              and PayPal in the USA). Those transfers rely on the EU Standard Contractual Clauses
+              and the additional safeguards required by the GDPR.
             </p>
           </div>
 

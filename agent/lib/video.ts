@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import type { SandboxSession } from "eve/sandbox";
+import { getActiveOllamaApiKey, getOllamaBaseUrl, getOllamaModelId } from "./ollama-auth";
 import { slugify } from "./skills-store";
 
 // ---------------------------------------------------------------------------
@@ -419,18 +420,17 @@ export async function extractAudioWav(path: string, outPath: string): Promise<st
 export function visionEndpoint(): { baseUrl: string; apiKey: string; model: string } | null {
   const model =
     process.env.VIDEO_VISION_MODEL?.trim() ||
-    process.env.OPENAI_COMPAT_MODEL?.trim() ||
-    process.env.AGENT_MODEL?.trim() ||
-    "";
+    process.env.OLLAMA_VISION_MODEL?.trim() ||
+    getOllamaModelId();
   const baseUrl = (
     process.env.VIDEO_VISION_BASE_URL?.trim() ||
-    process.env.OPENAI_COMPAT_BASE_URL?.trim() ||
-    ""
+    getOllamaBaseUrl()
   ).replace(/\/+$/, "");
+  const configuredKey = process.env.VIDEO_VISION_API_KEY?.trim() || "";
   const apiKey =
-    process.env.VIDEO_VISION_API_KEY?.trim() ||
-    process.env.OPENAI_COMPAT_API_KEY?.trim() ||
-    "";
+    !configuredKey || configuredKey === "ollama" || configuredKey === "auto-rotate"
+      ? getActiveOllamaApiKey()
+      : configuredKey;
   if (!model || !baseUrl) return null;
   return { baseUrl, apiKey, model };
 }

@@ -4,6 +4,8 @@ import { open, readFile, readdir, rm, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 
+import { maintainOllamaKeyAndHealth, rotateOllamaApiKey } from "./ollama-auth";
+
 const execFileAsync = promisify(execFile);
 
 // ---------------------------------------------------------------------------
@@ -254,6 +256,14 @@ async function tick(): Promise<void> {
     const report = await withLock(root, async () => {
       const lines: string[] = [];
       let changed = false;
+      try {
+        const ollamaStatus = await maintainOllamaKeyAndHealth();
+        lines.push(ollamaStatus.text);
+        changed ||= ollamaStatus.changed;
+      } catch (error) {
+        lines.push(`ollama-sjekk feilet: ${error instanceof Error ? error.message : String(error)}`);
+        changed = true;
+      }
       for (const task of [pruneRuns, pruneSandboxes]) {
         try {
           const result = await task(root);
@@ -283,6 +293,8 @@ export function startSupervisor(): void {
   if (state.__techAiSupervisorStarted || process.env.SUPERVISOR_DISABLED === "1") return;
   state.__techAiSupervisorStarted = true;
 
+  void rotateOllamaApiKey("startup").catch(() => undefined);
+
   const timer = setInterval(() => {
     void tick().catch((error) => {
       console.error(`[supervisor] uventet feil: ${error instanceof Error ? error.message : String(error)}`);
@@ -292,8 +304,8 @@ export function startSupervisor(): void {
   // Never keep the process alive just for this timer.
   timer.unref?.();
   console.log(
-    `[supervisor] aktiv: hvert ${Math.round(INTERVAL_MS / 1000)} s, maks ${MAX_RUNNING_SANDBOXES} VM-er, ` +
-      `uferdige kjøringer eldre enn ${ABANDONED_RUN_MINUTES} min ryddes`,
+    `[supervisor] aktiv: hvert ${Math.round(INTERVAL_MS / 1000)} s, kontinuerlig Ollama-nøkkelrotasjon, ` +
+      `maks ${MAX_RUNNING_SANDBOXES} VM-er, uferdige kjøringer eldre enn ${ABANDONED_RUN_MINUTES} min ryddes`,
   );
   void tick().catch(() => undefined);
 }

@@ -53,25 +53,30 @@ export default async function HomePage() {
       </header>
 
       <main>
-        {/* Model banner — shows the active AI model (first: Monkey, more coming). */}
+        {/* Model banner — shows the active AI model (Ollama self-hosted). */}
         <div className="border-b border-zinc-800 bg-gradient-to-r from-emerald-950/50 via-zinc-950 to-zinc-950">
-          <div className="mx-auto flex max-w-5xl items-center gap-3 px-6 py-3 text-sm">
+          <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-6 py-3 text-sm">
             <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
-              ACTIVE MODEL
+              OLLAMA LOCAL ENGINE
             </span>
             <span className="font-semibold">{siteConfig.modelName} {siteConfig.modelVersion}</span>
-            <span className="text-zinc-400">· full AI model package — more models coming</span>
+            <span className="text-zinc-400">
+              · 100% independent local Ollama brain (no OpenAI / DeepSeek dependency · automatic key rotation)
+            </span>
+            <Link href="/download" className="ml-auto text-xs font-medium text-emerald-400 hover:underline">
+              Download Ollama &amp; CLI →
+            </Link>
           </div>
         </div>
 
         <section className="mx-auto max-w-4xl px-6 py-20 text-center">
           <h1 className="text-4xl font-bold sm:text-5xl">{siteConfig.tagline}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-400">
-            {siteConfig.name} is an up-to-date AI that searches the web until it finds the
-            answer, learns from every conversation, and gives you API access for your own
-            server — at a fair price.
+            {siteConfig.name} runs on its own independent <strong>Ollama</strong> brain, searches
+            the web until it finds the answer, learns from every conversation, and gives you API
+            access with continuous automatic key renewal — at a fair price.
           </p>
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="mt-8 flex flex-wrap justify-center gap-3">
             {session?.user ? (
               <Link href="/dashboard" className="rounded-lg bg-blue-600 px-5 py-2.5 font-medium hover:bg-blue-500">
                 Open dashboard
@@ -81,6 +86,9 @@ export default async function HomePage() {
                 Get started free
               </Link>
             )}
+            <Link href="/download" className="rounded-lg border border-emerald-600/60 bg-emerald-950/30 px-5 py-2.5 text-emerald-200 hover:bg-emerald-900/40">
+              Download Ollama &amp; App
+            </Link>
             <Link href="/pricing" className="rounded-lg border border-zinc-700 px-5 py-2.5 hover:bg-zinc-900">
               View pricing
             </Link>
