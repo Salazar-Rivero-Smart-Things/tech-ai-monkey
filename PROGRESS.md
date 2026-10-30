@@ -1,6 +1,33 @@
 # Tech AI monkey — Project Progress Checkpoint
 
-> Resume point for future sessions. Last updated: 2026-10-05.
+> Resume point for future sessions. Last updated: 2026-10-30.
+
+## 🔧 2026-10-30 — portbytte + 502-fiks
+
+- **tech-ai.tech → port 3100** (var 3000). Agenten blir på **2000**.
+  `servidor-super` (eget prosjekt, `/home/hesriverp7/Dokumenter/MyGits/servidor`)
+  bruker **8000** (`backend/.env` → `PORT=8000`).
+- Årsak til «502 Bad gateway / 1011»: `myai-web` krasjet i loop med
+  `Changing to the requested working directory failed: No such file or directory`
+  fordi prosjektet lå på en **ekstern NTFS-disk** som ikke var montert.
+  systemd fikk ikke `chdir` → ingen lytting på porten → cloudflared fikk
+  `connection refused` → Cloudflare viste 502.
+- **Repoet ligger nå på rot-filsystemet** (`/home/hesriverp7/Dokumenter/MyGits/...`),
+  ikke på NTFS-disken. Da er polling-vakten (`ExecStartPre` + `TimeoutStartSec=330`)
+  overflødig: begge unit-filene bruker `RequiresMountsFor=@@REPO@@`, som får
+  systemd til å vente på riktig mount i stedet for å feile med CHDIR — og som
+  fortsatt er korrekt om repoet flyttes tilbake til en disk.
+- `StartLimitIntervalSec=0` står igjen, slik at tjenestene aldri gir opp.
+- **Ny helsesjekk**: `myai-healthcheck.timer` kjører hvert 2. minutt og varsler
+  på ntfy når en tjeneste er nede, en port ikke svarer, eller restart-telleren
+  øker (krasj-løkke). Samme feil varsles én gang; «OK igjen» sendes når den er
+  borte. `OnFailure=` virker ikke her, fordi `Restart=always` gjør at tjenesten
+  aldri blir «failed». Oppsett: `/etc/myai-alert.env` (`NTFY_TOPIC`).
+- `web/.env.local`: `MODEL_VERSION=v1` → `v2.0.1` (banneret viste «Monkey v1»).
+- **Next.js 16.4.0 → 16.4.3** (kritisk RCE i Image Optimization API med SVG,
+  pluss DoS i Server Actions). `npm audit --omit=dev` er nå uten kritiske.
+- Etter endringer: `sudo bash deploy/install-services.sh` (units + tunnel +
+  helsesjekk), deretter `sudoedit /etc/myai-alert.env`.
 
 ## 🟢 LIVE på internett (2026-10-05)
 

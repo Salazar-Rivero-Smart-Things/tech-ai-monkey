@@ -10,5 +10,5 @@
 # A-record peker på din offentlige IP.
 
 tech-ai.tech, www.tech-ai.tech {
-    reverse_proxy 127.0.0.1:3000
+    reverse_proxy 127.0.0.1:3100
 }

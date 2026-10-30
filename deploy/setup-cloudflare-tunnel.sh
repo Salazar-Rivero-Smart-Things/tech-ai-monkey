@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# Tech AI monkey – sett opp Cloudflare Tunnel for tech-ai.tech -> localhost:3000
+# Tech AI monkey – sett opp Cloudflare Tunnel for tech-ai.tech -> localhost:3100
 #
 # Forutsetter at du ALLEREDE har kjørt:   cloudflared tunnel login
 # (den åpner nettleser og lager ~/.cloudflared/cert.pem)
@@ -13,7 +13,7 @@ set -euo pipefail
 TUNNEL_NAME="tech-ai-monkey"
 HOST1="tech-ai.tech"
 HOST2="www.tech-ai.tech"
-APP="http://localhost:3000"
+APP="http://localhost:3100"
 
 CONF_DIR="$HOME/.cloudflared"
 CONF="$CONF_DIR/config.yml"

@@ -14,7 +14,7 @@ Sist oppdatert: 2026-10-05 · Ansvarlig: Salazar Rivero Smart Things (org. 933 8
 ```mermaid
 flowchart LR
     U([Bruker]) -->|HTTPS| CF["Cloudflare<br/>DNS + Tunnel + WAF"]
-    CF --> WEB["Next.js web-app<br/>localhost:3000"]
+    CF --> WEB["Next.js web-app<br/>localhost:3100"]
     WEB -->|"OAuth (innlogging)"| GOOG["Google OAuth<br/>EU/USA"]
     WEB -->|"leser/skriver"| DB[("PostgreSQL 18<br/>lokal server, Norge")]
     WEB -->|"/eve/v1 (proxy + fakturering)"| AG["eve-agent<br/>localhost:2000"]
