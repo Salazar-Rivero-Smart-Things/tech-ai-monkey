@@ -105,6 +105,12 @@ if [ "$DRY_RUN" = "1" ]; then
   echo "--- myai-web.service ---"
   sed_units "$WEB_UNIT"
   echo
+  echo "--- myai-healthcheck.service ---"
+  sed_units "$REPO_DIR/deploy/myai-healthcheck.service"
+  echo
+  echo "--- myai-healthcheck.timer ---"
+  sed_units "$REPO_DIR/deploy/myai-healthcheck.timer"
+  echo
   echo "(dry-run: ingenting er endret)"
   exit 0
 fi
@@ -119,6 +125,20 @@ sed_units "$AGENT_UNIT" | sudo tee /etc/systemd/system/myai-agent.service >/dev/
 echo "→ Installasjon: /etc/systemd/system/myai-web.service"
 sed_units "$WEB_UNIT" | sudo tee /etc/systemd/system/myai-web.service >/dev/null
 
+# --- health check (ntfy-varsel ved nedetid/krasj-løkke) --------------------
+chmod +x "$REPO_DIR/deploy/myai-healthcheck.sh"
+echo "→ Installasjon: /etc/systemd/system/myai-healthcheck.service + .timer"
+sed_units "$REPO_DIR/deploy/myai-healthcheck.service" \
+  | sudo tee /etc/systemd/system/myai-healthcheck.service >/dev/null
+sed_units "$REPO_DIR/deploy/myai-healthcheck.timer" \
+  | sudo tee /etc/systemd/system/myai-healthcheck.timer >/dev/null
+
+if [ ! -f /etc/myai-alert.env ]; then
+  echo "→ Oppretter /etc/myai-alert.env fra malen"
+  sudo install -m 600 "$REPO_DIR/deploy/myai-alert.env.example" /etc/myai-alert.env
+  echo "  ⚠ Sett NTFY_TOPIC i /etc/myai-alert.env – ellers havner varslene bare i journalen."
+fi
+
 echo "→ systemctl daemon-reload"
 sudo systemctl daemon-reload
 
@@ -129,15 +149,37 @@ echo "→ Starter tjenestene"
 sudo systemctl restart myai-agent
 sudo systemctl restart myai-web
 
+echo "→ Aktiverer helsesjekken (hvert 2. minutt, varsler på ntfy)"
+sudo systemctl enable --now myai-healthcheck.timer
+sudo systemctl start myai-healthcheck.service || true
+
 sleep 3
+
+# --- pek Cloudflare-tunnelen mot samme port som web-appen ------------------
+WEB_PORT="$(sed -n 's|^Environment=PORT=||p' "$WEB_UNIT" | head -n1)"
+RUN_HOME="$(getent passwd "$RUN_USER" | cut -d: -f6)"
+TUNNEL_CFG="$RUN_HOME/.cloudflared/config.yml"
+if [ -n "$WEB_PORT" ] && [ -f "$TUNNEL_CFG" ]; then
+  echo "→ Cloudflare-tunnel: tech-ai.tech -> http://localhost:$WEB_PORT"
+  cp "$TUNNEL_CFG" "$TUNNEL_CFG.bak.$(date +%s)"
+  sudo sed -i -E "s|service: http://localhost:[0-9]+|service: http://localhost:$WEB_PORT|g" "$TUNNEL_CFG"
+  sudo systemctl restart cloudflared
+  sleep 4
+fi
+
 echo
 echo "==================== status ===================="
 systemctl --no-pager status myai-agent | head -14 || true
 echo
 systemctl --no-pager status myai-web | head -14 || true
+echo
+systemctl --no-pager list-timers myai-healthcheck.timer --all || true
 echo "==============================================="
 echo
-echo "Web-app:   http://localhost:3000   (og https://tech-ai.tech via Caddy)"
+echo "Web-app:   http://localhost:${WEB_PORT:-3100}   (https://tech-ai.tech via Cloudflare Tunnel)"
 echo "Agent:     http://127.0.0.1:2000"
+echo "Super-Server (eget prosjekt): http://127.0.0.1:8000"
 echo
 echo "Sjekk logger med:  journalctl -u myai-web -f   /   journalctl -u myai-agent -f"
+echo "Helsesjekk:        journalctl -u myai-healthcheck -n 30 --no-pager"
+echo "Varsel-oppsett:    sudoedit /etc/myai-alert.env   (NTFY_TOPIC)"

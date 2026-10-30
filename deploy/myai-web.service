@@ -1,4 +1,4 @@
-# MyAI – web-app (Next.js, port 3000)
+# MyAI – web-app (Next.js, port 3100)
 # Kopier til: /etc/systemd/system/myai-web.service
 # Deretter: sudo systemctl daemon-reload && sudo systemctl enable --now myai-web
 #
@@ -6,9 +6,15 @@
 # Bruker, Gruppe og Node-sti fylles ut automatisk av deploy/install-services.sh.
 
 [Unit]
-Description=MyAI web-app (Next.js, port 3000)
+Description=MyAI web-app (Next.js, port 3100)
 After=network-online.target myai-agent.service
 Wants=network-online.target
+# Start aldri å gi opp: krasjer appen skal den bare starte på nytt.
+StartLimitIntervalSec=0
+# Repoet ligger på rot-filsystemet. RequiresMountsFor gjør at systemd venter på
+# riktig mount i stedet for å feile med CHDIR hvis prosjektmappa skulle mangle
+# – og er fortsatt riktig om repoet flyttes tilbake til en ekstern disk.
+RequiresMountsFor=@@REPO@@
 
 [Service]
 Type=simple
@@ -16,8 +22,11 @@ User=@@USER@@
 Group=@@GROUP@@
 WorkingDirectory=@@REPO@@/web
 Environment=PATH=@@NODE_BIN@@:/usr/local/bin:/usr/bin:/bin
-Environment=PORT=3000
+Environment=PORT=3100
 Environment=NODE_ENV=production
+# OnFailure= brukes bevisst ikke: med Restart=always + StartLimitIntervalSec=0
+# blir tjenesten aldri "failed", så OnFailure fyrer aldri. Krasj-løkker og døde
+# endepunkter fanges av myai-healthcheck.timer i stedet.
 ExecStart=@@NODE_BIN@@/npm run start
 Restart=always
 RestartSec=5

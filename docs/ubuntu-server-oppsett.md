@@ -175,11 +175,11 @@ sudo ufw enable
 sudo ufw status verbose
 ```
 
-**Ikke** åpne 2000 eller 3000 mot internett. De nås via Cloudflare Tunnel
+**Ikke** åpne 2000 eller 3100 mot internett. De nås via Cloudflare Tunnel
 (seksjon 11) eller SSH-tunnel:
 
 ```bash
-ssh -L 3000:127.0.0.1:3000 ai@192.168.1.50
+ssh -L 3100:127.0.0.1:3100 ai@192.168.1.50
 ```
 
 ---
@@ -441,10 +441,29 @@ bash deploy/install-services.sh --dry-run
 sudo bash deploy/install-services.sh
 systemctl status myai-agent myai-web --no-pager
 curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:2000/
-curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3000/download
+curl -s -o /dev/null -w '%{http_code}\n' http://127.0.0.1:3100/download
 ```
 
 Begge skal svare `200`.
+
+### Varsler når noe er nede
+
+`deploy/install-services.sh` installerer også `myai-healthcheck.timer`. Hvert
+andre minutt sjekker den at `myai-agent` og `myai-web` er aktive, at portene
+svarer, og at restart-telleren ikke har økt (krasj-løkke). Feil sendes som
+pushvarsel via ntfy – og «alt OK igjen» når feilen er borte.
+
+```bash
+sudo install -m 600 deploy/myai-alert.env.example /etc/myai-alert.env
+sudoedit /etc/myai-alert.env                  # sett NTFY_TOPIC
+sudo systemctl start myai-healthcheck.service # test nå
+journalctl -u myai-healthcheck -n 30 --no-pager
+```
+
+Uten `NTFY_TOPIC` havner varslene bare i journalen. `OnFailure=` i
+unit-filene er bevisst ikke brukt: med `Restart=always` og
+`StartLimitIntervalSec=0` blir tjenesten aldri «failed», så `OnFailure` ville
+aldri fyrt.
 
 ---
 
@@ -460,7 +479,7 @@ sudo dpkg -i /tmp/cloudflared.deb
 #    eller kopier URL-en til mobilen)
 cloudflared tunnel login
 
-# 3) opprett/gjenbruk tunnel for tech-ai.tech -> localhost:3000
+# 3) opprett/gjenbruk tunnel for tech-ai.tech -> localhost:3100
 bash deploy/setup-cloudflare-tunnel.sh
 
 # 4) kjør som tjeneste
@@ -471,11 +490,11 @@ systemctl status cloudflared --no-pager
 Test:
 
 ```bash
-curl -s -o /dev/null -w 'local  %{http_code}\n' http://127.0.0.1:3000/
+curl -s -o /dev/null -w 'local  %{http_code}\n' http://127.0.0.1:3100/
 curl -s -o /dev/null -w 'public %{http_code}\n' https://tech-ai.tech/
 ```
 
-> Tunnelen trenger ingen åpne porter i ruteren. 2000 og 3000 forblir lukket
+> Tunnelen trenger ingen åpne porter i ruteren. 2000 og 3100 forblir lukket
 > mot internett.
 
 ---
@@ -616,6 +635,8 @@ sudo smartctl -H /dev/sda
 
 # tjenester
 systemctl status myai-agent myai-web cloudflared --no-pager
+systemctl list-timers myai-healthcheck.timer myai-backup.timer
+journalctl -u myai-healthcheck -n 20 --no-pager
 journalctl -u myai-agent -f
 journalctl -u myai-web -n 100 --no-pager
 
@@ -683,6 +704,7 @@ Etter flyttingen: `bash scripts/preflight.sh` og en runde i chatten.
 | `permission denied` på `/dev/kvm` | `sudo usermod -aG kvm $USER`, logg inn på nytt |
 | `EADDRINUSE :2000` | Gammel prosess: `ss -ltnp \| grep 2000`, drep PID-en |
 | `myai-web` svarer 502 via Cloudflare | Web kjører ikke, eller tunnelen peker på feil port |
+| `status=200/CHDIR` i journalen | `WorkingDirectory` i uniten finnes ikke – repoet er flyttet, eller disken det ligger på er ikke montert |
 | `relation "user" does not exist` | `deploy/setup-db.sh` er ikke kjørt, eller feil `DATABASE_URL` |
 | `password authentication failed` | `DATABASE_URL` stemmer ikke med rollen i Postgres |
 | Agenten svarer ikke | `journalctl -u myai-agent -n 80`; sjekk modellnøkkel og `OPENAI_COMPAT_*` |
@@ -708,6 +730,7 @@ Etter flyttingen: `bash scripts/preflight.sh` og en runde i chatten.
 - [ ] `.env` og `web/.env.local` fylt ut, `chmod 600`
 - [ ] `deploy/setup-db.sh`, `npm run build` (rot + web)
 - [ ] `myai-agent` og `myai-web` aktive, begge svarer 200 lokalt
+- [ ] `myai-healthcheck.timer` aktiv, `NTFY_TOPIC` satt i `/etc/myai-alert.env`
 - [ ] Cloudflare Tunnel aktiv, `https://tech-ai.tech` svarer 200
 - [ ] `myai-backup.timer` og `sanoid.timer` aktive
 - [ ] `bash scripts/preflight.sh` uten feil

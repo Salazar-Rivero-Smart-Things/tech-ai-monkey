@@ -1,0 +1,18 @@
+# Tech AI monkey – helsesjekk for myai-web og myai-agent (oneshot).
+# Installeres av: deploy/install-services.sh
+# Test manuelt:   sudo systemctl start myai-healthcheck.service
+#                 journalctl -u myai-healthcheck.service -n 30 --no-pager
+
+[Unit]
+Description=Tech AI monkey - helsesjekk (web + agent)
+Documentation=file://@@REPO@@/docs/ubuntu-server-oppsett.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Kjøres som root for å kunne skrive til /var/lib/myai-health.
+# Uten denne fila logges varslene bare til journalen.
+EnvironmentFile=-/etc/myai-alert.env
+ExecStart=/bin/bash @@REPO@@/deploy/myai-healthcheck.sh
+Nice=10

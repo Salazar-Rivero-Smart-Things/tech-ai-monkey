@@ -1,0 +1,15 @@
+# Tech AI monkey – kjører helsesjekken hvert 2. minutt.
+# Installeres av: deploy/install-services.sh
+# Sjekk:          systemctl list-timers myai-healthcheck.timer
+
+[Unit]
+Description=Kjor Tech AI monkey helsesjekk hvert 2. minutt
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=2min
+AccuracySec=15s
+Unit=myai-healthcheck.service
+
+[Install]
+WantedBy=timers.target

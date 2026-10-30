@@ -11,6 +11,10 @@ Wants=network-online.target
 # Start aldri å gi opp: krasjer agenten skal den bare starte på nytt, i det
 # uendelige. Uten dette gir systemd opp etter 5 feil på 10 s.
 StartLimitIntervalSec=0
+# Repoet ligger på rot-filsystemet. RequiresMountsFor gjør at systemd venter på
+# riktig mount i stedet for å feile med CHDIR hvis prosjektmappa skulle mangle
+# – og er fortsatt riktig om repoet flyttes tilbake til en ekstern disk.
+RequiresMountsFor=@@REPO@@
 
 [Service]
 Type=simple
@@ -21,6 +25,9 @@ Environment=PATH=@@NODE_BIN@@:/usr/local/bin:/usr/bin:/bin
 Environment=PORT=2000
 Environment=NODE_ENV=production
 EnvironmentFile=@@REPO@@/.env
+# OnFailure= brukes bevisst ikke: med Restart=always + StartLimitIntervalSec=0
+# blir tjenesten aldri "failed", så OnFailure fyrer aldri. Krasj-løkker og døde
+# endepunkter fanges av myai-healthcheck.timer i stedet.
 ExecStart=@@NODE_BIN@@/npm run start
 Restart=always
 RestartSec=3
