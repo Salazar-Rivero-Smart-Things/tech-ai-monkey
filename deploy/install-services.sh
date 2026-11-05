@@ -118,6 +118,26 @@ fi
 # --- stop old services (they reference the old folder) ---------------------
 echo "→ Stopper gamle tjenester (hvis de kjører) …"
 sudo systemctl stop myai-web myai-agent 2>/dev/null || true
+# Gamle unit-filer kan ha KillMode=mixed, som etterlater next-server/eve som
+# foreldreløse prosesser som fortsatt holder portene. Da feiler hver nye start
+# med «address already in use» – uten at det synes i journalen. Vent til
+# portene faktisk er fri før vi installerer og starter på nytt.
+wait_port_free() { # <port> [sekunder]
+  local port="$1" limit="${2:-30}" i=0
+  while [ "$i" -lt "$limit" ]; do
+    if ! ss -ltn 2>/dev/null | grep -qE "[:.]${port}[[:space:]]"; then return 0; fi
+    sleep 1; i=$((i + 1))
+  done
+  echo "! Port ${port} er fortsatt opptatt etter ${limit}s."
+  echo "  Sjekk hvilken prosess som holder den:  sudo ss -ltnp | grep :${port}"
+  echo "  Dreper du den (kill <pid>) starter tjenesten av seg selv igjen."
+  return 1
+}
+AGENT_PORT_GUESS="$(sed -n 's|^Environment=PORT=||p' "$AGENT_UNIT" | head -n1)"
+WEB_PORT_GUESS="$(sed -n 's|^Environment=PORT=||p' "$WEB_UNIT" | head -n1)"
+wait_port_free "${AGENT_PORT_GUESS:-2000}" 30 || true
+wait_port_free "${WEB_PORT_GUESS:-3100}" 30 || true
+sudo systemctl reset-failed myai-agent myai-web 2>/dev/null || true
 
 # --- install the unit files -------------------------------------------------
 echo "→ Installasjon: /etc/systemd/system/myai-agent.service"
