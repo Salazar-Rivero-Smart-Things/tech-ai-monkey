@@ -11,7 +11,7 @@
     "build": "eve build",
     "postbuild": "node scripts/patch-eve.mjs",
     "postinstall": "node scripts/patch-eve.mjs",
-    "start": "eve start",
+    "start": "eve start --host 127.0.0.1",
     "bench": "node scripts/model-bench.mjs"
   },
   "dependencies": {

@@ -183,6 +183,16 @@ journalctl -u cloudflared -f    # tunnelens logg
 
 Vedlikehold og feilsøking: [docs/ubuntu-server-oppsett.md](./docs/ubuntu-server-oppsett.md#16-feilsøking).
 
+> **Portene 2000 og 3100 er ikke åpne utover maskinen.** `npm run start` binder
+> både agenten (`eve start --host 127.0.0.1`) og web-appen
+> (`next start -H 127.0.0.1`) til loopback, så de er utilgjengelige fra
+> nettverket uansett hva brannmuren skulle tillate. All trafikk går gjennom
+> Cloudflare-tunnelen. Trenger du å se dem fra en annen maskin:
+>
+> ```bash
+> ssh -L 3100:127.0.0.1:3100 bruker@server   # så: http://localhost:3100
+> ```
+
 ### Oppdatere en eksisterende installasjon
 
 ```bash
