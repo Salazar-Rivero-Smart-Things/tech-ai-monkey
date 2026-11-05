@@ -1,6 +1,6 @@
 {
   "name": "my-ai-agent",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -19,16 +19,16 @@
     "ai": "latest",
     "eve": "^0.27.11",
     "jose": "latest",
-    "zod": "latest"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^26.6.4",
     "just-bash": "^3.6.0",
     "microsandbox": "^0.5.10",
-    "typescript": "latest"
+    "typescript": "^5.9.3"
   },
   "overrides": {
-    "guarded-fetch": "^0.1.5",
+    "guarded-fetch": "^0.3.0",
     "sprintf-js": "https://codeload.github.com/ulises-jeremias/sprintf.js/tar.gz/438195c605fde3e4ff0bb155d2418f7d0171490a",
     "eve": {
       "undici": "^8.11.2"

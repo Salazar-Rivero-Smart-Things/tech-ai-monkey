@@ -23,15 +23,15 @@ const MODELS = [
   {
     id: "tech-ai-monkey",
     object: "model",
-    version: "v2.0.1",
+    version: "v2.1",
     core: "ollama-local",
     created: CREATED,
     owned_by: "tech-ai",
   },
   {
-    id: "tech-ai-monkey-v2.0.1",
+    id: "tech-ai-monkey-v2.1",
     object: "model",
-    version: "v2.0.1",
+    version: "v2.1",
     core: "ollama-local",
     created: CREATED,
     owned_by: "tech-ai",
@@ -39,7 +39,7 @@ const MODELS = [
   {
     id: "tech-ai-monkey-v2",
     object: "model",
-    version: "v2.0.1",
+    version: "v2.1",
     core: "ollama-local",
     created: CREATED,
     owned_by: "tech-ai",

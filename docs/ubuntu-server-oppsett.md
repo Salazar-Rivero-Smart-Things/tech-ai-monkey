@@ -369,6 +369,17 @@ cd tech-ai-monkey
 nvm use
 ```
 
+### Ollama og den lokale modellen
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+ollama create tech-ai-monkey -f Modelfile.tech-ai-monkey
+curl -s http://127.0.0.1:11434/api/tags   # modellen skal stå i listen
+```
+
+Agenten snakker med Ollama på `http://127.0.0.1:11434/v1` og forventer
+modellnavnet `tech-ai-monkey` (se `deploy/myai-agent.env.example`).
+
 ### Hemmeligheter
 
 ```bash

@@ -21,7 +21,7 @@ Type=simple
 User=@@USER@@
 Group=@@GROUP@@
 WorkingDirectory=@@REPO@@
-Environment=PATH=@@NODE_BIN@@:/usr/local/bin:/usr/bin:/bin
+Environment=PATH=@@NODE_BIN@@:/snap/bin:/usr/local/bin:/usr/bin:/bin
 Environment=PORT=2000
 Environment=NODE_ENV=production
 EnvironmentFile=@@REPO@@/.env

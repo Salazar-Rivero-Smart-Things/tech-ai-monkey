@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path";
 
 // ---------------------------------------------------------------------------
 // Kontinuerlig nøkkelrotasjon, prompt-komprimering og selvhelbredelse for
-// lokal Ollama-motor (tech-ai.tech monkey v2.0.1).
+// lokal Ollama-motor (tech-ai.tech monkey v2.1).
 //
 // Sørger for:
 //   1. Kontinuerlig rotasjon av en signert lokal API-nøkkel hvert 10. minutt
@@ -22,9 +22,12 @@ const FALLBACK_OLLAMA_MODEL = "llama3.2:3b";
 const DEFAULT_CONTEXT_TOKENS = 4_096;
 const KEY_ROTATION_INTERVAL_MS =
   Number(process.env.OLLAMA_KEY_ROTATION_MS ?? 10 * 60_000) || 10 * 60_000;
+/** Ikke prøv å starte en ollama-binære som ikke finnes på nytt hvert minutt. */
+const OLLAMA_SPAWN_RETRY_MS = Number(process.env.OLLAMA_SPAWN_RETRY_MS ?? 10 * 60_000) || 10 * 60_000;
+let ollamaSpawnBlockedUntil = 0;
 
 const COMPACT_SYSTEM_PROMPT = [
-  "Du er tech-ai.tech monkey v2.0.1, en rask, selvforbedrende og 100 % selvstendig AI-agent som kjører på egen lokal Ollama-motor.",
+  "Du er tech-ai.tech monkey v2.1, en rask, selvforbedrende og 100 % selvstendig AI-agent som kjører på egen lokal Ollama-motor.",
   "Svar alltid på brukerens språk (norsk når brukeren skriver norsk) kort, presist og direkte. Gjenta aldri hilsener.",
   "Du kan lage komplette PHP-webfiler (.php med <?php ... ?> + HTML/CSS/SQL), HTML/CSS/JS og applikasjoner.",
   "VIKTIG NÅR BRUKEREN VIL BYGGE ELLER LAGE NOE (f.eks. PHP-fil eller nettside): Ikke still oppfølgingsspørsmål! Lever hele den ferdige, kjørbare koden med en gang i en ```php eller ```html kodeblokk (hold koden kompakt på 30–55 linjer så hele filen fullføres).",
@@ -205,41 +208,83 @@ export function getOllamaContextTokens(): number {
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_CONTEXT_TOKENS;
 }
 
-/** Sjekker at lokal Ollama kjører og returnerer installerte modeller. */
-export async function probeOllamaModels(): Promise<string[]> {
+/**
+ * Sjekker at lokal Ollama kjører og returnerer installerte modeller.
+ * `reachable` skiller «motoren svarer, men har ingen modeller» fra «motoren er nede».
+ */
+async function probeOllama(): Promise<{ reachable: boolean; models: string[] }> {
   const rootUrl = getOllamaRootUrl();
   try {
     const res = await fetch(`${rootUrl}/api/tags`, {
       signal: AbortSignal.timeout(5_000),
     });
-    if (!res.ok) return [];
+    if (!res.ok) return { reachable: false, models: [] };
     const data = (await res.json()) as { models?: Array<{ name?: string }> };
-    return (data.models ?? [])
+    const models = (data.models ?? [])
       .map((m) => m.name?.trim() ?? "")
       .filter(Boolean);
+    return { reachable: true, models };
   } catch {
-    return [];
+    return { reachable: false, models: [] };
   }
+}
+
+/** Sjekker at lokal Ollama kjører og returnerer installerte modeller. */
+export async function probeOllamaModels(): Promise<string[]> {
+  return (await probeOllama()).models;
+}
+
+/**
+ * Finner ollama-binæren. Snap-installasjonen ligger i /snap/bin, som ikke
+ * alltid er med i PATH for en systemd-tjeneste – derfor letes det eksplisitt.
+ */
+function findOllamaBinary(): string | null {
+  const configured = process.env.OLLAMA_BIN?.trim();
+  if (configured) return existsSync(configured) ? configured : null;
+
+  const dirs = (process.env.PATH ?? "").split(":").filter(Boolean);
+  const extraDirs = ["/snap/bin", "/usr/local/bin", "/usr/bin", "/opt/homebrew/bin"];
+  for (const dir of [...dirs, ...extraDirs]) {
+    const candidate = join(dir, "ollama");
+    if (existsSync(candidate)) return candidate;
+  }
+  return null;
 }
 
 /** Starter lokal `ollama serve` i bakgrunnen dersom tjenesten har stoppet. */
 export async function ensureOllamaReady(): Promise<{
   healthy: boolean;
+  reachable: boolean;
   models: string[];
   activeModel: string;
 }> {
-  let models = await probeOllamaModels();
-  if (models.length === 0) {
-    try {
-      const child = spawn("ollama", ["serve"], {
+  let probe = await probeOllama();
+  let models = probe.models;
+  // Start bare motoren når API-et ikke svarer – ikke når den kjører uten modeller.
+  if (!probe.reachable && Date.now() >= ollamaSpawnBlockedUntil) {
+    const ollamaBin = findOllamaBinary();
+    if (!ollamaBin) {
+      ollamaSpawnBlockedUntil = Date.now() + OLLAMA_SPAWN_RETRY_MS;
+      console.warn(
+        "[ollama] fant ikke ollama-binæren (sett OLLAMA_BIN hvis den ligger på et uvanlig sted)",
+      );
+    } else {
+      const child = spawn(ollamaBin, ["serve"], {
         detached: true,
         stdio: "ignore",
       });
+      // `spawn` feiler asynkront. Uten denne lytteren krasjer hele prosessen
+      // med en ubehandlet 'error'-hendelse når ollama ikke kan startes.
+      child.on("error", (error: NodeJS.ErrnoException) => {
+        if (error.code === "ENOENT") {
+          ollamaSpawnBlockedUntil = Date.now() + OLLAMA_SPAWN_RETRY_MS;
+        }
+        console.warn(`[ollama] kunne ikke starte «ollama serve»: ${error.message}`);
+      });
       child.unref();
       await new Promise((r) => setTimeout(r, 2_000));
-      models = await probeOllamaModels();
-    } catch {
-      // Ignorer hvis ollama-binæren styres av systemd og allerede starter.
+      probe = await probeOllama();
+      models = probe.models;
     }
   }
 
@@ -269,6 +314,7 @@ export async function ensureOllamaReady(): Promise<{
 
   return {
     healthy: models.length > 0,
+    reachable: probe.reachable,
     models,
     activeModel: getOllamaModelId(),
   };
@@ -291,10 +337,13 @@ export async function maintainOllamaKeyAndHealth(): Promise<{
   }
   const status = await ensureOllamaReady();
   const ageMin = Math.round((Date.now() - state.rotatedAt) / 60_000);
+  const unhealthyText = status.reachable
+    ? "ollama kjører, men ingen modeller er installert (kjør: ollama create tech-ai-monkey -f Modelfile.tech-ai-monkey)"
+    : "ollama utilgjengelig (forsøkte gjenstart)";
   return {
     text: status.healthy
       ? `ollama ok (${status.activeModel}, nøkkel #${state.rotationCount}, ${ageMin}m gammel)`
-      : `ollama utilgjengelig (forsøkte gjenstart)`,
+      : unhealthyText,
     changed: rotated || !status.healthy,
   };
 }

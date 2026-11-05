@@ -18,8 +18,8 @@ import { startSupervisor } from "./lib/supervisor";
 // at agenten aldri stopper opp på grunn av utløpte eksterne nøkler.
 // ---------------------------------------------------------------------------
 
-export const AGENT_VERSION = "v2.0.1";
-export const AGENT_CORE_CODENAME = "tech-ai.tech monkey v2.0.1";
+export const AGENT_VERSION = "v2.1";
+export const AGENT_CORE_CODENAME = "tech-ai.tech monkey v2.1";
 
 const MODEL_ID = getOllamaModelId();
 const BASE_URL = getOllamaBaseUrl();

@@ -1,6 +1,6 @@
 {
   "name": "web",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,12 +10,12 @@
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.3",
-    "argon2": "^0.45.1",
-    "drizzle-orm": "^0.45.3",
-    "jose": "^6.2.12",
-    "next": "16.4.3",
+    "argon2": "^0.45.2",
+    "drizzle-orm": "^0.45.4",
+    "jose": "^6.2.15",
+    "next": "16.4.5",
     "next-auth": "^5.0.0-beta.32",
-    "nodemailer": "^8.0.11",
+    "nodemailer": "^10.3.1",
     "postgres": "^3.4.9",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -29,16 +29,23 @@
     "@types/react-dom": "^19",
     "drizzle-kit": "^0.31.11",
     "eslint": "^9",
-    "eslint-config-next": "16.4.3",
+    "eslint-config-next": "16.4.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
   "allowScripts": {
-    "argon2@0.45.1": true
+    "argon2@0.45.2": true
   },
   "overrides": {
     "@esbuild-kit/core-utils": {
       "esbuild": "^0.25.0"
+    },
+    "zod": "^4.6.7",
+    "next-auth": {
+      "nodemailer": "^10.3.1"
+    },
+    "@auth/core": {
+      "nodemailer": "^10.3.1"
     }
   }
 }

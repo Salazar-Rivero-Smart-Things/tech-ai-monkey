@@ -67,7 +67,7 @@ export default async function AppsPage({
     .where(eq(integrations.userId, session.user.id));
   const byProvider = new Map(rows.map((r) => [r.provider, r]));
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000").replace(/\/+$/, "");
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3100").replace(/\/+$/, "");
 
   return (
     <div className="max-w-2xl space-y-6">

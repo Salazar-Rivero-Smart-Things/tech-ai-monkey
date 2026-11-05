@@ -1,7 +1,7 @@
 # Tech AI monkey (web app)
 
-The consumer web application for **Tech AI monkey** v2.0.1 — powered 100% by a
-standalone local **Ollama** engine (`tech-ai-monkey` v2.0.1) with continuous API
+The consumer web application for **Tech AI monkey** v2.1 — powered 100% by a
+standalone local **Ollama** engine (`tech-ai-monkey` v2.1) with continuous API
 key rotation, PHP/HTML web file generation, subscriptions, pay-as-you-go tokens,
 and secure account handling. Built with **Next.js 16 (App Router, TypeScript, Tailwind)**,
 **self-hosted** on Linux and published through a **Cloudflare Tunnel**, with **PostgreSQL** as the database.
@@ -15,13 +15,14 @@ and secure account handling. Built with **Next.js 16 (App Router, TypeScript, Ta
 
 ## Getting started
 
-1. Install Node.js **20+** (24 recommended).
+1. Install Node.js **24** (the repo requires Node >= 24; see the root `.nvmrc`).
 
    ```bash
    npm install
    ```
 
-2. Create your environment file and fill in the values (see `.env.example`):
+2. Create your environment file and fill in the values (see `.env.example`).
+   `DATABASE_URL` is required — `next build` fails without it:
 
    ```bash
    cp .env.example .env.local
@@ -33,13 +34,16 @@ and secure account handling. Built with **Next.js 16 (App Router, TypeScript, Ta
    npx drizzle-kit push
    ```
 
-4. Run the app:
+4. Run the app in development, or build it for production:
 
    ```bash
-   npm run dev
+   npm run dev     # http://localhost:3100 (PORT=3100)
+   npm run build   # production build -> .next/BUILD_ID
    ```
 
-Open http://localhost:3000.
+Open http://localhost:3100. In production it is served by `myai-web.service`
+(`npm run start`, `PORT=3100`) and published through a Cloudflare Tunnel — see
+the [root README](../README.md#installere-repoet-på-egen-maskin).
 
 ## Environment variables
 

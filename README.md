@@ -1,9 +1,205 @@
 # Tech AI monkey
 
-> **Live:** <https://tech-ai.tech> · **v2.0.1 (tech-ai.tech monkey v2.0.1 / 100 % lokal Ollama-motor)**  
+> **Live:** <https://tech-ai.tech> · **v2.1 (tech-ai.tech monkey v2.1 / 100 % lokal Ollama-motor)**  
 > © Salazar Rivero Smart Things (org. 933 853 195, Norge)
 
-**Tech AI monkey v2.0.1** er en 100 % selvstendig, selvlærende, kryssplattform AI-agent (macOS, Linux og Windows) som kjører på egen lokal **Ollama**-motor med kontinuerlig API-nøkkelrotasjon, web-dashboard, terminal-CLI, PHP/HTML-kodebygger og OpenAI/Ollama-kompatibelt API.
+**Tech AI monkey v2.1** er en 100 % selvstendig, selvlærende, kryssplattform AI-agent (macOS, Linux og Windows) som kjører på egen lokal **Ollama**-motor med kontinuerlig API-nøkkelrotasjon, web-dashboard, terminal-CLI, PHP/HTML-kodebygger og OpenAI/Ollama-kompatibelt API.
+
+---
+
+## Installere repoet på egen maskin
+
+Dette er hele veien fra tom maskin til <https://tech-ai.tech> svarer. Har du en
+ferdig Ubuntu-server kan du hoppe rett til [punkt 2](#2-ollama-og-den-lokale-modellen).
+Full gjennomgang av OS, ZFS, brannmur og backup: [docs/ubuntu-server-oppsett.md](./docs/ubuntu-server-oppsett.md).
+
+### 1. Krav
+
+| Du trenger | Merk |
+|---|---|
+| Linux x86-64 med `/dev/kvm` | Microsandbox (sandkassen agenten kjører kode i) krever KVM. Sjekk med `ls -l /dev/kvm`. |
+| **Node 24** + npm | `nvm use` i repoet følger [.nvmrc](./.nvmrc). Node 24 er minimum – ikke 20/22. |
+| git | |
+| **Ollama** | Motoren som kjører modellen lokalt. Port `11434`. |
+| PostgreSQL | Database for web-appen (`deploy/setup-db.sh` lager rolle, database og tabeller). |
+| `ffmpeg` | Videoanalyse (agenten henter stillbilder fra videoer). |
+| `systemd` | Tjenestene `myai-agent`, `myai-web`, `myai-healthcheck.timer`. |
+| `cloudflared` | Bare hvis du vil publisere på internett (punkt 7). |
+
+```bash
+git clone https://github.com/Salazar-Rivero-Smart-Things/tech-ai-monkey.git
+cd tech-ai-monkey
+nvm use          # Node 24
+```
+
+### 2. Ollama og den lokale modellen
+
+```bash
+# Installer Ollama (Linux, én linje – lager også ollama.service)
+curl -fsSL https://ollama.com/install.sh | sh
+
+# Har du snap-utgaven? Da ligger binæren i /snap/bin/ollama.
+# Agenten og tjenestefilen finner den selv; ellers sett OLLAMA_BIN i .env.
+
+# Bygg modellen repoet bruker (navnet må være tech-ai-monkey)
+cd /sti/til/tech-ai-monkey
+ollama create tech-ai-monkey -f Modelfile.tech-ai-monkey
+
+# Kontroller at motoren svarer og at modellen finnes
+curl -s http://127.0.0.1:11434/api/tags
+```
+
+`ollama create` henter grunnmodellen `llama3.2:3b` (~2 GB) første gang.
+
+Uten Ollama på plass bygger agenten fortsatt, men den kan ikke svare i chatten;
+supervisor-tjenesten i agenten vil logge `ollama utilgjengelig` hvert minutt.
+
+### 3. Hemmeligheter
+
+```bash
+cp .env.example .env
+cp web/.env.example web/.env.local
+chmod 600 .env web/.env.local
+```
+
+| Fil | Variabel | Verdi |
+|---|---|---|
+| `.env` | `AGENT_API_KEY_SECRET` | `openssl rand -hex 32` |
+| `.env` | `EVE_PUBLIC_URL` | `http://127.0.0.1:2000` |
+| `.env` | `OLLAMA_MODEL` / `OLLAMA_BASE_URL` | `tech-ai-monkey` / `http://127.0.0.1:11434/v1` (standard) |
+| `web/.env.local` | `AUTH_SECRET`, `SECRET_KEK` | `openssl rand -base64 32` (hver sin) |
+| `web/.env.local` | `AGENT_API_KEY_SECRET` | **nøyaktig samme** som i `.env` |
+| `web/.env.local` | `EVE_AGENT_URL` | `http://127.0.0.1:2000` |
+| `web/.env.local` | `NEXT_PUBLIC_APP_URL` / `AUTH_URL` | `https://tech-ai.tech` |
+| `web/.env.local` | `DATABASE_URL` | skrives automatisk av punkt 4 |
+
+### 4. Database
+
+```bash
+bash deploy/setup-db.sh
+```
+
+Scriptet oppretter Postgres-rollen og databasen, skriver `DATABASE_URL` i
+`web/.env.local` og kjører `drizzle-kit push`. **Må kjøres før web-appen bygges** —
+`next build` leser `DATABASE_URL` fra `web/.env.local` og stopper ellers med
+`DATABASE_URL is not set`.
+
+### 5. Bygg begge appene
+
+```bash
+# Agenten (rot) – må bygges først
+npm install
+npm run build          # bygger .output/ og patcher eve (postbuild)
+
+# Web-appen
+cd web
+npm install
+npm run build          # lager web/.next/BUILD_ID
+cd ..
+```
+
+### 6. Installer tjenestene
+
+```bash
+bash deploy/install-services.sh --dry-run   # se hva som skrives, uten å endre noe
+sudo bash deploy/install-services.sh        # skriver /etc/systemd/system/*.service
+```
+
+Scriptet fyller inn riktig bruker, repo-sti og Node-sti, aktiverer
+`myai-agent` (port **2000**), `myai-web` (port **3100**) og
+`myai-healthcheck.timer`, og peker Cloudflare-tunnelen mot port 3100 hvis den
+finnes. Det nekter å kjøre hvis `.output/server/index.mjs` eller
+`web/.next/BUILD_ID` mangler – altså må punkt 5 være ferdig.
+
+### 7. Cloudflare Tunnel (offentlig HTTPS)
+
+```bash
+curl -L -o /tmp/cloudflared.deb \
+  https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+sudo dpkg -i /tmp/cloudflared.deb
+
+cloudflared tunnel login        # velg sonen tech-ai.tech i nettleseren
+bash deploy/setup-cloudflare-tunnel.sh
+```
+
+Scriptet oppretter/gjenbruker tunnelen, setter DNS for `tech-ai.tech` og
+`www.tech-ai.tech`, installerer `cloudflared.service`, og **slår av Caddy** (den
+trengs ikke når tunnelen tar HTTPS). Ingen porter må åpnes i ruteren.
+
+#### Har du allerede en tunnel fra Cloudflare-dashbordet?
+
+Da kjører `cloudflared` med en token-fil (`/etc/cloudflared/token`), og
+**inngangsreglene ligger i dashbordet — ikke i en lokal `config.yml`**. En slik
+tunnel svarer `503` på alt og gir feilkode **1033** i nettleseren helt til du
+legger inn vertsnavnet:
+
+1. <https://one.dash.cloudflare.com> → **Networks → Tunnels**
+2. Velg tunnelen med status **HEALTHY** (det er den som kjører på maskinen)
+3. **Public Hostname → Add a public hostname**
+   - Subdomain: *(tom)* · Domain: `tech-ai.tech` · Type: `HTTP` · URL: `localhost:3100`
+   - Gjenta med Subdomain `www`
+4. Vent noen sekunder og test: `curl -sI https://tech-ai.tech | head -1`
+
+Sjekk hva tunnelen faktisk har fått av regler:
+
+```bash
+journalctl -u cloudflared --since "-10min" | grep -i "ingress\|config"
+# «No ingress rules were defined … will return 503» = ingen vertsnavn i dashbordet
+```
+
+### Rekkefølge ved oppstart og restart
+
+Start alltid i denne rekkefølgen — hver tjeneste er avhengig av den forrige:
+
+```bash
+sudo systemctl start ollama            # 1. modellmotoren, port 11434
+sudo systemctl start postgresql        # 2. databasen, port 5432
+sudo systemctl enable --now myai-agent # 3. agenten, port 2000
+sudo systemctl enable --now myai-web   # 4. nettsiden, port 3100
+sudo systemctl enable --now cloudflared# 5. tunnelen, tech-ai.tech -> 3100
+```
+
+| Rekkefølge | Tjeneste | Hvorfor |
+|---|---|---|
+| 1 | `ollama` | Agenten kaller `http://127.0.0.1:11434` på hvert modelsvar. Uten den svarer chatten aldri. |
+| 2 | `postgresql` | Web-appen leser brukere, nøkler og kvoter fra databasen ved første request. |
+| 3 | `myai-agent` | Web-appen proxyer `/v1/*` og `/eve/*` til `127.0.0.1:2000`. `myai-web.service` har `After=myai-agent.service`. |
+| 4 | `myai-web` | Må svare på port 3100 før tunnelen har noe å sende trafikk til. |
+| 5 | `cloudflared` | Sender `tech-ai.tech` → `127.0.0.1:3100`. Rekkefølgen mot 3/4 er ikke kritisk, men uten 3 og 4 får du 502 fra Cloudflare. |
+
+> **Kort svar:** agenten og web-appen **før** tunnelen. Tunnelen er bare
+> inngangsdøren til port 3100 – er ikke web-appen oppe, viser den 502 Bad Gateway.
+
+Sjekk at alt lever:
+
+```bash
+curl -s -o /dev/null -w 'agent  %{http_code}\n' http://127.0.0.1:2000/
+curl -s -o /dev/null -w 'web    %{http_code}\n' http://127.0.0.1:3100/download
+curl -s -o /dev/null -w 'offent %{http_code}\n' https://tech-ai.tech/
+journalctl -u myai-agent -f     # agentens logg
+journalctl -u myai-web -f       # web-appens logg
+journalctl -u cloudflared -f    # tunnelens logg
+```
+
+Vedlikehold og feilsøking: [docs/ubuntu-server-oppsett.md](./docs/ubuntu-server-oppsett.md#16-feilsøking).
+
+### Oppdatere en eksisterende installasjon
+
+```bash
+git pull
+npm install && npm run build
+cd web && npm install && npm run build && cd ..
+sudo systemctl restart myai-agent myai-web
+```
+
+Avhengighetene holdes oppdatert av Dependabot ([.github/dependabot.yml](./.github/dependabot.yml)),
+og CI ([.github/workflows/security.yml](./.github/workflows/security.yml)) kjører
+`npm audit --omit=dev --audit-level=high` på både rot og `web`. Vil du sjekke selv:
+
+```bash
+npm audit --omit=dev
+cd web && npm audit --omit=dev
+```
 
 ---
 
@@ -69,7 +265,7 @@ curl https://tech-ai.tech/v1/chat/completions \
   }'
 ```
 
-- **Modeller:** `GET https://tech-ai.tech/v1/models` (`tech-ai-monkey` – v2.0.1)
+- **Modeller:** `GET https://tech-ai.tech/v1/models` (`tech-ai-monkey` – v2.1)
 - **VS Code-oppsett:** Se <https://tech-ai.tech/docs/vscode>
 - **Last ned Ollama & CLI:** Se <https://tech-ai.tech/download>
 
@@ -83,9 +279,9 @@ curl -X POST https://tech-ai.tech/eve/v1/session \
   -d '{"message": "Hei fra serveren min!"}'
 ```
 
-### 3. Lokal Ollama-motor (`tech-ai-monkey` v2.0.1) & kontinuerlig nøkkelrotasjon
+### 3. Lokal Ollama-motor (`tech-ai-monkey` v2.1) & kontinuerlig nøkkelrotasjon
 
-**Tech AI monkey v2.0.1** kjører 100 % selvstendig på egen lokal **Ollama**-motor uten eksterne OpenAI/DeepSeek-avhengigheter:
+**Tech AI monkey v2.1** kjører 100 % selvstendig på egen lokal **Ollama**-motor uten eksterne OpenAI/DeepSeek-avhengigheter:
 
 ```bash
 # Bygg den lokale modellen fra Modelfile.tech-ai-monkey
