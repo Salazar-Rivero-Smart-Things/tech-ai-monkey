@@ -30,7 +30,10 @@ Environment=NODE_ENV=production
 ExecStart=@@NODE_BIN@@/npm run start
 Restart=always
 RestartSec=5
-KillMode=mixed
+# KillMode=control-group: `npm run start` starter barneprosesser (next-server/eve).
+# Med KillMode=mixed får bare npm SIGTERM, barna blir igjen som foreldreløse og
+# holder port 2000/3100 – da feiler hver restart med «address already in use».
+KillMode=control-group
 
 [Install]
 WantedBy=multi-user.target
