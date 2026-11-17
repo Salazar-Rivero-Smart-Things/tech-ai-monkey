@@ -20,8 +20,8 @@ if errorlevel 1 (
 echo [2/3] Oppretter versjonert fil (tech-ai_2.1.0_windows_x64.exe)...
 copy /y "web\public\downloads\tech-ai.exe" "web\public\downloads\tech-ai_2.1.0_windows_x64.exe" >nul
 
-echo [3/3] Beregner SHA-256 kontrollsum...
-powershell -NoProfile -Command "Get-FileHash -Path 'web\public\downloads\tech-ai.exe' -Algorithm SHA256 | ForEach-Object { $_.Hash.ToLower() + '  tech-ai.exe' } | Set-Content -Path 'web\public\downloads\checksums.txt' -Encoding utf8"
+echo [3/3] Beregner SHA-256 kontrollsum for alle nedlastingsfiler...
+powershell -NoProfile -Command "Get-ChildItem -Path 'web\public\downloads\tech-ai*' -File | Sort-Object Name | ForEach-Object { (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLower() + '  ' + $_.Name } | Set-Content -Path 'web\public\downloads\checksums.txt' -Encoding utf8"
 
 echo.
 echo ==========================================================

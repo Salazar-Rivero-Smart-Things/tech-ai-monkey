@@ -185,9 +185,10 @@ export default async function DownloadPage() {
           </div>
         </section>
 
-        <h2 className="mt-12 text-2xl font-bold">Last ned Tech AI monkey CLI</h2>
+        <h2 className="mt-12 text-2xl font-bold">Last ned Tech AI monkey CLI (v2.1.0)</h2>
         <p className="mt-2 text-sm text-zinc-400">
-          Velg ditt operativsystem under. Windows .exe er klar til umiddelbar nedlasting; macOS og Linux deb-pakke kan også bygges eller lastes ned.
+          Velg ditt operativsystem under. Ferdigbygde installasjonspakker for <strong>Ubuntu / Debian (<code>.deb</code>)</strong>,{" "}
+          <strong>Windows (<code>.exe</code> / <code>.zip</code>)</strong> og <strong>macOS Universal (<code>.dmg</code>)</strong> er klare til umiddelbar nedlasting.
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-3">
@@ -229,9 +230,9 @@ tech-ai ask "hello"`
             subtitle={
               mac
                 ? macDmg
-                  ? "Universal DMG for Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer"
-                  : "Installer for Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer"
-                : "Apple Silicon (M1 and newer), macOS Sequoia 15.7.9 or newer"
+                  ? "Universal DMG (v2.1.0) for Apple Silicon (M1–M4) & Intel Mac"
+                  : "Installer for Apple Silicon (M1–M4) & Intel Mac"
+                : "Apple Silicon (M1–M4) & Intel Mac"
             }
             artifact={mac}
             checksum={mac ? checksums[mac.name] : undefined}
