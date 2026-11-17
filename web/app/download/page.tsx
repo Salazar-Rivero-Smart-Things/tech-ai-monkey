@@ -29,7 +29,7 @@ async function listArtifacts(): Promise<Artifact[]> {
       const info = await stat(join(downloadsDir(), name));
       found.push({ name, bytes: info.size });
     }
-    return found.sort((a, b) => a.name.localeCompare(b.name));
+    return found.sort((a, b) => b.name.localeCompare(a.name, undefined, { numeric: true }));
   } catch {
     return [];
   }

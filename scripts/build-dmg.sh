@@ -42,6 +42,8 @@ die() { printf '\033[31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
 BUN=""
 if command -v bun >/dev/null 2>&1; then
   BUN="bun"
+elif [ -x "$HOME/.bun/bin/bun" ]; then
+  BUN="$HOME/.bun/bin/bun"
 elif npx --yes bun@1 --version >/dev/null 2>&1; then
   BUN="npx --yes bun@1"
 else

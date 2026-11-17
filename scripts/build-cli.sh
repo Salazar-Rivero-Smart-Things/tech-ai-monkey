@@ -65,7 +65,12 @@ for arg in "$@"; do
 done
 
 [ -f "$CLI_DIR/src/index.js" ] || die "Fant ikke cli/src/index.js"
-command -v dpkg-deb >/dev/null 2>&1 || die "dpkg-deb mangler (installer dpkg-dev)"
+HAVE_DPKG_DEB=0
+if command -v dpkg-deb >/dev/null 2>&1; then
+  HAVE_DPKG_DEB=1
+elif ! command -v python3 >/dev/null 2>&1; then
+  die "Verken dpkg-deb eller python3 ble funnet (kreves for å pakke .deb)"
+fi
 
 echo "tech-ai CLI $VERSION -> $OUT_DIR"
 
@@ -87,6 +92,8 @@ fi
 BUN=""
 if command -v bun >/dev/null 2>&1; then
   BUN="bun"
+elif [ -x "$HOME/.bun/bin/bun" ]; then
+  BUN="$HOME/.bun/bin/bun"
 elif command -v npx >/dev/null 2>&1; then
   log "bun er ikke installert – provde a hente det via npx (kan ta litt tid)"
   if npx --yes bun@1 --version >/dev/null 2>&1; then
@@ -344,20 +351,119 @@ chmod 0755 "$DEB_ROOT/DEBIAN/postinst" "$DEB_ROOT/DEBIAN/postrm"
 
 DEB_FILE="$OUT_DIR/${PKG}_${VERSION}_amd64.deb"
 log "Bygger $DEB_FILE"
-dpkg-deb --build --root-owner-group "$DEB_ROOT" "$DEB_FILE" >/dev/null
+if [ "$HAVE_DPKG_DEB" = "1" ]; then
+  dpkg-deb --build --root-owner-group "$DEB_ROOT" "$DEB_FILE" >/dev/null
+else
+  python3 - "$DEB_ROOT" "$DEB_FILE" <<'PYEOF'
+import gzip, io, os, stat, sys, tarfile, time
+
+deb_root, deb_file = sys.argv[1], sys.argv[2]
+mtime = int(time.time())
+
+def reset_tarinfo(ti):
+    ti.uid = 0
+    ti.gid = 0
+    ti.uname = "root"
+    ti.gname = "root"
+    ti.mtime = mtime
+    return ti
+
+def make_targz(base_dir, exclude=None):
+    raw = io.BytesIO()
+    with tarfile.open(fileobj=raw, mode="w", format=tarfile.GNU_FORMAT) as tf:
+        for root, dirs, files in os.walk(base_dir):
+            dirs.sort()
+            files.sort()
+            rel_root = os.path.relpath(root, base_dir)
+            if exclude and (rel_root == exclude or rel_root.startswith(exclude + os.sep)):
+                dirs[:] = []
+                continue
+            if exclude and rel_root == ".":
+                dirs[:] = [d for d in dirs if d != exclude]
+            arc_dir = "./" if rel_root == "." else "./" + rel_root.replace(os.sep, "/") + "/"
+            ti = tf.gettarinfo(root, arcname=arc_dir)
+            ti.mode = 0o755
+            tf.addfile(reset_tarinfo(ti))
+            for fname in files:
+                fpath = os.path.join(root, fname)
+                rel_file = os.path.relpath(fpath, base_dir).replace(os.sep, "/")
+                arc_file = "./" + rel_file
+                ti = tf.gettarinfo(fpath, arcname=arc_file)
+                st_mode = os.stat(fpath).st_mode
+                ti.mode = 0o755 if (st_mode & stat.S_IXUSR) else 0o644
+                with open(fpath, "rb") as fh:
+                    tf.addfile(reset_tarinfo(ti), fh)
+    gz = io.BytesIO()
+    with gzip.GzipFile(filename="", mode="wb", fileobj=gz, compresslevel=9, mtime=mtime) as gzf:
+        gzf.write(raw.getvalue())
+    return gz.getvalue()
+
+control_targz = make_targz(os.path.join(deb_root, "DEBIAN"))
+data_targz = make_targz(deb_root, exclude="DEBIAN")
+
+def ar_member(name, content):
+    hdr = f"{name:<16}{mtime:<12}{0:<6}{0:<6}{'100644':<8}{len(content):<10}`\n".encode("ascii")
+    assert len(hdr) == 60
+    pad = b"\n" if (len(content) % 2 == 1) else b""
+    return hdr + content + pad
+
+with open(deb_file, "wb") as out:
+    out.write(b"!<arch>\n")
+    out.write(ar_member("debian-binary", b"2.0\n"))
+    out.write(ar_member("control.tar.gz", control_targz))
+    out.write(ar_member("data.tar.gz", data_targz))
+PYEOF
+fi
 
 # --- 3b. verify what we just built --------------------------------------------
-if dpkg-deb -f "$DEB_FILE" >/dev/null 2>&1; then
-  log "✓ .deb er gyldig — $(dpkg-deb -f "$DEB_FILE" Depends)"
+if [ "$HAVE_DPKG_DEB" = "1" ]; then
+  if dpkg-deb -f "$DEB_FILE" >/dev/null 2>&1; then
+    log "✓ .deb er gyldig — $(dpkg-deb -f "$DEB_FILE" Depends)"
+  else
+    die ".deb-pakken kunne ikke leses tilbake. Bygget er ugyldig."
+  fi
 else
-  die ".deb-pakken kunne ikke leses tilbake. Bygget er ugyldig."
+  DEB_DEPENDS="$(python3 - "$DEB_FILE" <<'PYEOF'
+import io, sys, tarfile
+
+data = open(sys.argv[1], "rb").read()
+assert data[:8] == b"!<arch>\n", "Ugyldig ar-header"
+pos = 8
+members = {}
+while pos < len(data):
+    hdr = data[pos:pos+60]
+    name = hdr[:16].decode("ascii").strip().rstrip("/")
+    size = int(hdr[48:58].decode("ascii").strip())
+    pos += 60
+    members[name] = data[pos:pos+size]
+    pos += size + (size % 2)
+assert members.get("debian-binary") == b"2.0\n", "Mangler debian-binary 2.0"
+assert "control.tar.gz" in members and "data.tar.gz" in members, "Mangler tar-medlemmer"
+with tarfile.open(fileobj=io.BytesIO(members["control.tar.gz"]), mode="r:gz") as tf:
+    ctrl = tf.extractfile("./control").read().decode("utf-8")
+with tarfile.open(fileobj=io.BytesIO(members["data.tar.gz"]), mode="r:gz") as tf:
+    names = tf.getnames()
+    assert "./usr/bin/tech-ai" in names, "Mangler ./usr/bin/tech-ai i data.tar.gz"
+for line in ctrl.splitlines():
+    if line.startswith("Depends:"):
+        print(line.split(":", 1)[1].strip())
+        break
+PYEOF
+)" || die ".deb-pakken kunne ikke verifiseres."
+  log "✓ .deb er gyldig (ar + control.tar.gz + data.tar.gz) — $DEB_DEPENDS"
 fi
 
 if [ "$HAVE_BUN" = "1" ]; then
-  if RUNS="$("$LINUX_BIN" --version 2>&1 | head -n1)" && [ -n "$RUNS" ]; then
-    log "✓ Linux-binæren kjører: $RUNS"
+  if [ "$(uname -s 2>/dev/null)" = "Linux" ]; then
+    if RUNS="$("$LINUX_BIN" --version 2>&1 | head -n1)" && [ -n "$RUNS" ]; then
+      log "✓ Linux-binæren kjører: $RUNS"
+    else
+      die "Linux-binæren ble bygget, men kjører ikke. Avbryter før noe publiseres."
+    fi
+  elif command -v file >/dev/null 2>&1 && file "$LINUX_BIN" | grep -q 'ELF 64-bit'; then
+    log "✓ Linux-binæren er en gyldig 64-bit ELF (x86-64)"
   else
-    die "Linux-binæren ble bygget, men kjører ikke. Avbryter før noe publiseres."
+    die "Linux-binæren er ikke en gyldig 64-bit ELF — avbryter."
   fi
 fi
 

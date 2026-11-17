@@ -1,7 +1,8 @@
-# Built CLI artifacts are large binaries — never commit them.
-# Build them locally with:  bash scripts/build-cli.sh
+# Built CLI artifacts are large binaries — never commit them unless released.
+# Build them locally with:  bash scripts/build-cli.sh && bash scripts/build-dmg.sh
 *
 !.gitignore
 !README.md
 !checksums.txt
-!tech-ai_2.0.0_macos_universal.dmg
+!tech-ai_2.1.0_macos_universal.dmg
+!tech-ai_2.1.0_amd64.deb
