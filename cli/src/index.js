@@ -11,7 +11,25 @@ import {
 } from "./config.js";
 import { loginWithBrowser, loginWithKey, loginWithPassword, persist } from "./login.js";
 import { CLIENT_NAME, VERSION } from "./version.js";
-import { bold, cyan, dim, fail, green, heading, red, say, warn, yellow } from "./ui.js";
+import {
+  badge,
+  banner,
+  blue,
+  bold,
+  card,
+  cyan,
+  dim,
+  fail,
+  gray,
+  green,
+  heading,
+  magenta,
+  red,
+  say,
+  success,
+  warn,
+  yellow,
+} from "./ui.js";
 
 function parseArgs(argv) {
   const flags = {};
@@ -41,7 +59,7 @@ ${bold("USAGE")}
   tech-ai                Sign in on the first run, then start the chat
 
 ${bold("COMMANDS")}
-  login                  Sign in via your browser (Google or e-mail)
+  login                  Sign in via your browser (e-mail & password)
   login --key <key>      Sign in with an API key (Dashboard → API keys)
   login --email <e> --password <p>
                          Sign in with e-mail and password
@@ -53,6 +71,7 @@ ${bold("COMMANDS")}
   help                   Show this help
 
 ${bold("OPTIONS")}
+  --local                Connect to local stack (${cyan("http://127.0.0.1:3100")})
   --api <url>            API base URL (default: ${cyan("https://tech-ai.tech")})
   --session <id>         Continue an existing session with "ask"
   -h, --help             Show help
@@ -110,7 +129,7 @@ async function requireAuth(apiBase) {
 
   say();
   say(bold("You are not signed in yet."));
-  say(dim("Signing in opens your browser — Google or e-mail works."));
+  say(dim("Signing in opens your browser to sign in."));
   say();
 
   const answer = await ask(cyan("Sign in now? ") + dim("[Y/n] "));
@@ -212,12 +231,13 @@ async function runTurn(apiBase, token, { sessionId, continuationToken, startInde
 }
 
 async function commandLogin(flags, positional) {
-  const apiBase = resolveApiBase(flags.api);
+  const apiBase = resolveApiBase(flags.api, flags.local);
 
   if (flags.key) {
     try {
       const result = await loginWithKey(apiBase, flags.key);
       persist(apiBase, result.token, result.user, result.unlimited);
+      success("Logged in successfully via API key.");
       return 0;
     } catch (error) {
       handleApiError(error);
@@ -230,6 +250,7 @@ async function commandLogin(flags, positional) {
     try {
       const result = await loginWithPassword(apiBase, { email, password });
       persist(apiBase, result.token, result.user, result.unlimited);
+      success("Logged in successfully as " + email + ".");
       return 0;
     } catch (error) {
       handleApiError(error);
@@ -244,6 +265,7 @@ async function commandLogin(flags, positional) {
   try {
     const result = await loginWithBrowser(apiBase);
     persist(apiBase, result.token, result.user, result.unlimited);
+    success("Logged in successfully as " + (result.user?.email ?? "authorized user") + ".");
     return 0;
   } catch (error) {
     if (error instanceof ApiError) handleApiError(error);
@@ -253,7 +275,7 @@ async function commandLogin(flags, positional) {
 }
 
 async function commandWhoami(flags) {
-  const apiBase = resolveApiBase(flags.api);
+  const apiBase = resolveApiBase(flags.api, flags.local);
   const token = await requireAuth(apiBase);
 
   let me;
@@ -263,27 +285,24 @@ async function commandWhoami(flags) {
     handleApiError(error);
   }
 
-  heading("Account");
-  say(`  ${dim("e-mail   ")} ${me.user?.email ?? "—"}`);
-  say(`  ${dim("name     ")} ${me.user?.name ?? "—"}`);
-  say(`  ${dim("role     ")} ${me.user?.role ?? "—"}`);
-  say(`  ${dim("API      ")} ${apiBase}`);
+  const remaining = Number(me.tokensRemaining ?? 0);
+  const colour = remaining <= 0 ? red : remaining < 10_000 ? yellow : green;
 
-  if (me.unlimited) {
-    say(`  ${dim("plan     ")} ${green("Unlimited — owner account, never metered")}`);
-  } else {
-    const remaining = Number(me.tokensRemaining ?? 0);
-    const colour = remaining <= 0 ? red : remaining < 10_000 ? yellow : green;
-    say(`  ${dim("plan     ")} ${me.planName ?? me.plan}`);
-    say(`  ${dim("tokens   ")} ${colour(String(remaining))} remaining`);
-    if (me.prepaidTokens) say(`  ${dim("prepaid  ")} ${me.prepaidTokens}`);
-  }
+  say("");
+  card([
+    `${bold("Account:")}   ${cyan(me.user?.email ?? "—")}`,
+    `${bold("Name:")}      ${me.user?.name ?? "—"}`,
+    `${bold("Role:")}      ${me.user?.role ?? "user"}`,
+    `${bold("Endpoint:")}  ${dim(apiBase)}`,
+    `${bold("Plan:")}      ${me.unlimited ? green("Unlimited [Owner Account]") : (me.planName ?? me.plan ?? "Standard")}`,
+    `${bold("Tokens:")}    ${me.unlimited ? green("∞ Unlimited") : colour(String(remaining)) + " remaining"}`,
+  ], "TECH AI MONKEY · ACCOUNT STATUS");
   say("");
   return 0;
 }
 
 async function commandAsk(flags, positional) {
-  const apiBase = resolveApiBase(flags.api);
+  const apiBase = resolveApiBase(flags.api, flags.local);
   const token = await requireAuth(apiBase);
   const message = positional.join(" ").trim();
   if (!message) {
@@ -306,15 +325,18 @@ async function commandAsk(flags, positional) {
 }
 
 async function commandChat(flags) {
-  const apiBase = resolveApiBase(flags.api);
+  const apiBase = resolveApiBase(flags.api, flags.local);
   const token = await requireAuth(apiBase);
 
   const credentials = loadCredentials();
-  say();
-  say(bold(`${CLIENT_NAME} v${VERSION}`));
-  say(dim(`  signed in as ${credentials?.user?.email ?? "unknown"} · ${apiBase}`));
-  if (credentials?.unlimited) say(dim("  unlimited (owner account)"));
-  say(dim("  type /exit to quit, /new for a fresh conversation"));
+  say("");
+  banner();
+  card([
+    `${bold("Session:")}   ${green("● Active")}`,
+    `${bold("Account:")}   ${cyan(credentials?.user?.email ?? "Signed in")}${credentials?.unlimited ? " " + green("[Owner · Unlimited]") : ""}`,
+    `${bold("Endpoint:")}  ${dim(apiBase)}`,
+    `${bold("Commands:")}  ${yellow("/new")} ${dim("start fresh")} · ${yellow("/exit")} ${dim("quit chat")}`,
+  ], "TECH AI MONKEY INTERACTIVE SHELL");
 
   const rl = createInterface({ input: stdin, output: stdout });
   let sessionId = null;
@@ -323,18 +345,18 @@ async function commandChat(flags) {
 
   try {
     while (true) {
-      const input = (await rl.question(cyan("\nyou › "))).trim();
+      const input = (await rl.question(cyan("\n  you ❯ "))).trim();
       if (!input) continue;
       if (input === "/exit" || input === "/quit") break;
       if (input === "/new") {
         sessionId = null;
         continuationToken = null;
         startIndex = 0;
-        say(dim("  started a new conversation"));
+        success("Started a new conversation session.");
         continue;
       }
 
-      stdout.write(dim("\nai  › "));
+      stdout.write(magenta("\n  monkey ❯ "));
       try {
         const result = await runTurn(apiBase, token, {
           sessionId,
@@ -357,6 +379,7 @@ async function commandChat(flags) {
   } finally {
     rl.close();
   }
+  say(dim("\nBye!"));
   return 0;
 }
 
@@ -365,7 +388,7 @@ async function commandChat(flags) {
  * Signs the user in on the first run, then drops straight into the chat.
  */
 async function commandWelcome(flags) {
-  const apiBase = resolveApiBase(flags.api);
+  const apiBase = resolveApiBase(flags.api, flags.local);
   if (!storedToken()) await requireAuth(apiBase);
   return commandChat(flags);
 }

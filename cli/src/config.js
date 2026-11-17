@@ -48,8 +48,9 @@ export function clearCredentials() {
   return false;
 }
 
-/** Precedence: --api flag > TECH_AI_API_URL > stored value > default. */
-export function resolveApiBase(flagValue) {
+/** Precedence: --local > --api flag > TECH_AI_API_URL > stored value > default. */
+export function resolveApiBase(flagValue, isLocal = false) {
+  if (isLocal) return "http://127.0.0.1:3100";
   const stored = loadCredentials()?.apiBase;
   const value = flagValue || process.env.TECH_AI_API_URL || stored || DEFAULT_API_BASE;
   return String(value).replace(/\/+$/, "");

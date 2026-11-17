@@ -86,31 +86,29 @@ export default function VsCodeDocsPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-6 py-12">
-        <h1 className="text-3xl font-bold">Use {siteConfig.name} (Ollama Engine) in VS Code</h1>
+        <h1 className="text-3xl font-bold">Use {siteConfig.name} in VS Code</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          {siteConfig.name} runs on its own independent <strong>Ollama</strong> brain (no OpenAI or
-          DeepSeek dependency) with continuous automatic API-key rotation. You can connect VS Code
-          directly to this Ollama-powered agent — or download Ollama yourself on the{" "}
+          {siteConfig.name} is a completely independent AI assistant powered by its own dedicated
+          GPU engine. You can connect VS Code directly to this agent using our Chat Completions
+          endpoint, or download the CLI app on the{" "}
           <Link href="/download" className="text-emerald-400 hover:underline">
-            Download &amp; Ollama page
+            Download page
           </Link>
           .
         </p>
 
         <div className="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/5 p-5 text-sm leading-relaxed text-zinc-300">
           <h2 className="font-semibold text-emerald-200">
-            Powered by Ollama — Continuous Automatic Key Rotation
+            Dedicated Local GPU Engine — Completely Independent
           </h2>
           <p className="mt-2">
-            Unlike external OpenAI or DeepSeek endpoints that stop working when an external provider
-            key expires, {siteConfig.name} runs its own local Ollama model (
-            <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">tech-ai-monkey</code>) and
-            automatically refreshes its internal engine token every 10 minutes. In VS Code, keep{" "}
+            Unlike external services that rely on third-party APIs with expiring quotas, {siteConfig.name} runs
+            its own dedicated model engine (<code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">tech-ai-monkey</code>)
+            on our server. In VS Code, keep{" "}
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">
               &quot;toolCalling&quot;: false
             </code>{" "}
-            and use it in Ask mode because the agent runs its own sandbox and research tools on the
-            server.
+            and use it in Ask mode because the agent handles research and code execution directly on the server.
           </p>
         </div>
 
@@ -193,7 +191,7 @@ export default function VsCodeDocsPage() {
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">
               &quot;stream&quot;: true
             </code>{" "}
-            to receive Server-Sent Events exactly as OpenAI sends them:
+            to receive Server-Sent Events in standard format:
           </p>
           <CopyBlock code={CURL_STREAM} className="mt-3" />
         </Step>
@@ -230,7 +228,7 @@ export default function VsCodeDocsPage() {
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">
               Authorization: Bearer tai_…
             </code>
-            . Errors use OpenAI&apos;s shape:{" "}
+            . Standard error format:{" "}
             <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">
               {`{ "error": { "message": "…", "type": "…" } }`}
             </code>

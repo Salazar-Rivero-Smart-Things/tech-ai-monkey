@@ -43,9 +43,9 @@ export default function PrivacyPolicyContent() {
             <li>We collect the data needed to create your account, run the assistant, and bill you.</li>
             <li>We never sell your personal data and we do not use it for advertising.</li>
             <li>
-              Your chat prompts are processed on our own server in {siteConfig.taxCountry} with a
-              self-hosted AI model — they are not sent to OpenAI, Google, DeepSeek or similar
-              providers, and they are not used to train third-party models.
+              Your chat prompts are processed on our own server in {siteConfig.taxCountry} with our
+              dedicated local AI model — they are processed 100% locally and never shared with external
+              third-party AI providers or used to train public models.
             </li>
             <li>You can download or delete your data yourself from the dashboard, at any time.</li>
           </ul>
@@ -166,10 +166,9 @@ export default function PrivacyPolicyContent() {
 
         <Section title="6. AI processing — where your prompts go">
           <p>
-            The assistant is powered by a self-hosted model (Ollama) that runs on our own server in{" "}
+            The assistant is powered by a self-hosted local model running on our dedicated server in{" "}
             {siteConfig.taxCountry}. Your prompts, uploaded files and the generated answers are
-            processed and stored there. They are <strong>not</strong> forwarded to external AI
-            providers such as OpenAI, Anthropic, Google or DeepSeek.
+            processed and stored there. They are <strong>not</strong> forwarded to external AI providers.
           </p>
           <p>
             When the assistant searches the web, the search query — not your full conversation — is
@@ -254,10 +253,10 @@ export default function PrivacyPolicyContent() {
                 </tr>
                 <tr>
                   <td className="py-2 pr-3 whitespace-nowrap">
-                    {siteConfig.companyName} — Local Ollama Engine (Norway)
+                    {siteConfig.companyName} — Local GPU AI Engine (Norway)
                   </td>
                   <td className="py-2 pr-3">
-                    Self-hosted AI model (Ollama) that generates the agent&apos;s answers locally
+                    Self-hosted local AI engine that generates the agent&apos;s answers locally
                   </td>
                   <td className="py-2">
                     The text (prompt) you send to the agent — processed 100% on our own server in
@@ -283,8 +282,8 @@ export default function PrivacyPolicyContent() {
         <Section title="9. Transfers outside the EEA">
           <p>
             Your account data and AI chat prompts are processed and stored on our own server in
-            Norway using our local <strong>Ollama</strong> AI engine — your chat prompts are{" "}
-            <strong>never</strong> sent to external AI providers such as OpenAI or DeepSeek. A few
+            Norway using our local AI engine — your chat prompts are{" "}
+            <strong>never</strong> sent to external AI providers. A few
             optional infrastructure sub-processors are outside the EEA (Cloudflare, Slack, Stripe,
             and PayPal in the USA). Those transfers rely on the EU Standard Contractual Clauses and
             the additional safeguards required by the GDPR.

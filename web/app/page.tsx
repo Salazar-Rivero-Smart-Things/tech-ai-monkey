@@ -53,18 +53,18 @@ export default async function HomePage() {
       </header>
 
       <main>
-        {/* Model banner — shows the active AI model (Ollama self-hosted). */}
+        {/* Model banner — shows the active AI model (local GPU). */}
         <div className="border-b border-zinc-800 bg-gradient-to-r from-emerald-950/50 via-zinc-950 to-zinc-950">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-3 px-6 py-3 text-sm">
             <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
-              OLLAMA LOCAL ENGINE
+              LOCAL GPU ENGINE
             </span>
             <span className="font-semibold">{siteConfig.modelName} {siteConfig.modelVersion}</span>
             <span className="text-zinc-400">
-              · 100% independent local Ollama brain (no OpenAI / DeepSeek dependency · automatic key rotation)
+              · 100% uavhengig lokal GPU-motor (Qwen 2.5 Coder · dedikert server · ingen eksterne avhengigheter)
             </span>
             <Link href="/download" className="ml-auto text-xs font-medium text-emerald-400 hover:underline">
-              Download Ollama &amp; CLI →
+              Last ned CLI (Windows, macOS, Linux) →
             </Link>
           </div>
         </div>
@@ -72,9 +72,9 @@ export default async function HomePage() {
         <section className="mx-auto max-w-4xl px-6 py-20 text-center">
           <h1 className="text-4xl font-bold sm:text-5xl">{siteConfig.tagline}</h1>
           <p className="mx-auto mt-4 max-w-2xl text-lg text-zinc-400">
-            {siteConfig.name} runs on its own independent <strong>Ollama</strong> brain, searches
-            the web until it finds the answer, learns from every conversation, and gives you API
-            access with continuous automatic key renewal — at a fair price.
+            {siteConfig.name} kjører på sin egen uavhengige, oppdaterte GPU-motor, søker
+            på nettet til den finner svaret, lærer fra hver samtale, og gir deg direkte
+            tilgang fra nettleser eller terminal via vår nye CLI — til en rimelig pris.
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             {session?.user ? (
@@ -87,7 +87,7 @@ export default async function HomePage() {
               </Link>
             )}
             <Link href="/download" className="rounded-lg border border-emerald-600/60 bg-emerald-950/30 px-5 py-2.5 text-emerald-200 hover:bg-emerald-900/40">
-              Download Ollama &amp; App
+              Last ned CLI (.exe / macOS / Linux)
             </Link>
             <Link href="/pricing" className="rounded-lg border border-zinc-700 px-5 py-2.5 hover:bg-zinc-900">
               View pricing

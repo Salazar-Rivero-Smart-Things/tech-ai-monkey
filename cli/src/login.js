@@ -54,7 +54,7 @@ const SUCCESS_HTML = `<!doctype html><html><head><meta charset="utf-8">
 Trouble? Run <code>tech-ai login</code> again.</p>
 </div></body></html>`;
 
-/** Browser login: Google or e-mail on the web page, loopback callback to us. */
+/** Browser login: e-mail and password on the web page, loopback callback to us. */
 export async function loginWithBrowser(apiBase) {
   const { verifier, challenge } = makePkce();
   const state = randomBytes(16).toString("base64url");

@@ -168,25 +168,23 @@ export default function ApiKeyManager({ unlimited }: { unlimited: boolean }) {
 
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-5 text-sm text-zinc-400">
         <h2 className="text-base font-semibold text-zinc-100">
-          Ollama Engine &amp; Command Line
+          Local AI Engine &amp; Command Line (CLI)
         </h2>
         <p className="mt-2">
-          Tech AI monkey runs on its own independent <strong>Ollama</strong> brain (no OpenAI or
-          DeepSeek dependency) with automatic continuous key rotation every 10 minutes so the agent
-          never stops.
+          Tech AI monkey kjører på sin egen uavhengige, oppdaterte GPU-motor (Qwen 2.5 Coder /
+          llama.cpp) på vår dedikerte server. Du trenger ikke installere eller laste ned noen lokal
+          modell selv — du laster bare ned vår nye CLI for ditt operativsystem (Windows, macOS eller Linux) og logger inn.
         </p>
-        <p className="mt-2">Download Ollama or the CLI and sign in:</p>
-        <pre className="mt-3 overflow-x-auto rounded bg-black/50 p-3 font-mono text-xs text-zinc-300">{`# Install Ollama locally (Linux):
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.1:8b
+        <p className="mt-2">Bruk Tech AI monkey CLI:</p>
+        <pre className="mt-3 overflow-x-auto rounded bg-black/50 p-3 font-mono text-xs text-zinc-300">{`# 1. Logg inn via nettleser (e-post & passord) eller med API-nøkkel:
+tech-ai login
+tech-ai login --key tai_...
 
-# Or use the Tech AI monkey CLI:
-tech-ai login                 # browser (Google or e-mail)
-tech-ai login --key tai_...   # paste an API key
-tech-ai ask "hello"
+# 2. Still spørsmål eller start interaktiv chat:
+tech-ai ask "Hjelp meg med denne koden"
 tech-ai chat`}</pre>
         <p className="mt-3">
-          Get Ollama and the CLI installer at{" "}
+          Last ned CLI-appen for Windows (.exe), macOS og Linux på{" "}
           <a className="text-emerald-400 hover:underline" href="/download">
             /download
           </a>

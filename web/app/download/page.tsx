@@ -25,7 +25,7 @@ async function listArtifacts(): Promise<Artifact[]> {
     const entries = await readdir(downloadsDir());
     const found: Artifact[] = [];
     for (const name of entries) {
-      if (!/\.(deb|exe|msi|pkg|dmg)$/i.test(name)) continue;
+      if (!/\.(deb|exe|msi|pkg|dmg|zip)$/i.test(name)) continue;
       const info = await stat(join(downloadsDir(), name));
       found.push({ name, bytes: info.size });
     }
@@ -130,7 +130,7 @@ export default async function DownloadPage() {
   const deb = artifacts.find((a) => a.name.endsWith(".deb"));
   // Prefer the installer for Windows: it is what gives the Start-menu entry.
   const winSetup = artifacts.find((a) => /_setup\.exe$/i.test(a.name));
-  const winPortable = artifacts.find((a) => a.name.endsWith(".exe") && a !== winSetup);
+  const winPortable = artifacts.find((a) => (a.name.endsWith(".exe") || a.name.endsWith(".zip")) && a !== winSetup);
   const exe = winSetup ?? winPortable;
   const mac = artifacts.find((a) => a.name.endsWith(".pkg") || a.name.endsWith(".dmg"));
   const macDmg = mac?.name.endsWith(".dmg") ?? false;
@@ -144,110 +144,50 @@ export default async function DownloadPage() {
       </header>
 
       <main className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="text-3xl font-bold">Download &amp; Local Ollama Engine</h1>
+        <h1 className="text-3xl font-bold">Download Tech AI monkey CLI</h1>
         <p className="mt-2 text-sm text-zinc-400">
-          {siteConfig.name} runs 100% independently on its own local <strong>Ollama</strong> brain
-          — no OpenAI or DeepSeek dependency, and automatic continuous API-key rotation so the
-          agent never stops. Below you can download <strong>Ollama</strong> (the local AI engine)
-          and the <strong>{siteConfig.name} CLI app</strong>.
+          {siteConfig.name} kjører på sin egen uavhengige, oppdaterte GPU-motor på vår dedikerte
+          server. Du trenger ikke å installere eller kjøre tunge AI-modeller på din egen maskin —
+          last bare ned CLI-appen for Windows, macOS eller Linux, logg inn én gang, og chat direkte
+          med agenten fra hvilken som helst terminal.
         </p>
 
-        {/* Ollama Download & Explanation Section */}
+        {/* Updated Engine & Server Info */}
         <section className="mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-950/15 p-6">
           <div className="flex flex-wrap items-center gap-3">
             <span className="rounded-full border border-emerald-500/40 bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-300">
-              INDEPENDENT AI BRAIN
+              HIGH-PERFORMANCE GPU ENGINE
             </span>
             <h2 className="text-xl font-bold text-zinc-100">
-              1. Download Ollama (Local AI Engine — replaces OpenAI / DeepSeek)
+              Oppdatert motor &amp; server (llama.cpp · Qwen 2.5 Coder)
             </h2>
           </div>
           <p className="mt-3 text-sm leading-relaxed text-zinc-300">
-            Instead of relying on external providers like OpenAI or DeepSeek whose API keys can
-            expire or stop working, {siteConfig.name} uses <strong>Ollama</strong> to run the AI
-            model (<code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">tech-ai-monkey</code>{" "}
-            / <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">llama3.1:8b</code>)
-            directly on the server. The built-in supervisor automatically rotates and renews the
-            local API token every 10 minutes (<code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs">sk-ollama-live-…</code>)
-            and self-heals the connection so the agent never stops.
+            Agenten kjører nå på en oppdatert, lynrask GPU-motor på vår server. Du trenger ikke
+            installere eller konfigurere noen eksterne modeller manuelt. Last ned den nye CLI-en under, kjør{" "}
+            <code className="rounded bg-zinc-900 px-1.5 py-0.5 text-xs text-emerald-300">tech-ai login</code>,{" "}
+            og få full tilgang til kodeassistenten, automatiske verktøy og sandkasser direkte i terminalen.
           </p>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-              <h3 className="font-semibold text-zinc-100">Linux (Ubuntu / Debian)</h3>
-              <p className="mt-1 text-xs text-zinc-400">One-line installer for 64-bit Linux servers &amp; desktops</p>
-              <a
-                href="https://ollama.com/download/linux"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
-              >
-                Download Ollama for Linux
-              </a>
-              <pre className="mt-3 overflow-x-auto rounded border border-zinc-800 bg-black/60 p-2.5 font-mono text-[11px] text-zinc-300">{`curl -fsSL https://ollama.com/install.sh | sh
-ollama pull llama3.1:8b`}</pre>
-            </div>
-
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-              <h3 className="font-semibold text-zinc-100">Windows 10 / 11</h3>
-              <p className="mt-1 text-xs text-zinc-400">Official standalone installer (OllamaSetup.exe)</p>
-              <a
-                href="https://ollama.com/download/OllamaSetup.exe"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
-              >
-                Download Ollama (.exe)
-              </a>
-              <pre className="mt-3 overflow-x-auto rounded border border-zinc-800 bg-black/60 p-2.5 font-mono text-[11px] text-zinc-300">{`# After installing OllamaSetup.exe:
-ollama pull llama3.1:8b
-ollama run llama3.1:8b`}</pre>
-            </div>
-
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/60 p-4">
-              <h3 className="font-semibold text-zinc-100">macOS</h3>
-              <p className="mt-1 text-xs text-zinc-400">Apple Silicon (M1–M4) &amp; Intel macOS 12+</p>
-              <a
-                href="https://ollama.com/download/Ollama-darwin.zip"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-block rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-500"
-              >
-                Download Ollama for macOS
-              </a>
-              <pre className="mt-3 overflow-x-auto rounded border border-zinc-800 bg-black/60 p-2.5 font-mono text-[11px] text-zinc-300">{`# Unzip, move to Applications, then:
-ollama pull llama3.1:8b
-ollama run llama3.1:8b`}</pre>
-            </div>
-          </div>
-
           <div className="mt-5 rounded-xl border border-zinc-800 bg-black/40 p-4 text-xs leading-relaxed text-zinc-300">
-            <strong className="text-emerald-300">Hvordan det fungerer (Forklaring):</strong>
+            <strong className="text-emerald-300">Hva CLI-en gir deg:</strong>
             <ul className="mt-2 list-inside list-disc space-y-1 text-zinc-400">
               <li>
-                <strong>Helt uavhengig AI-motor:</strong> Agenten kjører på din egen konfigurerte modellmotor. Ingen
-                avhengigheter til tredjeparts bakdører, og du har full kontroll over nøkler og forbruk.
+                <strong>Frittstående binærfil:</strong> Ingen avhengigheter til Node.js, Python eller andre pakker.
               </li>
               <li>
-                <strong>Lynrask respons:</strong> Optimalisert arkitektur som svarer på under et sekund uten
-                tregheter eller lokale CPU-køer.
+                <strong>Interaktiv terminalchat:</strong> Kjør <code className="text-zinc-200">tech-ai chat</code> for en lynrask, fargerik samtaleopplevelse.
               </li>
               <li>
-                <strong>Koble til med egen nøkkel:</strong> For å bruke denne serverens ferdige
-                AI-agent fra terminalen, VS Code eller egne skript, opprett en nøkkel under{" "}
-                <Link href="/dashboard/api-keys" className="text-emerald-400 hover:underline">
-                  Dashboard → API keys
-                </Link>{" "}
-                eller last ned CLI-appen under.
+                <strong>Raske engangsspørsmål:</strong> Kjør <code className="text-zinc-200">tech-ai ask &quot;feilsøk denne koden&quot;</code> rett i dine byggeskript.
               </li>
             </ul>
           </div>
         </section>
 
-        <h2 className="mt-12 text-2xl font-bold">2. Download the {siteConfig.name} CLI app</h2>
+        <h2 className="mt-12 text-2xl font-bold">Last ned Tech AI monkey CLI</h2>
         <p className="mt-2 text-sm text-zinc-400">
-          The {siteConfig.name} command-line app talks directly to our Ollama-powered agent. Sign in
-          once, then ask from any terminal.
+          Velg ditt operativsystem under. Windows .exe er klar til umiddelbar nedlasting; macOS og Linux deb-pakke kan også bygges eller lastes ned.
         </p>
 
         <div className="mt-8 grid gap-6 md:grid-cols-3">

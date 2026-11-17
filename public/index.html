@@ -97,8 +97,8 @@
 </head>
 <body>
   <header>
-    <span class="title">Tech AI Monkey <span style="font-size:0.75em;padding:3px 8px;border-radius:999px;background:#064e3b;color:#6ee7b7;border:1px solid #059669;margin-left:8px;">Ollama Local Engine · Auto-Key Active</span></span>
-    <a href="https://ollama.com/download" target="_blank" rel="noopener noreferrer" style="font-size:0.85em;padding:7px 10px;border-radius:8px;background:#065f46;color:#ecfdf5;text-decoration:none;border:1px solid #10b981;">Last ned Ollama</a>
+    <span class="title">Tech AI Monkey <span style="font-size:0.75em;padding:3px 8px;border-radius:999px;background:#064e3b;color:#6ee7b7;border:1px solid #059669;margin-left:8px;">Local GPU Engine · Active</span></span>
+    <a href="/download" style="font-size:0.85em;padding:7px 12px;border-radius:8px;background:#2563eb;color:#ffffff;text-decoration:none;border:1px solid #3b82f6;font-weight:600;">Last ned CLI</a>
     <input id="apiKey" class="key" type="password" placeholder="API key (optional in local dev)" />
     <button id="saveKey" title="Save API key to this browser">Save key</button>
     <button id="newChat">New chat</button>
@@ -106,11 +106,11 @@
     <button id="resetChat" class="danger">Reset chat</button>
   </header>
   <details style="margin:6px 16px 0;padding:8px 12px;border-radius:8px;background:#111827;border:1px solid #1f2937;font-size:0.82em;color:#9ca3af;">
-    <summary style="cursor:pointer;color:#6ee7b7;font-weight:600;">Slik fungerer den uavhengige Ollama-hjernen (Ingen OpenAI / DeepSeek nødvendig)</summary>
+    <summary style="cursor:pointer;color:#6ee7b7;font-weight:600;">Slik fungerer Tech AI Monkey (100 % dedikert GPU-motor & CLI)</summary>
     <div style="margin-top:8px;line-height:1.5;">
-      <strong>1. 100 % selvstendig motor:</strong> Agenten kjører lokalt på <code>http://127.0.0.1:11434/v1</code> med modellen <code>tech-ai-monkey</code> (<code>llama3.1:8b</code>) via Ollama — 0 kr per token.<br/>
-      <strong>2. Kontinuerlig nøkkelrotasjon:</strong> Agenten fornyer automatisk sin interne Ollama-nøkkel (<code>sk-ollama-live-…</code>) hvert 10. minutt og sjekker helsen hvert minutt, slik at den aldri stopper opp.<br/>
-      <strong>3. Last ned Ollama:</strong> Linux: <code>curl -fsSL https://ollama.com/install.sh | sh &amp;&amp; ollama pull llama3.1:8b</code> · <a href="https://ollama.com/download/OllamaSetup.exe" target="_blank" style="color:#60a5fa;">Windows (.exe)</a> · <a href="https://ollama.com/download/Ollama-darwin.zip" target="_blank" style="color:#60a5fa;">macOS (.zip)</a>
+      <strong>1. Dedikert GPU-motor:</strong> Agenten kjører på vår oppdaterte servermotor med Qwen 2.5 Coder på dedikert GPU — lynrask respons og 0 kr per token.<br/>
+      <strong>2. Profesjonell CLI:</strong> Last ned den nye frittstående CLI-appen for Windows (.exe), macOS eller Linux direkte fra <a href="/download" style="color:#60a5fa;font-weight:600;">nedlastingssiden</a>.<br/>
+      <strong>3. Enkel oppstart:</strong> Bare kjør <code>tech-ai login</code> og <code>tech-ai chat</code>, ingen lokal oppsett eller ekstra programvare nødvendig!
     </div>
   </details>
   <div class="hint" id="status">Starting…</div>

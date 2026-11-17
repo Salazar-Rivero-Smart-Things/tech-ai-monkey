@@ -12,8 +12,7 @@ function jsonError(message: string, status: number) {
 }
 
 // The web chat is driven by the eve agent (see /eve/v1/*). This endpoint is a
-// thin compatibility shim that forwards to that same cloud-backed agent, so no
-// local Ollama model is needed.
+// thin compatibility shim that forwards to that same agent.
 export async function POST(req: Request) {
   const session = await auth();
   const userId = session?.user?.id;

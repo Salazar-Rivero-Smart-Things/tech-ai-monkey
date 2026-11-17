@@ -1,7 +1,7 @@
 # Tech AI monkey (web app)
 
 The consumer web application for **Tech AI monkey** v2.1 — powered 100% by a
-standalone local **Ollama** engine (`tech-ai-monkey` v2.1) with continuous API
+standalone local **GPU** engine (`tech-ai-monkey` v2.1) with continuous API
 key rotation, PHP/HTML web file generation, subscriptions, pay-as-you-go tokens,
 and secure account handling. Built with **Next.js 16 (App Router, TypeScript, Tailwind)**,
 **self-hosted** on Linux and published through a **Cloudflare Tunnel**, with **PostgreSQL** as the database.
