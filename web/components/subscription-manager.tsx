@@ -97,6 +97,16 @@ export default function SubscriptionManager({
       </div>
 
       <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
+        <div className="font-semibold">Vipps-betaling</div>
+        <p className="mt-1 text-sm text-zinc-400">
+          Du kan også betale direkte med Vipps til bedriftsnummer: <strong className="text-orange-400 text-base">139973</strong> (Salazar Rivero Smart Things).
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Husk å merke betalingen med e-postadressen din eller kontonavn, så krediteres tokens/abonnement manuelt eller via kvittering.
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-5">
         <div className="font-semibold">Pay-as-you-go top-up</div>
         <p className="mt-1 text-sm text-zinc-400">
           €{PAYG_MIN_EUR}–€{PAYG_MAX_EUR} prepaid at €0.00016/token (31,250 tokens per €5).

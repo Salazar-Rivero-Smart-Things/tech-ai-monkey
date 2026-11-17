@@ -79,7 +79,7 @@ export default function PricingPage() {
 
         <h2 className="mt-10 text-xl font-semibold">Payment methods</h2>
         <p className="mt-2 text-sm text-zinc-400">
-          Card (Stripe) · PayPal · Google Pay · Apple Pay.
+          Card (Stripe) · PayPal · Vipps (nummer: <strong className="text-zinc-200">{siteConfig.vippsNumber}</strong>) · Google Pay · Apple Pay.
         </p>
       </main>
     </div>

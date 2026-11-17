@@ -6,14 +6,14 @@ import { signIn } from "next-auth/react";
 
 function getAuthErrorMessage(code: string) {
   switch (code) {
-    case "OAuthAccountNotLinked":
-      return "This email is already registered with another sign-in method. Sign in with that method first.";
+    case "CredentialsSignin":
+      return "Invalid email or password.";
     case "AccessDenied":
-      return "Google sign-in was denied. Try again and approve the requested access.";
+      return "Access denied. Please check your credentials or contact support.";
     case "Configuration":
-      return "Google sign-in is not configured correctly. Please contact support.";
+      return "Sign-in service is not configured correctly. Please contact support.";
     default:
-      return `Google sign-in failed (${code}). Please try again or contact support.`;
+      return `Sign-in failed (${code}). Please try again or contact support.`;
   }
 }
 
@@ -47,19 +47,6 @@ export default function SignInPage() {
         <div>
           <h1 className="text-2xl font-semibold">Tech AI monkey</h1>
           <p className="text-sm text-zinc-400">Sign in to continue.</p>
-        </div>
-
-        <button
-          onClick={() => signIn("google", { redirectTo: "/dashboard" })}
-          className="w-full rounded-lg border border-zinc-700 px-4 py-2.5 hover:bg-zinc-900"
-        >
-          Continue with Google
-        </button>
-
-        <div className="flex items-center gap-3 text-xs text-zinc-500">
-          <span className="h-px flex-1 bg-zinc-800" />
-          or
-          <span className="h-px flex-1 bg-zinc-800" />
         </div>
 
         <form onSubmit={onSubmit} className="space-y-3">

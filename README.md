@@ -248,7 +248,7 @@ agenten mot din egen leverandør med `IMAGE_GEN_BASE_URL`, `IMAGE_GEN_API_KEY` o
 ## Pris & Gratis kvote (240 000 gratis hver annen uke)
 
 - **Gratis kvote:** Alle kontoer får **240 000 gratis tokens hver annen uke** automatisk.
-- **Rimelig betaling:** Når du trenger mer enn gratiskvoten, må du betale for ekstra bruk eller abonnement — prisene er svært lave og rimelige (støtter kort/Stripe, PayPal og krypto under **Dashboard → Subscription** på <https://tech-ai.tech/pricing>).
+- **Rimelig betaling:** Når du trenger mer enn gratiskvoten, må du betale for ekstra bruk eller abonnement — prisene er svært lave og rimelige (støtter kort/Stripe, PayPal, Vipps (nr: **139973**) og krypto under **Dashboard → Subscription** på <https://tech-ai.tech/pricing>).
 
 ---
 

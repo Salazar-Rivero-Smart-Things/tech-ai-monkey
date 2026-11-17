@@ -225,15 +225,12 @@ ollama run llama3.1:8b`}</pre>
             <strong className="text-emerald-300">Hvordan det fungerer (Forklaring):</strong>
             <ul className="mt-2 list-inside list-disc space-y-1 text-zinc-400">
               <li>
-                <strong>100 % uavhengig av OpenAI og DeepSeek:</strong> Agenten snakker direkte med{" "}
-                <code className="text-zinc-200">http://127.0.0.1:11434/v1</code> via Ollama. Ingen
-                data sendes til eksterne AI-leverandører, og det koster 0 kr per token å kjøre.
+                <strong>Helt uavhengig AI-motor:</strong> Agenten kjører på din egen konfigurerte modellmotor. Ingen
+                avhengigheter til tredjeparts bakdører, og du har full kontroll over nøkler og forbruk.
               </li>
               <li>
-                <strong>Kontinuerlig oppdatering av API-nøkkel:</strong> Agentens innebygde{" "}
-                <code className="text-zinc-200">ollama-auth</code>-motor genererer og roterer
-                automatisk en fersk, signert nøkkel hvert 10. minutt (og ved hvert kall), slik at
-                agenten aldri stopper på grunn av en utgått nøkkel.
+                <strong>Lynrask respons:</strong> Optimalisert arkitektur som svarer på under et sekund uten
+                tregheter eller lokale CPU-køer.
               </li>
               <li>
                 <strong>Koble til med egen nøkkel:</strong> For å bruke denne serverens ferdige

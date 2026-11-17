@@ -11,10 +11,11 @@
     "build": "eve build",
     "postbuild": "node scripts/patch-eve.mjs",
     "postinstall": "node scripts/patch-eve.mjs",
-    "start": "eve start --host 127.0.0.1",
+    "start": "eve start --host 127.0.0.1 --port 2000",
     "bench": "node scripts/model-bench.mjs"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.118",
     "@ai-sdk/openai-compatible": "latest",
     "ai": "latest",
     "eve": "^0.27.11",

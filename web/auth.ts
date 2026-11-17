@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { eq } from "drizzle-orm";
@@ -30,7 +29,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   providers: [
-    Google,
     Credentials({
       name: "Email and password",
       credentials: {

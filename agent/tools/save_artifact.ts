@@ -83,7 +83,7 @@ export default defineTool({
         const content = await sandbox.readTextFile({ path: filePath });
         files.push({
           path: filePath.replace(/^\/workspace\/?/, ""),
-          content,
+          content: content ?? "",
         });
       } catch (err) {
         console.warn("Skipping non-UTF8 or unreadable file in artifact:", filePath, err);

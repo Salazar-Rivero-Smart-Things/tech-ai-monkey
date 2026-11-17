@@ -10,6 +10,7 @@ export const siteConfig = {
   supportEmail: process.env.SUPPORT_EMAIL ?? "support@tech-ai.tech",
   supportWhatsAppUrl: process.env.SUPPORT_WHATSAPP_URL ?? "https://wa.me/4748904267",
   supportHours: process.env.SUPPORT_HOURS ?? "12:00–21:00 every day",
+  vippsNumber: process.env.VIPPS_NUMBER ?? "139973",
   privacyPolicyVersion: "2.1",
   privacyPolicyLastUpdated: "6 November 2026",
 };

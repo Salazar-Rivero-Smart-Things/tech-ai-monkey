@@ -34,3 +34,10 @@ uploads/
 
 # Images created by the generate_image tool (served at /generated/)
 web/public/generated/
+llama-cpp/
+models/
+*.gguf
+pgsql/
+pgdata/
+pgsql.zip
+installer-postgres*

@@ -11,7 +11,7 @@ import { cliAuthCodes } from "@/lib/db/schema";
 //      `code_challenge = BASE64URL(SHA256(verifier))` and starts a loopback
 //      HTTP server on 127.0.0.1:<port>.
 //   2. It opens https://<app>/cli-login?port=<port>&state=<state>&challenge=<challenge>
-//   3. The user signs in there (Google or e-mail + password) and approves.
+//   3. The user signs in there (e-mail + password) and approves.
 //   4. /cli-login creates a one-time code and redirects the browser to
 //      http://127.0.0.1:<port>/callback?code=<code>&state=<state>
 //   5. The CLI POSTs { code, code_verifier } to /api/cli/token and receives a

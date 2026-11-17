@@ -5,7 +5,6 @@ import { tmpdir } from "node:os";
 import { extname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 import type { SandboxSession } from "eve/sandbox";
-import { getActiveOllamaApiKey, getOllamaBaseUrl, getOllamaModelId } from "./ollama-auth";
 import { slugify } from "./skills-store";
 
 // ---------------------------------------------------------------------------
@@ -420,18 +419,14 @@ export async function extractAudioWav(path: string, outPath: string): Promise<st
 export function visionEndpoint(): { baseUrl: string; apiKey: string; model: string } | null {
   const model =
     process.env.VIDEO_VISION_MODEL?.trim() ||
-    process.env.OLLAMA_VISION_MODEL?.trim() ||
-    getOllamaModelId();
+    process.env.OPENAI_MODEL?.trim() ||
+    "gpt-4o-mini";
   const baseUrl = (
     process.env.VIDEO_VISION_BASE_URL?.trim() ||
-    getOllamaBaseUrl()
+    "https://api.openai.com/v1"
   ).replace(/\/+$/, "");
-  const configuredKey = process.env.VIDEO_VISION_API_KEY?.trim() || "";
-  const apiKey =
-    !configuredKey || configuredKey === "ollama" || configuredKey === "auto-rotate"
-      ? getActiveOllamaApiKey()
-      : configuredKey;
-  if (!model || !baseUrl) return null;
+  const apiKey = process.env.VIDEO_VISION_API_KEY?.trim() || process.env.OPENAI_API_KEY?.trim() || "";
+  if (!model || !baseUrl || !apiKey) return null;
   return { baseUrl, apiKey, model };
 }
 

@@ -1,49 +1,39 @@
-import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { createOpenAI } from "@ai-sdk/openai";
 import { defineAgent } from "eve";
 
-import {
-  createSelfHealingModelFetch,
-  getActiveOllamaApiKey,
-  getOllamaBaseUrl,
-  getOllamaContextTokens,
-  getOllamaModelId,
-} from "./lib/ollama-auth";
 import { startSupervisor } from "./lib/supervisor";
 
 // ---------------------------------------------------------------------------
-// Tech AI Monkey – tech-ai.tech monkey v2.0 (Selvstendig lokal Ollama-motor)
-//
-// Kjører 100 % uavhengig på egen server via lokal Ollama (http://127.0.0.1:11434/v1)
-// med kontinuerlig automatisk rotasjon av API-nøkkel og selvhelbredelse, slik
-// at agenten aldri stopper opp på grunn av utløpte eksterne nøkler.
+// Tech AI Monkey – tech-ai.tech monkey v2.1
+// 100 % uavhengig lokal llama.cpp motor (GPU-akselerert via Vulkan/CUDA).
+// Kjører uten eksterne skylleverandører eller bakdører.
 // ---------------------------------------------------------------------------
 
 export const AGENT_VERSION = "v2.1";
-export const AGENT_CORE_CODENAME = "tech-ai.tech monkey v2.1";
+export const AGENT_CORE_CODENAME = "tech-ai.tech monkey v2.1 (llama.cpp)";
 
-const MODEL_ID = getOllamaModelId();
-const BASE_URL = getOllamaBaseUrl();
-const contextTokens = getOllamaContextTokens();
+const BASE_URL =
+  process.env.LOCAL_AI_BASE_URL?.trim() ||
+  process.env.OPENAI_COMPAT_BASE_URL?.trim() ||
+  "http://127.0.0.1:8080/v1";
 
-// Tidsgrense for hele modelsvaret inkludert streaming (standard 300 s for lokal inferens).
-const MODEL_TIMEOUT_MS = Number(process.env.AGENT_MODEL_TIMEOUT_MS ?? 300_000) || 300_000;
+const MODEL_ID =
+  process.env.LOCAL_AI_MODEL?.trim() ||
+  process.env.OPENAI_MODEL?.trim() ||
+  "default";
 
-const fetchWithTimeout = createSelfHealingModelFetch(MODEL_TIMEOUT_MS);
-
-const model = createOpenAICompatible({
-  name: "tech-ai-monkey",
+const localEngine = createOpenAI({
   baseURL: BASE_URL,
-  apiKey: getActiveOllamaApiKey(),
-  fetch: fetchWithTimeout,
-}).chatModel(MODEL_ID);
+  apiKey: process.env.LOCAL_AI_API_KEY?.trim() || "not-needed",
+});
 
-console.log(`[agent] ${AGENT_CORE_CODENAME} -> lokal motor: ${MODEL_ID} (${BASE_URL}, kontinuerlig nøkkelrotasjon aktiv)`);
+const model = localEngine(MODEL_ID);
 
-// Selvhelbredelse og nøkkelrotasjon ligger i selve agenten: ingen cron-jobb
-// eller ekstern leverandør den er avhengig av. Se agent/lib/supervisor.ts.
+console.log(`[agent] ${AGENT_CORE_CODENAME} -> aktiv motor: ${MODEL_ID} på ${BASE_URL} (100 % lokal llama.cpp)`);
+
 startSupervisor();
 
 export default defineAgent({
-  model,
-  modelContextWindowTokens: contextTokens,
+  model: model as any,
+  modelContextWindowTokens: 8192,
 });
