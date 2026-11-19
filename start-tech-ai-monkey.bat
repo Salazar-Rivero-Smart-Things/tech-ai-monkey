@@ -56,7 +56,7 @@ echo [2/4] Kontrollerer llama-server [GPU]...
 netstat -ano -p tcp | find ":8080 " | find "LISTENING" >nul
 if errorlevel 1 (
     echo       Starter llama-server med Qwen 2.5 Coder pa RTX 2070...
-    start "llama-server GPU" /min "%~dp0llama-cpp\llama-server.exe" -m "%~dp0models\qwen2.5-coder-7b-instruct-q4_k_m.gguf" --port 8080 --host 127.0.0.1 -ngl 99 -c 8192
+    start "llama-server GPU" /min "%~dp0llama-cpp\llama-server.exe" -m "%~dp0models\qwen2.5-coder-7b-instruct-q4_k_m.gguf" --port 8080 --host 127.0.0.1 -ngl 99 -c 16384
 ) else (
     echo       llama-server kjorer allerede.
 )
