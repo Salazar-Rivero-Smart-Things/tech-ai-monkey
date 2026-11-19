@@ -1,4 +1,4 @@
-import { SignJWT } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 
 const AGENT_ISSUER = "my-ai-agent";
 const AGENT_AUDIENCE = "my-ai-agent-api";
@@ -35,4 +35,26 @@ export async function createAgentToken(
     .setIssuedAt()
     .setExpirationTime("5m")
     .sign(new TextEncoder().encode(secret));
+}
+
+/**
+ * Verify a short-lived agent JWT (used when the agent calls internal web APIs
+ * such as GET /api/history on behalf of the active session user).
+ */
+export async function verifyAgentToken(token: string): Promise<{ userId: string } | null> {
+  const secret = process.env.AGENT_API_KEY_SECRET;
+  if (!secret || !token) return null;
+  try {
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret), {
+      issuer: AGENT_ISSUER,
+      audience: AGENT_AUDIENCE,
+    });
+    const sub = typeof payload.sub === "string" ? payload.sub.trim() : "";
+    if (!sub) return null;
+    // Strip optional eve principal prefix like "my-ai-agent:"
+    const cleaned = sub.replace(/^[^:]+:/, "").trim();
+    return cleaned ? { userId: cleaned } : null;
+  } catch {
+    return null;
+  }
 }

@@ -3,8 +3,12 @@ import { existsSync } from "node:fs";
 import { open, readFile, readdir, rm, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { promisify } from "node:util";
+import { signAgentToken } from "./jwt";
 
 const execFileAsync = promisify(execFile);
+
+/** Designated AI supervisors overseeing Tech AI Monkey upgrades & learning. */
+export const SUPERVISOR_AGENTS = ["Gemini", "DeepSeek"] as const;
 
 // ---------------------------------------------------------------------------
 // In-process supervisor.
@@ -37,6 +41,9 @@ const SANDBOX_MIN_AGE_MINUTES = Number(process.env.SANDBOX_MIN_AGE_MINUTES ?? 20
 const SANDBOX_HARD_MAX = Number(process.env.SANDBOX_HARD_MAX ?? MAX_RUNNING_SANDBOXES * 2) || MAX_RUNNING_SANDBOXES * 2;
 /** A turn with a half-finished step and no activity for this long is dead. */
 const ABANDONED_RUN_MINUTES = Number(process.env.ABANDONED_RUN_MINUTES ?? 15) || 15;
+/** How often the supervisor pings /api/workflows/cron for due daily learning & routines. */
+const WORKFLOW_CRON_INTERVAL_MS = 15 * 60_000;
+const WEB_APP_URL = (process.env.WEB_APP_URL?.trim() || "http://127.0.0.1:3100").replace(/\/+$/, "");
 
 
 function repoRoot(): string {
@@ -208,7 +215,40 @@ const state = globalThis as typeof globalThis & {
   __techAiSupervisorStarted?: boolean;
   __techAiSupervisorTicking?: boolean;
   __techAiSupervisorTicks?: number;
+  __techAiLastWorkflowCronAt?: number;
 };
+
+async function triggerScheduledWorkflows(): Promise<PruneResult> {
+  const now = Date.now();
+  if (now - (state.__techAiLastWorkflowCronAt ?? 0) < WORKFLOW_CRON_INTERVAL_MS) {
+    return { text: "cron OK", changed: false };
+  }
+  state.__techAiLastWorkflowCronAt = now;
+
+  const secret = process.env.AGENT_API_KEY_SECRET;
+  const headers: Record<string, string> = {};
+  if (secret) {
+    const token = await signAgentToken({
+      secret,
+      subject: "supervisor-cron",
+      ttlSeconds: 60,
+    });
+    headers.authorization = `Bearer ${token}`;
+  }
+
+  try {
+    const res = await fetch(`${WEB_APP_URL}/api/workflows/cron`, {
+      headers,
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!res.ok) return { text: `cron ${res.status}`, changed: false };
+    const body = (await res.json().catch(() => ({}))) as { triggeredCount?: number };
+    const count = body.triggeredCount ?? 0;
+    return { text: `${count} planlagte rutiner kjørt`, changed: count > 0 };
+  } catch {
+    return { text: "web-cron ikke klar", changed: false };
+  }
+}
 
 /**
  * Bare én ryddejobb om gangen, også om modulen skulle bli lastet i flere
@@ -254,7 +294,7 @@ async function tick(): Promise<void> {
     const report = await withLock(root, async () => {
       const lines: string[] = [];
       let changed = false;
-      for (const task of [pruneRuns, pruneSandboxes]) {
+      for (const task of [pruneRuns, pruneSandboxes, triggerScheduledWorkflows]) {
         try {
           const result = await task(root);
           lines.push(result.text);
@@ -292,8 +332,9 @@ export function startSupervisor(): void {
   // Never keep the process alive just for this timer.
   timer.unref?.();
   console.log(
-    `[supervisor] aktiv: hvert ${Math.round(INTERVAL_MS / 1000)} s, ` +
-      `maks ${MAX_RUNNING_SANDBOXES} VM-er, uferdige kjøringer eldre enn ${ABANDONED_RUN_MINUTES} min ryddes`,
+    `[supervisor] aktiv (${SUPERVISOR_AGENTS.join(" & ")}): hvert ${Math.round(INTERVAL_MS / 1000)} s, ` +
+      `maks ${MAX_RUNNING_SANDBOXES} VM-er, uferdige kjøringer eldre enn ${ABANDONED_RUN_MINUTES} min ryddes, ` +
+      `daglig læringsplan / workflows sjekkes hvert ${Math.round(WORKFLOW_CRON_INTERVAL_MS / 60_000)} min`,
   );
   void tick().catch(() => undefined);
 }

@@ -3,12 +3,15 @@ import { desc, eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { workflows, workflowRuns } from "@/lib/db/schema";
+import { ensureDailyLearningWorkflow } from "@/lib/workflows/daily-learning";
 import WorkflowForm from "./WorkflowForm";
 import WorkflowList from "./WorkflowList";
 
 export default async function WorkflowsPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/signin");
+
+  await ensureDailyLearningWorkflow(session.user.id).catch(() => undefined);
 
   const userWorkflows = await db
     .select()

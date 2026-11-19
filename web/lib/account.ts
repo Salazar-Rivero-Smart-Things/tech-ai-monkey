@@ -4,6 +4,8 @@ import {
   accounts,
   artifacts,
   auditLogs,
+  chatConversations,
+  chatMessages,
   integrations,
   notebooks,
   sessions,
@@ -21,6 +23,8 @@ import {
 
 /** Every table that stores per-user rows, children first. */
 const USER_TABLES = [
+  chatMessages,
+  chatConversations,
   integrations,
   tokenTransactions,
   tokenBalances,
@@ -64,6 +68,14 @@ export async function exportUserData(userId: string) {
   const files = await db.select().from(artifacts).where(eq(artifacts.userId, userId));
   const apps = await db.select().from(integrations).where(eq(integrations.userId, userId));
   const audit = await db.select().from(auditLogs).where(eq(auditLogs.userId, userId));
+  const conversations = await db
+    .select()
+    .from(chatConversations)
+    .where(eq(chatConversations.userId, userId));
+  const messages = await db
+    .select()
+    .from(chatMessages)
+    .where(eq(chatMessages.userId, userId));
 
   const { passwordHash: _omit, ...profile } = user;
 
@@ -75,6 +87,20 @@ export async function exportUserData(userId: string) {
     tokenTransactions: transactions,
     notebooks: notes,
     artifacts: files,
+    chatConversations: conversations.map((c) => ({
+      id: c.id,
+      title: c.title,
+      createdAt: c.createdAt,
+      updatedAt: c.updatedAt,
+      messages: messages
+        .filter((m) => m.conversationId === c.id)
+        .map((m) => ({
+          role: m.role,
+          content: m.content,
+          attachment: m.attachment,
+          createdAt: m.createdAt,
+        })),
+    })),
     // Tokens/secrets are stripped: only the connection metadata is exported.
     integrations: apps.map((i) => ({
       provider: i.provider,

@@ -318,3 +318,50 @@ export const cliTokens = pgTable(
     index("cliToken_userId_idx").on(table.userId),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Chat conversation history (persisted per user for Dashboard → History
+// and the agent's get_chat_history tool).
+// ---------------------------------------------------------------------------
+
+export const chatConversations = pgTable(
+  "chatConversation",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    eveSessionId: text("eveSessionId"),
+    title: text("title").notNull().default("New conversation"),
+    continuationToken: text("continuationToken"),
+    eventCount: integer("eventCount").notNull().default(0),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+    updatedAt: timestamp("updatedAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("chatConversation_userId_idx").on(table.userId),
+    index("chatConversation_userId_updatedAt_idx").on(table.userId, table.updatedAt),
+    index("chatConversation_eveSessionId_idx").on(table.eveSessionId),
+  ],
+);
+
+export const chatMessages = pgTable(
+  "chatMessage",
+  {
+    id: text("id").primaryKey(),
+    conversationId: text("conversationId")
+      .notNull()
+      .references(() => chatConversations.id, { onDelete: "cascade" }),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: text("role").notNull(), // user | agent | error
+    content: text("content").notNull(),
+    attachment: jsonb("attachment").$type<{ name: string; kind: "image" | "video" | "document" } | null>(),
+    createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("chatMessage_conversationId_idx").on(table.conversationId),
+    index("chatMessage_userId_idx").on(table.userId),
+  ],
+);

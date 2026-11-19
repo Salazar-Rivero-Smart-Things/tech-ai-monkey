@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 type Role = "user" | "agent" | "error";
@@ -115,11 +116,18 @@ const SEND_TIMEOUT_MS = 90_000;
 
 type RetryPayload = { raw: string; display: string; attachment?: ChatMessage["attachment"] };
 
-export default function Chat() {
+export default function Chat({
+  initialConversationId = null,
+}: {
+  initialConversationId?: string | null;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [streaming, setStreaming] = useState<string | null>(null);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(Boolean(initialConversationId));
+  const [conversationId, setConversationId] = useState<string | null>(initialConversationId);
+  const [conversationTitle, setConversationTitle] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -129,14 +137,120 @@ export default function Chat() {
   const idRef = useRef(0);
   const continuationRef = useRef<string | null>(null);
   const eventCountRef = useRef(0);
+  const conversationIdRef = useRef<string | null>(initialConversationId);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const persistQueueRef = useRef<Promise<void>>(Promise.resolve());
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight });
   }, [messages, streaming]);
 
+  useEffect(() => {
+    if (!initialConversationId) {
+      setLoadingHistory(false);
+      return;
+    }
+    let cancelled = false;
+    setLoadingHistory(true);
+    fetch(`/api/history/${encodeURIComponent(initialConversationId)}`, { cache: "no-store" })
+      .then((res) => res.json())
+      .then(
+        (body: {
+          ok?: boolean;
+          conversation?: {
+            id: string;
+            title: string;
+            eveSessionId: string | null;
+            continuationToken: string | null;
+            eventCount: number;
+            messages: Array<{
+              role: Role;
+              content: string;
+              attachment?: ChatMessage["attachment"] | null;
+            }>;
+          };
+        }) => {
+          if (cancelled || !body.ok || !body.conversation) return;
+          const conv = body.conversation;
+          conversationIdRef.current = conv.id;
+          setConversationId(conv.id);
+          setConversationTitle(conv.title);
+          setSessionId(conv.eveSessionId);
+          continuationRef.current = conv.continuationToken;
+          eventCountRef.current = conv.eventCount ?? 0;
+          idRef.current = 0;
+          setMessages(
+            conv.messages.map((m) => ({
+              id: ++idRef.current,
+              role: m.role,
+              text: m.content,
+              attachment: m.attachment ?? undefined,
+            })),
+          );
+        },
+      )
+      .catch(() => {
+        // If loading fails, keep empty state rather than crashing the chat
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingHistory(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [initialConversationId]);
+
   function addMessage(role: Role, text: string, att?: ChatMessage["attachment"]) {
     const id = ++idRef.current;
     setMessages((prev) => [...prev, { id, role, text, attachment: att }]);
+  }
+
+  function persistHistory(payload: {
+    eveSessionId?: string | null;
+    continuationToken?: string | null;
+    eventCount?: number;
+    messages?: Array<{
+      role: Role;
+      content: string;
+      attachment?: ChatMessage["attachment"] | null;
+    }>;
+  }): Promise<void> {
+    const run = async () => {
+      try {
+        const res = await fetch("/api/history", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            conversationId: conversationIdRef.current,
+            ...payload,
+          }),
+        });
+        if (!res.ok) return;
+        const body = (await res.json()) as {
+          ok?: boolean;
+          conversation?: { id: string; title?: string };
+        };
+        if (body.ok && body.conversation?.id) {
+          const isNew = conversationIdRef.current !== body.conversation.id;
+          conversationIdRef.current = body.conversation.id;
+          setConversationId(body.conversation.id);
+          if (body.conversation.title) setConversationTitle(body.conversation.title);
+          if (isNew && typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("conversation", body.conversation.id);
+            window.history.replaceState({}, "", url.toString());
+          }
+        }
+      } catch {
+        // Never block live chat if history persistence temporarily fails
+      }
+    };
+    persistQueueRef.current = persistQueueRef.current.then(run, run);
+    return persistQueueRef.current;
   }
 
   async function uploadFile(file: File) {
@@ -174,37 +288,51 @@ export default function Chat() {
     return `${res.status} ${res.statusText}`;
   }
 
+  function buildResumePrompt(text: string): string {
+    const prior = messagesRef.current.filter((m) => m.role === "user" || m.role === "agent").slice(-8);
+    if (prior.length === 0) return text;
+    const transcript = prior
+      .map((m) => `${m.role === "user" ? "User" : "Assistant"}: ${m.text.slice(0, 600)}`)
+      .join("\n");
+    return `[Resumed conversation context]\n${transcript}\n\n[New user message]\n${text}`;
+  }
+
+  async function createFreshSession(text: string): Promise<string> {
+    eventCountRef.current = 0;
+    continuationRef.current = null;
+    const res = await fetch("/eve/v1/session", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ message: text }),
+      signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+    }).catch((err: unknown) => {
+      throw new Error(
+        err instanceof Error && err.name === "TimeoutError"
+          ? "Agenten svarte ikke på forespørselen. Prøv igjen."
+          : err instanceof Error
+            ? err.message
+            : "Fikk ikke kontakt med agenten.",
+      );
+    });
+    if (!res.ok) throw new Error(await parseError(res));
+    const body = (await res.json()) as { sessionId?: string; continuationToken?: string };
+    if (!body.sessionId) throw new Error("Could not create a chat session.");
+    if (body.continuationToken) continuationRef.current = body.continuationToken;
+    setSessionId(body.sessionId);
+    return body.sessionId;
+  }
+
   async function sendTurn(id: string | null, text: string): Promise<string> {
-    let res: Response;
     if (!id) {
-      // First message: create the session and dispatch the turn in one call.
-      // The eve channel requires a JSON body on POST /eve/v1/session.
-      res = await fetch("/eve/v1/session", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: text }),
-        signal: AbortSignal.timeout(SEND_TIMEOUT_MS),
-      }).catch((err: unknown) => {
-        throw new Error(
-          err instanceof Error && err.name === "TimeoutError"
-            ? "Agenten svarte ikke på forespørselen. Prøv igjen."
-            : err instanceof Error
-              ? err.message
-              : "Fikk ikke kontakt med agenten.",
-        );
-      });
-      if (!res.ok) throw new Error(await parseError(res));
-      const body = (await res.json()) as { sessionId?: string; continuationToken?: string };
-      if (!body.sessionId) throw new Error("Could not create a chat session.");
-      if (body.continuationToken) continuationRef.current = body.continuationToken;
-      setSessionId(body.sessionId);
-      return body.sessionId;
+      // First message (or resumed conversation without a live eve session).
+      const prompt = messagesRef.current.length > 0 ? buildResumePrompt(text) : text;
+      return createFreshSession(prompt);
     }
 
     // Follow-up: continue the session with the current continuation token.
     const payload: Record<string, unknown> = { message: text };
     if (continuationRef.current) payload.continuationToken = continuationRef.current;
-    res = await fetch(`/eve/v1/session/${id}`, {
+    const res = await fetch(`/eve/v1/session/${id}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),
@@ -218,13 +346,20 @@ export default function Chat() {
             : "Fikk ikke kontakt med agenten.",
       );
     });
-    if (!res.ok) throw new Error(await parseError(res));
+    if (!res.ok) {
+      // If a previously saved eve session expired (404/409/410), start a fresh
+      // session seamlessly carrying recent conversation context.
+      if (res.status === 404 || res.status === 409 || res.status === 410) {
+        return createFreshSession(buildResumePrompt(text));
+      }
+      throw new Error(await parseError(res));
+    }
     const body = (await res.json()) as { continuationToken?: string };
     if (body.continuationToken) continuationRef.current = body.continuationToken;
     return id;
   }
 
-  async function streamReply(id: string) {
+  async function streamReply(id: string): Promise<string> {
     const url =
       eventCountRef.current > 0
         ? `/eve/v1/session/${id}/stream?startIndex=${eventCountRef.current}`
@@ -255,7 +390,7 @@ export default function Chat() {
     }
     if (!res.body) {
       clearInterval(watchdog);
-      return;
+      return "";
     }
 
     const reader = res.body.getReader();
@@ -344,6 +479,7 @@ export default function Chat() {
       else if (!sawTerminal) failure = "Agenten avsluttet uten å fullføre svaret. Prøv igjen.";
     }
     if (failure) throw new Error(failure);
+    return acc;
   }
 
   async function send() {
@@ -376,9 +512,25 @@ export default function Chat() {
     setBusy(true);
     setRetry(null);
     addMessage("user", payload.display, payload.attachment);
+    // Persist user message immediately so the thread appears in History even while streaming
+    void persistHistory({
+      messages: [
+        {
+          role: "user",
+          content: payload.display,
+          attachment: payload.attachment ?? null,
+        },
+      ],
+    });
     try {
       const id = await sendTurn(sessionId, payload.raw);
-      await streamReply(id);
+      const reply = await streamReply(id);
+      void persistHistory({
+        eveSessionId: id,
+        continuationToken: continuationRef.current,
+        eventCount: eventCountRef.current,
+        messages: reply.trim() ? [{ role: "agent", content: reply }] : undefined,
+      });
     } catch (err) {
       addMessage("error", err instanceof Error ? err.message : "Noe gikk galt.");
       setRetry(payload);
@@ -389,6 +541,9 @@ export default function Chat() {
 
   function newChat() {
     setSessionId(null);
+    conversationIdRef.current = null;
+    setConversationId(null);
+    setConversationTitle(null);
     continuationRef.current = null;
     eventCountRef.current = 0;
     setMessages([]);
@@ -396,31 +551,51 @@ export default function Chat() {
     setInput("");
     setAttachment(null);
     setRetry(null);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("conversation");
+      window.history.replaceState({}, "", url.toString());
+    }
   }
 
   return (
     <div className="flex h-[calc(100dvh-12rem)] min-h-[24rem] flex-col">
       <div className="mb-4 flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Chat with AI</h1>
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-semibold">
+            {conversationTitle ? conversationTitle : "Chat with AI"}
+          </h1>
           <p className="text-sm text-zinc-400">
-            Ask anything — the AI keeps searching the web until the answer is right.
+            {conversationId
+              ? "Saved automatically to your History — reload or continue any time."
+              : "Ask anything — the AI keeps searching the web until the answer is right."}
           </p>
         </div>
-        <button
-          onClick={newChat}
-          disabled={busy}
-          className="rounded-lg border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900 disabled:opacity-50"
-        >
-          New chat
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href="/dashboard/history"
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-900"
+          >
+            History
+          </Link>
+          <button
+            onClick={newChat}
+            disabled={busy}
+            className="rounded-lg border border-zinc-700 px-3 py-2 text-sm hover:bg-zinc-900 disabled:opacity-50"
+          >
+            New chat
+          </button>
+        </div>
       </div>
 
       <div
         ref={scrollRef}
         className="flex-1 space-y-3 overflow-y-auto rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
       >
-        {messages.length === 0 && streaming === null && (
+        {loadingHistory && (
+          <p className="text-sm text-zinc-500">Loading conversation history…</p>
+        )}
+        {!loadingHistory && messages.length === 0 && streaming === null && (
           <p className="text-sm text-zinc-500">
             Send a message below to start chatting.
           </p>

@@ -1,0 +1,12 @@
+{
+  "name": "Daily Tech & Software Engineering Study (1h)",
+  "enabled": true,
+  "frequency": "daily",
+  "time": "06:00",
+  "durationMinutes": 60,
+  "supervisors": [
+    "Gemini",
+    "DeepSeek"
+  ],
+  "updatedAt": "2026-11-19T18:25:33.766Z"
+}

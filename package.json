@@ -12,7 +12,11 @@
     "postbuild": "node scripts/patch-eve.mjs",
     "postinstall": "node scripts/patch-eve.mjs",
     "start": "eve start --host 127.0.0.1 --port 2000",
-    "bench": "node scripts/model-bench.mjs"
+    "bench": "node scripts/model-bench.mjs",
+    "learn:next": "node scripts/learn-next.mjs",
+    "learn:recent": "node scripts/study-history.mjs",
+    "learn:inventory": "node scripts/tech-inventory.mjs",
+    "learn:schedule": "node scripts/study-schedule.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.118",

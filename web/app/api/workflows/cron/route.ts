@@ -1,25 +1,36 @@
 import { NextResponse } from "next/server";
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { workflows } from "@/lib/db/schema";
 import { runWorkflow } from "@/lib/workflows/runner";
+import { verifyAgentToken } from "@/lib/agent-auth";
+import { bearerFrom } from "@/lib/api-caller";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Automated cron trigger endpoint for running due workflows.
- * Can be called by a cron job or background scheduler.
+ * Can be called by a cron job, systemd timer, or the agent's in-process supervisor.
  */
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  let authorized = !cronSecret || authHeader === `Bearer ${cronSecret}`;
+  if (!authorized) {
+    const bearer = bearerFrom(request);
+    const agent = bearer ? await verifyAgentToken(bearer) : null;
+    if (agent) authorized = true;
+  }
+
+  if (!authorized) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const now = new Date();
-  const currentHourMinute = now.toTimeString().slice(0, 5); // "HH:MM"
+  const currentHourMinute = `${String(now.getHours()).padStart(2, "0")}:${String(
+    now.getMinutes(),
+  ).padStart(2, "0")}`;
 
   // Fetch all active scheduled workflows
   const activeWorkflows = await db
@@ -42,9 +53,9 @@ export async function GET(request: Request) {
         shouldRun = true;
       }
     } else if (wf.schedule === "daily") {
-      // Run once a day around the configured time
+      // Run once a day once the configured HH:MM time has been reached
       const targetTime = wf.scheduleTime || "08:00";
-      if (timeSinceLastRunHours >= 20) {
+      if (timeSinceLastRunHours >= 20 && currentHourMinute >= targetTime) {
         shouldRun = true;
       }
     } else if (wf.schedule === "weekly") {
