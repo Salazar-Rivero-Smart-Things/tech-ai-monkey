@@ -1,0 +1,801 @@
+{
+  "fetchedAt": "2026-11-20T14:55:01.414289+00:00",
+  "window_brand_new_since": "2026-08-22",
+  "counts": {
+    "brand_new_github": 18,
+    "popular_github": 15,
+    "pypi_in_libraries": 16,
+    "npm_trending": 15
+  },
+  "brand_new_github": [
+    {
+      "name": "Gathin23/cleanyourtv",
+      "short_name": "cleanyourtv",
+      "language": "Python",
+      "stars": 59760,
+      "description": "Debloat any Android or Google TV over Wi-Fi and get an Apple TV-style home.",
+      "topics": [
+        "adb",
+        "adblock",
+        "android-tv",
+        "android-tv-launcher",
+        "apple-tv",
+        "bloatware-removal"
+      ],
+      "url": "https://github.com/Gathin23/cleanyourtv",
+      "created_at": "2026-10-17",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "NandhaKishorM/laya",
+      "short_name": "laya",
+      "language": "Python",
+      "stars": 35739,
+      "description": "Non-autoregressive System 1 decision engine. Typed choice, score and yes/no decisions over any text in a single forward pass, in 100+ languages, with a router that picks the right checkpoint per request.",
+      "topics": [
+        "calibration",
+        "classification",
+        "decision-model",
+        "huggingface",
+        "jev",
+        "modernbert"
+      ],
+      "url": "https://github.com/NandhaKishorM/laya",
+      "created_at": "2026-09-18",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "ccch1mneyyy/dsh-Go",
+      "short_name": "dsh-Go",
+      "language": "Dart",
+      "stars": 28828,
+      "description": "dsh-go — DeepSeek Harness 装进口袋：手机本机运行，也能遥控你的电脑。",
+      "topics": [
+        "ai-agent",
+        "android",
+        "android-app",
+        "coding-agent",
+        "deepseek",
+        "deepseek-harness"
+      ],
+      "url": "https://github.com/ccch1mneyyy/dsh-Go",
+      "created_at": "2026-10-25",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "deepseek-ai/DeepInfer",
+      "short_name": "DeepInfer",
+      "language": "Python",
+      "stars": 26256,
+      "description": "DeepInfer: High-performance, large-scale inference framework for DeepSeek models",
+      "topics": [],
+      "url": "https://github.com/deepseek-ai/DeepInfer",
+      "created_at": "2026-10-16",
+      "updated_at": "2026-11-19"
+    },
+    {
+      "name": "browser-use/jev-ultrafast",
+      "short_name": "jev-ultrafast",
+      "language": "Python",
+      "stars": 24691,
+      "description": "Fastest and cheapest web agent",
+      "topics": [],
+      "url": "https://github.com/browser-use/jev-ultrafast",
+      "created_at": "2026-09-16",
+      "updated_at": "2026-11-11"
+    },
+    {
+      "name": "google-research/harness2",
+      "short_name": "harness2",
+      "language": "Python",
+      "stars": 24551,
+      "description": "",
+      "topics": [],
+      "url": "https://github.com/google-research/harness2",
+      "created_at": "2026-10-06",
+      "updated_at": "2026-11-02"
+    },
+    {
+      "name": "deepseek-ai/dsh-superagent-prototype",
+      "short_name": "dsh-superagent-prototype",
+      "language": "TypeScript",
+      "stars": 24053,
+      "description": "Towards a More Autonomous Agent System",
+      "topics": [],
+      "url": "https://github.com/deepseek-ai/dsh-superagent-prototype",
+      "created_at": "2026-10-31",
+      "updated_at": "2026-11-03"
+    },
+    {
+      "name": "google/elephant-goldfish-model",
+      "short_name": "elephant-goldfish-model",
+      "language": "Python",
+      "stars": 21604,
+      "description": "Open-source plugin for designing and reviewing software with agents",
+      "topics": [
+        "agent-skills",
+        "ai-agents",
+        "antigravity",
+        "claude-code",
+        "claude-code-plugin",
+        "claude-skills"
+      ],
+      "url": "https://github.com/google/elephant-goldfish-model",
+      "created_at": "2026-09-13",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "jub0t/Concat",
+      "short_name": "Concat",
+      "language": "Rust",
+      "stars": 19132,
+      "description": "Beta: The truly free, open-source, local-first, cross-platform video editor. Scriptable through a JSON-RPC API & MCP.",
+      "topics": [
+        "ffmpeg",
+        "free-video-editor",
+        "model-context-protocol",
+        "non-linear-editor",
+        "offline-first",
+        "open-source-video-editor"
+      ],
+      "url": "https://github.com/jub0t/Concat",
+      "created_at": "2026-08-25",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "tangency-labs/solidcraft",
+      "short_name": "solidcraft",
+      "language": "Rust",
+      "stars": 17411,
+      "description": "SolidCraft: an open-source parametric 3D CAD application built in pure Rust. Desktop, web, and automation through MCP.",
+      "topics": [
+        "3d-modeling",
+        "brep",
+        "cad",
+        "egui",
+        "mcp",
+        "parametric-cad"
+      ],
+      "url": "https://github.com/tangency-labs/solidcraft",
+      "created_at": "2026-10-07",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "KKKKhazix/AIHOT",
+      "short_name": "AIHOT",
+      "language": "TypeScript",
+      "stars": 11134,
+      "description": "一个自己找热点、自己写日报的网站框架。把信源和精选标准换成你的，它就是你的行业热点站。",
+      "topics": [
+        "ai",
+        "chinese",
+        "content-curation",
+        "daily-digest",
+        "docker-compose",
+        "llm"
+      ],
+      "url": "https://github.com/KKKKhazix/AIHOT",
+      "created_at": "2026-09-28",
+      "updated_at": "2026-11-19"
+    },
+    {
+      "name": "lnkiai/m3e-canvas",
+      "short_name": "m3e-canvas",
+      "language": "TypeScript",
+      "stars": 10672,
+      "description": "Sketch Material 3 Expressive screens in the browser and turn them into vibe-coding prompts.",
+      "topics": [
+        "design-tool",
+        "material-3-expressive",
+        "material-design",
+        "material3",
+        "nextjs",
+        "prompt"
+      ],
+      "url": "https://github.com/lnkiai/m3e-canvas",
+      "created_at": "2026-09-02",
+      "updated_at": "2026-11-17"
+    },
+    {
+      "name": "amosblomqvist/learnharness",
+      "short_name": "learnharness",
+      "language": "TypeScript",
+      "stars": 10657,
+      "description": "Agent harness for learning difficult things.",
+      "topics": [],
+      "url": "https://github.com/amosblomqvist/learnharness",
+      "created_at": "2026-10-16",
+      "updated_at": "2026-11-12"
+    },
+    {
+      "name": "Ryze-AI-Adgent/open-seo-mcp-skills",
+      "short_name": "open-seo-mcp-skills",
+      "language": "Shell",
+      "stars": 10567,
+      "description": "Free SEO MCP server + open-source SEO and GEO skills for Claude: keyword research, rank tracking, audits, backlinks, AI visibility on your real GSC/GA4/ads data. claude mcp add ryze --transport http https://connector.get",
+      "topics": [
+        "ai-seo",
+        "ai-visibility",
+        "backlinks",
+        "claude",
+        "claude-code",
+        "claude-skills"
+      ],
+      "url": "https://github.com/Ryze-AI-Adgent/open-seo-mcp-skills",
+      "created_at": "2026-08-29",
+      "updated_at": "2026-10-27"
+    },
+    {
+      "name": "Albert-Weasker/niubigeo",
+      "short_name": "niubigeo",
+      "language": "TypeScript",
+      "stars": 9902,
+      "description": "Open-source AI brand visibility and competitor reports. Official website: https://niubigeo.ai/ | Paid services: AI testing by real people and GEO optimization. Pricing: https://niubigeo.ai/pricing",
+      "topics": [],
+      "url": "https://github.com/Albert-Weasker/niubigeo",
+      "created_at": "2026-09-03",
+      "updated_at": "2026-11-16"
+    },
+    {
+      "name": "rehan-remade/universal-modder",
+      "short_name": "universal-modder",
+      "language": "Python",
+      "stars": 9806,
+      "description": "Point Claude at any game. Skills, tools and the fal MCP that let Claude Code mod almost any PC game you own: recon, reverse engineering, fal-generated art/3D/audio, in-game testing, showcase videos.",
+      "topics": [
+        "age-of-empires",
+        "claude-code",
+        "claude-code-plugin",
+        "fal",
+        "game-assets",
+        "game-modding"
+      ],
+      "url": "https://github.com/rehan-remade/universal-modder",
+      "created_at": "2026-09-30",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "l0ng-ai/openidea",
+      "short_name": "openidea",
+      "language": "TypeScript",
+      "stars": 9690,
+      "description": "The IDE you know, rebuilt in Rust. IntelliJ IDEA–style keymap, tool windows and search-everywhere in a fast native app: editor, code insight, debugger, Git, terminal, database and HTTP clients for 60+ languages.",
+      "topics": [
+        "code-editor",
+        "cross-platform",
+        "dap",
+        "database-client",
+        "debugger",
+        "desktop-app"
+      ],
+      "url": "https://github.com/l0ng-ai/openidea",
+      "created_at": "2026-10-21",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "wangzan101/Mika",
+      "short_name": "Mika",
+      "language": "Kotlin",
+      "stars": 9274,
+      "description": "An on-device AI agent for Android that operates apps and the web to get things done for you.",
+      "topics": [
+        "accessibility",
+        "ai-agent",
+        "android",
+        "automation",
+        "jetpack-compose",
+        "kotlin"
+      ],
+      "url": "https://github.com/wangzan101/Mika",
+      "created_at": "2026-10-29",
+      "updated_at": "2026-11-20"
+    }
+  ],
+  "popular_github": [
+    {
+      "name": "public-apis/public-apis",
+      "short_name": "public-apis",
+      "language": "Python",
+      "stars": 500441,
+      "description": "A collective list of free APIs",
+      "topics": [
+        "api",
+        "apis",
+        "dataset",
+        "development",
+        "free",
+        "list"
+      ],
+      "url": "https://github.com/public-apis/public-apis",
+      "created_at": "2016-03-20",
+      "updated_at": "2026-11-18"
+    },
+    {
+      "name": "morluto/rea",
+      "short_name": "rea",
+      "language": "TypeScript",
+      "stars": 471010,
+      "description": "Reverse engineer anything with agents, from app behavior down to native binaries.",
+      "topics": [
+        "agent-skills",
+        "ai",
+        "android",
+        "claude-code",
+        "cli",
+        "cpp"
+      ],
+      "url": "https://github.com/morluto/rea",
+      "created_at": "2026-04-14",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "freeCodeCamp/freeCodeCamp",
+      "short_name": "freeCodeCamp",
+      "language": "TypeScript",
+      "stars": 459383,
+      "description": "freeCodeCamp.org's open-source codebase and curriculum. Learn math, programming, and computer science for free.",
+      "topics": [
+        "careers",
+        "certification",
+        "community",
+        "curriculum",
+        "d3",
+        "education"
+      ],
+      "url": "https://github.com/freeCodeCamp/freeCodeCamp",
+      "created_at": "2014-12-24",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "EbookFoundation/free-programming-books",
+      "short_name": "free-programming-books",
+      "language": "Python",
+      "stars": 401946,
+      "description": ":books: Freely available programming books",
+      "topics": [
+        "books",
+        "education",
+        "hacktoberfest",
+        "list",
+        "resource"
+      ],
+      "url": "https://github.com/EbookFoundation/free-programming-books",
+      "created_at": "2013-10-11",
+      "updated_at": "2026-11-12"
+    },
+    {
+      "name": "openclaw/openclaw",
+      "short_name": "openclaw",
+      "language": "TypeScript",
+      "stars": 394892,
+      "description": "The AI that really does things. Any OS. Any Platform. The lobster way. 🦞",
+      "topics": [
+        "ai",
+        "assistant",
+        "crustacean",
+        "molty",
+        "openclaw",
+        "own-your-data"
+      ],
+      "url": "https://github.com/openclaw/openclaw",
+      "created_at": "2025-11-24",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "nilbuild/developer-roadmap",
+      "short_name": "developer-roadmap",
+      "language": "TypeScript",
+      "stars": 372430,
+      "description": "Interactive roadmaps, guides and other educational content to help developers grow in their careers.",
+      "topics": [
+        "angular-roadmap",
+        "backend-roadmap",
+        "blockchain-roadmap",
+        "computer-science",
+        "dba-roadmap",
+        "developer-roadmap"
+      ],
+      "url": "https://github.com/nilbuild/developer-roadmap",
+      "created_at": "2017-03-15",
+      "updated_at": "2026-11-19"
+    },
+    {
+      "name": "vinta/awesome-python",
+      "short_name": "awesome-python",
+      "language": "Python",
+      "stars": 335996,
+      "description": "The definitive list that answers \"I want to do X in Python, which tool should I use?\"",
+      "topics": [
+        "awesome",
+        "awesome-list",
+        "python",
+        "python-frameworks",
+        "python-libraries",
+        "python-tools"
+      ],
+      "url": "https://github.com/vinta/awesome-python",
+      "created_at": "2014-06-27",
+      "updated_at": "2026-11-17"
+    },
+    {
+      "name": "mattpocock/skills",
+      "short_name": "skills",
+      "language": "Shell",
+      "stars": 328584,
+      "description": "Skills for Real Engineers. Straight from my .agents directory.",
+      "topics": [],
+      "url": "https://github.com/mattpocock/skills",
+      "created_at": "2026-02-03",
+      "updated_at": "2026-11-19"
+    },
+    {
+      "name": "obra/superpowers",
+      "short_name": "superpowers",
+      "language": "Shell",
+      "stars": 322583,
+      "description": "An agentic skills framework & software development methodology that works.",
+      "topics": [
+        "ai",
+        "brainstorming",
+        "coding",
+        "obra",
+        "sdlc",
+        "skills"
+      ],
+      "url": "https://github.com/obra/superpowers",
+      "created_at": "2025-10-09",
+      "updated_at": "2026-11-03"
+    },
+    {
+      "name": "affaan-m/ECC",
+      "short_name": "ECC",
+      "language": "JavaScript",
+      "stars": 307602,
+      "description": "The agent harness performance optimization system. Skills, instincts, memory, security, and research-first development for Claude Code, Codex, Opencode, Cursor and beyond.",
+      "topics": [
+        "ai-agents",
+        "anthropic",
+        "claude",
+        "claude-code",
+        "developer-tools",
+        "llm"
+      ],
+      "url": "https://github.com/affaan-m/ECC",
+      "created_at": "2026-01-18",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "practical-tutorials/project-based-learning",
+      "short_name": "project-based-learning",
+      "language": "Python",
+      "stars": 290088,
+      "description": "Curated list of project-based tutorials",
+      "topics": [
+        "beginner-project",
+        "cpp",
+        "golang",
+        "javascript",
+        "project",
+        "python"
+      ],
+      "url": "https://github.com/practical-tutorials/project-based-learning",
+      "created_at": "2017-04-12",
+      "updated_at": "2026-11-16"
+    },
+    {
+      "name": "deepseek-ai/deepseek-harness",
+      "short_name": "deepseek-harness",
+      "language": "TypeScript",
+      "stars": 284587,
+      "description": "DeepSeek Harness: Everything is a Plugin.",
+      "topics": [
+        "ai-agents",
+        "cordis",
+        "dsh",
+        "dsh-plugin"
+      ],
+      "url": "https://github.com/deepseek-ai/deepseek-harness",
+      "created_at": "2026-08-13",
+      "updated_at": "2026-11-18"
+    },
+    {
+      "name": "NousResearch/hermes-agent",
+      "short_name": "hermes-agent",
+      "language": "Python",
+      "stars": 264904,
+      "description": "The agent that grows with you",
+      "topics": [
+        "ai",
+        "ai-agent",
+        "ai-agents",
+        "anthropic",
+        "chatgpt",
+        "claude"
+      ],
+      "url": "https://github.com/NousResearch/hermes-agent",
+      "created_at": "2025-07-22",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "anomalyco/opencode",
+      "short_name": "opencode",
+      "language": "TypeScript",
+      "stars": 228171,
+      "description": "The open source coding agent.",
+      "topics": [],
+      "url": "https://github.com/anomalyco/opencode",
+      "created_at": "2025-04-30",
+      "updated_at": "2026-11-20"
+    },
+    {
+      "name": "TheAlgorithms/Python",
+      "short_name": "Python",
+      "language": "Python",
+      "stars": 226337,
+      "description": "All Algorithms implemented in Python",
+      "topics": [
+        "algorithm",
+        "algorithm-competitions",
+        "algorithms-implemented",
+        "algos",
+        "community-driven",
+        "education"
+      ],
+      "url": "https://github.com/TheAlgorithms/Python",
+      "created_at": "2016-07-16",
+      "updated_at": "2026-11-13"
+    }
+  ],
+  "pypi_in_libraries": [
+    {
+      "name": "uv",
+      "version": "0.13.9",
+      "summary": "An extremely fast Python package and project manager, written in Rust.",
+      "when_to_recommend": "Ultra-fast Rust-based Python package & venv manager (10-100x faster than pip)",
+      "install": "pip install uv",
+      "url": "https://pypi.org/project/uv/"
+    },
+    {
+      "name": "ruff",
+      "version": "0.17.6",
+      "summary": "An extremely fast Python linter and code formatter, written in Rust.",
+      "when_to_recommend": "Ultra-fast Python linter & formatter replacing flake8/black/isort",
+      "install": "pip install ruff",
+      "url": "https://pypi.org/project/ruff/"
+    },
+    {
+      "name": "fastapi",
+      "version": "0.165.0",
+      "summary": "FastAPI framework, high performance, easy to learn, fast to code, ready for production",
+      "when_to_recommend": "Modern async Python web & REST API framework",
+      "install": "pip install fastapi",
+      "url": "https://pypi.org/project/fastapi/"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.14.4",
+      "summary": "Data validation using Python type hints",
+      "when_to_recommend": "Fast data validation & settings management using Python type hints",
+      "install": "pip install pydantic",
+      "url": "https://pypi.org/project/pydantic/"
+    },
+    {
+      "name": "pydantic-ai",
+      "version": "2.71.0",
+      "summary": "AI Agent Framework, the Pydantic way",
+      "when_to_recommend": "Type-safe Python AI Agent framework by the Pydantic team",
+      "install": "pip install pydantic-ai",
+      "url": "https://pypi.org/project/pydantic-ai/"
+    },
+    {
+      "name": "mcp",
+      "version": "2.3.0",
+      "summary": "Model Context Protocol SDK",
+      "when_to_recommend": "Official Model Context Protocol Python SDK for AI tools & servers",
+      "install": "pip install mcp",
+      "url": "https://pypi.org/project/mcp/"
+    },
+    {
+      "name": "polars",
+      "version": "2.1.0",
+      "summary": "Blazingly fast DataFrame library",
+      "when_to_recommend": "Blazing-fast Rust-powered DataFrame library (alternative to pandas)",
+      "install": "pip install polars",
+      "url": "https://pypi.org/project/polars/"
+    },
+    {
+      "name": "duckdb",
+      "version": "2.0.1",
+      "summary": "DuckDB in-process database",
+      "when_to_recommend": "In-process analytical SQL database for Parquet/CSV/JSON",
+      "install": "pip install duckdb",
+      "url": "https://pypi.org/project/duckdb/"
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "summary": "The next generation HTTP client.",
+      "when_to_recommend": "Modern async/sync HTTP client with HTTP/2 support",
+      "install": "pip install httpx",
+      "url": "https://pypi.org/project/httpx/"
+    },
+    {
+      "name": "typer",
+      "version": "0.29.2",
+      "summary": "Typer, build great CLIs. Easy to code. Based on Python type hints.",
+      "when_to_recommend": "Ergonomic CLI builder using Python type hints",
+      "install": "pip install typer",
+      "url": "https://pypi.org/project/typer/"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0",
+      "summary": "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal",
+      "when_to_recommend": "Beautiful terminal formatting, tables, and progress bars",
+      "install": "pip install rich",
+      "url": "https://pypi.org/project/rich/"
+    },
+    {
+      "name": "textual",
+      "version": "8.2.8",
+      "summary": "Modern Text User Interface framework",
+      "when_to_recommend": "Modern Python TUI (Terminal User Interface) framework",
+      "install": "pip install textual",
+      "url": "https://pypi.org/project/textual/"
+    },
+    {
+      "name": "playwright",
+      "version": "1.65.2",
+      "summary": "A high-level API to automate web browsers",
+      "when_to_recommend": "Reliable cross-browser automation & E2E testing",
+      "install": "pip install playwright",
+      "url": "https://pypi.org/project/playwright/"
+    },
+    {
+      "name": "Crawl4AI",
+      "version": "0.9.6",
+      "summary": "🚀🤖 Crawl4AI: Open-source LLM Friendly Web Crawler & scraper",
+      "when_to_recommend": "LLM-friendly async web crawler & markdown extractor",
+      "install": "pip install crawl4ai",
+      "url": "https://pypi.org/project/Crawl4AI/"
+    },
+    {
+      "name": "litellm",
+      "version": "1.110.2",
+      "summary": "Library to easily interface with LLM API providers",
+      "when_to_recommend": "Unified OpenAI-compatible interface for 100+ LLMs",
+      "install": "pip install litellm",
+      "url": "https://pypi.org/project/litellm/"
+    },
+    {
+      "name": "sqlmodel",
+      "version": "0.0.50",
+      "summary": "SQLModel, SQL databases in Python, designed for simplicity, compatibility, and robustness.",
+      "when_to_recommend": "SQL databases in Python combining SQLAlchemy + Pydantic",
+      "install": "pip install sqlmodel",
+      "url": "https://pypi.org/project/sqlmodel/"
+    }
+  ],
+  "npm_trending": [
+    {
+      "name": "@anthropic-ai/claude-agent-sdk",
+      "version": "0.3.329",
+      "category": "ai-agents-sdk",
+      "description": "SDK for building AI agents with Claude Code's capabilities. Programmatically interact with Claude to build autonomous agents that can understand codebases, edit files, and execute workflows.",
+      "install": "npm install @anthropic-ai/claude-agent-sdk",
+      "url": "https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk"
+    },
+    {
+      "name": "agent-device",
+      "version": "0.21.41",
+      "category": "ai-agents-sdk",
+      "description": "Open source device layer for AI coding agents: a CLI, MCP server, and typed Node.js API to control mobile, web, TV, and desktop apps on devices and simulators, locally or in the cloud.",
+      "install": "npm install agent-device",
+      "url": "https://www.npmjs.com/package/agent-device"
+    },
+    {
+      "name": "@ai-sdk/mcp",
+      "version": "2.0.101",
+      "category": "ai-agents-sdk",
+      "description": "The **Model Context Protocol (MCP) client** for the [AI SDK](https://ai-sdk.dev/docs) lets you connect to MCP servers and use their tools with AI SDK functions like `generateText` and `streamText`.",
+      "install": "npm install @ai-sdk/mcp",
+      "url": "https://www.npmjs.com/package/@ai-sdk/mcp"
+    },
+    {
+      "name": "@agentclientprotocol/claude-agent-acp",
+      "version": "0.109.0",
+      "category": "ai-agents-sdk",
+      "description": "An ACP-compatible coding agent powered by the Claude Agent SDK (TypeScript)",
+      "install": "npm install @agentclientprotocol/claude-agent-acp",
+      "url": "https://www.npmjs.com/package/@agentclientprotocol/claude-agent-acp"
+    },
+    {
+      "name": "@google/genai",
+      "version": "3.6.1",
+      "category": "ai-agents-sdk",
+      "description": "[![NPM Downloads](https://img.shields.io/npm/dw/%40google%2Fgenai)](https://www.npmjs.com/package/@google/genai) [![Node Current](https://img.shields.io/node/v/%40google%2Fgenai)](https://www.npmjs.co",
+      "install": "npm install @google/genai",
+      "url": "https://www.npmjs.com/package/@google/genai"
+    },
+    {
+      "name": "drizzle-zod",
+      "version": "0.8.3",
+      "category": "modern-web-ts",
+      "description": "Generate Zod schemas from Drizzle ORM schemas",
+      "install": "npm install drizzle-zod",
+      "url": "https://www.npmjs.com/package/drizzle-zod"
+    },
+    {
+      "name": "drizzle-orm",
+      "version": "0.45.4",
+      "category": "modern-web-ts",
+      "description": "Drizzle ORM package for SQL databases",
+      "install": "npm install drizzle-orm",
+      "url": "https://www.npmjs.com/package/drizzle-orm"
+    },
+    {
+      "name": "@better-auth/drizzle-adapter",
+      "version": "1.7.27",
+      "category": "modern-web-ts",
+      "description": "Drizzle adapter for Better Auth",
+      "install": "npm install @better-auth/drizzle-adapter",
+      "url": "https://www.npmjs.com/package/@better-auth/drizzle-adapter"
+    },
+    {
+      "name": "@t3-oss/env-nextjs",
+      "version": "0.13.11",
+      "category": "modern-web-ts",
+      "description": "![NPM Version](https://img.shields.io/npm/v/%40t3-oss%2Fenv-core) [![JSR](https://jsr.io/badges/@t3-oss/env-core)](https://jsr.io/@t3-oss/env-core) [![JSR Score](https://jsr.io/badges/@t3-oss/env-core",
+      "install": "npm install @t3-oss/env-nextjs",
+      "url": "https://www.npmjs.com/package/@t3-oss/env-nextjs"
+    },
+    {
+      "name": "drizzle-kit",
+      "version": "0.31.11",
+      "category": "modern-web-ts",
+      "description": "Drizzle Kit is a CLI migrator tool for Drizzle ORM. It is probably the one and only tool that lets you completely automatically generate SQL migrations and covers ~95% of the common cases like deletio",
+      "install": "npm install drizzle-kit",
+      "url": "https://www.npmjs.com/package/drizzle-kit"
+    },
+    {
+      "name": "rolldown",
+      "version": "1.3.3",
+      "category": "cli-and-tools",
+      "description": "Fast JavaScript/TypeScript bundler in Rust with Rollup-compatible API.",
+      "install": "npm install rolldown",
+      "url": "https://www.npmjs.com/package/rolldown"
+    },
+    {
+      "name": "@lingui/cli",
+      "version": "6.12.0",
+      "category": "cli-and-tools",
+      "description": "Lingui CLI: extracts i18n messages from source code into catalogs and compiles the translated catalogs for the runtime",
+      "install": "npm install @lingui/cli",
+      "url": "https://www.npmjs.com/package/@lingui/cli"
+    },
+    {
+      "name": "@sentry/bundler-plugin-core",
+      "version": "5.3.0",
+      "category": "cli-and-tools",
+      "description": "Sentry Bundler Plugin Core",
+      "install": "npm install @sentry/bundler-plugin-core",
+      "url": "https://www.npmjs.com/package/@sentry/bundler-plugin-core"
+    },
+    {
+      "name": "@sentry/bundler-plugins",
+      "version": "11.16.0",
+      "category": "cli-and-tools",
+      "description": "Sentry Bundler Plugins",
+      "install": "npm install @sentry/bundler-plugins",
+      "url": "https://www.npmjs.com/package/@sentry/bundler-plugins"
+    },
+    {
+      "name": "vite-node",
+      "version": "6.0.0",
+      "category": "cli-and-tools",
+      "description": "Vite as Node.js runtime",
+      "install": "npm install vite-node",
+      "url": "https://www.npmjs.com/package/vite-node"
+    }
+  ]
+}

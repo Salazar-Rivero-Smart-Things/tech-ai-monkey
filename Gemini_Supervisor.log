@@ -13,6 +13,11 @@ Tjenester (4/4)  : Postgres (Online) | qwen-mcp-server (Online) | agent (Online)
 AI-motor & MCP   : Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf på Railway Volume (/models, 5 GB) + Streamable HTTP MCP (/mcp)
 
 [ENDRINGSLOGG]
+[2026-11-20 15:54 CET] [Gemini Supervisor]
+- Opprettet komplett Python-treningssystem i scripts/training/ (schedule_daily_training.py, fetch_trending_libraries.py, study_now_1h.py, what_learned_today.py) + skills/supervisor_reading_list.json.
+- Hentet live JSON-radar for populære & nye biblioteker (GitHub, PyPI, npm) og generert skills/global/trending-libraries-radar.md.
+- Satt WEB_APP_URL + CRON_SECRET på Railway agent-tjenesten.
+
 [2026-11-20 14:48 CET] [Gemini Supervisor]
 - Fullført full migrering av Tech AI Monkey v2.1 til Railway (4/4 tjenester Online):
   - Lagt til deploy/Dockerfile.llama, deploy/start-llama-railway.sh, deploy/qwen-mcp-gateway.mjs (Qwen2.5-Coder-7B + MCP Server).

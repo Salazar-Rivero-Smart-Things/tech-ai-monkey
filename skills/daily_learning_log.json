@@ -1,0 +1,34 @@
+{
+  "sessions": [
+    {
+      "date": "2026-11-20",
+      "started_at": "2026-11-20T15:03:13.192071+00:00",
+      "finished_at": "2026-11-20T15:03:13.194092+00:00",
+      "elapsed_minutes": 0.0,
+      "topics_learned": [
+        {
+          "id": "new-libs-2026-11-20",
+          "title": "Brand-New & Trending Libraries Spotlight (2026-11-20)",
+          "category": "New & IN Libraries",
+          "libraries": [
+            "cleanyourtv",
+            "laya",
+            "dsh-Go",
+            "DeepInfer",
+            "jev-ultrafast"
+          ],
+          "summary": "Category:** New & IN Libraries | **Focus Libraries:** `cleanyourtv, laya, dsh-Go, DeepInfer, jev-ultrafast`",
+          "skill_file": "skills/global/learned-new-libs-2026-11-20.md",
+          "engine": "offline-structured",
+          "completed_at": "2026-11-20T15:03:13.192883+00:00"
+        }
+      ],
+      "trending_counts": {
+        "brand_new_github": 18,
+        "popular_github": 15,
+        "pypi_in_libraries": 16,
+        "npm_trending": 15
+      }
+    }
+  ]
+}

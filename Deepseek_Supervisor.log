@@ -17,6 +17,14 @@ MCP Server URL   : https://qwen-mcp-server-production.up.railway.app/mcp (Bearer
 - Dette GitHub-repoet er OFFENTLIG (public). ALDRI legg inn hemmelige nøkler, passord eller tokens i loggene eller i koden!
 
 [ENDRINGSLOGG]
+[2026-11-20 15:54 CET] [Gemini Supervisor]
+- Lagt til 4 avhengighetsfrie Python-treningsskript i scripts/training/ + pensum i skills/supervisor_reading_list.json:
+  1) schedule_daily_training.py (planlegg klokkeslett/varighet i skills/study-schedule.json + valgfri daemon)
+  2) fetch_trending_libraries.py (henter live JSON fra GitHub, PyPI og npm om populære & helt nye biblioteker -> skills/trending_libraries.json + skills/global/trending-libraries-radar.md)
+  3) study_now_1h.py ("les nå i 1 time" mot Railway Qwen2.5-Coder-7B -> lagrer lærte skills/global/learned-*.md + daily_learning_log.json)
+  4) what_learned_today.py (viser dagens læringsrapport + --search <tema> for umiddelbare bibliotektips til prosjekter).
+- Koblet Railway agent-tjenesten med WEB_APP_URL og CRON_SECRET for automatiske 15-min workflow/lærings-sjekker i skyen.
+
 [2026-11-20 14:48 CET] [Gemini Supervisor]
 - Deployet komplett Tech AI Monkey v2.1 24/7 på Railway (4/4 tjenester grønne & Online):
   1) Postgres (managed Railway PostgreSQL, tabeller opprettet automatisk via Drizzle + admin riveroosx7@gmail.com seedet).

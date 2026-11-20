@@ -1,0 +1,135 @@
+{
+  "updatedAt": "2026-11-20T15:38:00Z",
+  "supervisors": [
+    "Gemini",
+    "DeepSeek"
+  ],
+  "notes": "Curated daily study syllabus for Tech AI Monkey (Qwen2.5-Coder-7B). Add new topics here anytime!",
+  "topics": [
+    {
+      "id": "modern-python-tooling",
+      "title": "Modern Python 3.13/3.14 Ecosystem: uv, ruff, FastAPI, Pydantic v2 & Async SQLAlchemy",
+      "category": "Python & Backend",
+      "priority": 1,
+      "libraries": [
+        "uv",
+        "ruff",
+        "fastapi",
+        "pydantic",
+        "httpx",
+        "sqlmodel"
+      ],
+      "goal": "Master ultra-fast Python project setup, strict typing, async APIs, and production patterns.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "nextjs16-react19-drizzle",
+      "title": "Next.js 16, React 19, Tailwind CSS v4 & Drizzle ORM Production Patterns",
+      "category": "Web & Fullstack",
+      "priority": 1,
+      "libraries": [
+        "next",
+        "react",
+        "drizzle-orm",
+        "tailwindcss",
+        "zod"
+      ],
+      "goal": "Know Server Actions, Turbopack, zero-downtime Drizzle migrations, and Auth.js v5 security.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "mcp-and-ai-agents",
+      "title": "Model Context Protocol (MCP), Streamable HTTP Servers & Tool-Calling Agents",
+      "category": "AI & Agents",
+      "priority": 1,
+      "libraries": [
+        "mcp",
+        "ai",
+        "openai",
+        "litellm",
+        "pydantic-ai"
+      ],
+      "goal": "Design reliable MCP servers, structured tool outputs, sandboxing, and hybrid local/cloud LLMs.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "desktop-apps-pyside6-electron",
+      "title": "Cross-Platform Desktop Apps: PySide6 (Qt6), FFmpeg Pipelines, PyInstaller & macOS DMG",
+      "category": "Desktop & Media",
+      "priority": 2,
+      "libraries": [
+        "PySide6",
+        "imageio-ffmpeg",
+        "soundfile",
+        "scipy",
+        "pillow"
+      ],
+      "goal": "Build fast native Windows .exe and macOS .dmg audio/video apps with custom installers and CLIs.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "data-and-analytics-fast",
+      "title": "High-Speed Data Processing: Polars, DuckDB & Modern PostgreSQL Indexing",
+      "category": "Data & Databases",
+      "priority": 2,
+      "libraries": [
+        "polars",
+        "duckdb",
+        "psycopg",
+        "pgvector"
+      ],
+      "goal": "Recommend Polars/DuckDB when handling large CSV/Parquet/financial datasets 10-50x faster than pandas.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "payments-security-norway",
+      "title": "Nordic Payments & App Security: Stripe Webhooks, PayPal, Vipps ePayment & OWASP",
+      "category": "Payments & Security",
+      "priority": 2,
+      "libraries": [
+        "stripe",
+        "argon2",
+        "jose",
+        "cryptography"
+      ],
+      "goal": "Implement tamper-proof webhooks, HMAC licensing, Argon2id password hashing, and zero-leak secret hygiene.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "browser-automation-scraping",
+      "title": "Modern Browser Automation & Web Extraction: Playwright & Crawl4AI",
+      "category": "Automation & Web",
+      "priority": 3,
+      "libraries": [
+        "playwright",
+        "crawl4ai",
+        "beautifulsoup4",
+        "lxml"
+      ],
+      "goal": "Automate testing, UI verification, and structured LLM-ready web data extraction.",
+      "status": "pending",
+      "lastStudied": null
+    },
+    {
+      "id": "cli-and-tui-craft",
+      "title": "Polished Developer CLIs & TUIs: Typer, Rich, Textual & Commander.js",
+      "category": "CLI & DX",
+      "priority": 3,
+      "libraries": [
+        "typer",
+        "rich",
+        "textual",
+        "commander"
+      ],
+      "goal": "Design ergonomic, scriptable command-line tools with auto-help, JSON output, and progress bars.",
+      "status": "pending",
+      "lastStudied": null
+    }
+  ]
+}
