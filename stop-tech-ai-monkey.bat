@@ -7,6 +7,14 @@ echo        Stopper Tech AI Monkey-tjenester...
 echo ==========================================================
 echo.
 
+:: 0. Stopp Cloudflare Tunnel
+taskkill /F /IM cloudflared.exe >nul 2>&1
+if not errorlevel 1 (
+    echo [x] Cloudflare Tunnel [cloudflared] stoppet.
+) else (
+    echo [-] Cloudflare Tunnel kjorte ikke.
+)
+
 :: 1. Stopp Web App (port 3100)
 for /f "tokens=5" %%a in ('netstat -ano -p tcp ^| findstr ":3100 " ^| findstr LISTENING') do (
     taskkill /F /PID %%a >nul 2>&1

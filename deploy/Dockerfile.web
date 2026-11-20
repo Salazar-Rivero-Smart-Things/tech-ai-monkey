@@ -1,0 +1,26 @@
+FROM node:24-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 make g++ curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY web/package.json web/package-lock.json ./web/
+WORKDIR /app/web
+RUN npm install
+
+WORKDIR /app
+COPY web ./web
+COPY scripts/seed-admin.mjs ./scripts/seed-admin.mjs
+COPY deploy/start-web-railway.sh ./start-web-railway.sh
+RUN sed -i 's/\r$//' /app/start-web-railway.sh && chmod +x /app/start-web-railway.sh
+
+WORKDIR /app/web
+RUN npm run build
+
+ENV NODE_ENV=production
+ENV PORT=3100
+EXPOSE 3100
+
+CMD ["/bin/bash", "/app/start-web-railway.sh"]

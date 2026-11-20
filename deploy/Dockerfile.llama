@@ -1,0 +1,20 @@
+FROM node:24-slim AS nodebin
+FROM ghcr.io/ggml-org/llama.cpp:server
+
+COPY --from=nodebin /usr/local/bin/node /usr/local/bin/node
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY deploy/qwen-mcp-gateway.mjs /app/qwen-mcp-gateway.mjs
+COPY deploy/start-llama-railway.sh /app/start-llama-railway.sh
+RUN sed -i 's/\r$//' /app/start-llama-railway.sh && chmod +x /app/start-llama-railway.sh
+
+ENV PORT=8080
+ENV MODEL_DIR=/models
+ENV MODEL_FILE=qwen2.5-coder-7b-instruct-q4_k_m.gguf
+ENV LLAMA_CTX=16384
+
+EXPOSE 8080
+ENTRYPOINT ["/bin/bash", "/app/start-llama-railway.sh"]

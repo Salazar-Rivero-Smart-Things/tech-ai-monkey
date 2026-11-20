@@ -1,0 +1,24 @@
+FROM node:24-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ffmpeg curl bash ca-certificates git && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json package-lock.json tsconfig.json env.d.ts ./
+COPY scripts ./scripts
+RUN npm install
+
+COPY agent ./agent
+COPY skills ./skills
+COPY books ./books
+COPY videos ./videos
+COPY public ./public
+
+RUN npm run build
+
+ENV PORT=2000
+EXPOSE 2000
+
+CMD ["sh", "-c", "npx eve start --host :: --port ${PORT:-2000}"]

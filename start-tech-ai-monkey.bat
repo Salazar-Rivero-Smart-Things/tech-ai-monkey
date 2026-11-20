@@ -10,7 +10,7 @@ echo.
 :: -----------------------------------------------------------
 :: 1. PostgreSQL [Port 5432]
 :: -----------------------------------------------------------
-echo [1/4] Kontrollerer PostgreSQL...
+echo [1/5] Kontrollerer PostgreSQL...
 
 :: Rydd opp foreldet postmaster.pid hvis prosessen ikke er i live
 if exist "%~dp0pgdata\postmaster.pid" (
@@ -52,7 +52,7 @@ echo.
 :: -----------------------------------------------------------
 :: 2. llama-server [Port 8080]
 :: -----------------------------------------------------------
-echo [2/4] Kontrollerer llama-server [GPU]...
+echo [2/5] Kontrollerer llama-server [GPU]...
 netstat -ano -p tcp | find ":8080 " | find "LISTENING" >nul
 if errorlevel 1 (
     echo       Starter llama-server med Qwen 2.5 Coder pa RTX 2070...
@@ -82,7 +82,7 @@ echo.
 :: -----------------------------------------------------------
 :: 3. AI Agent [Port 2000]
 :: -----------------------------------------------------------
-echo [3/4] Kontrollerer AI Agent...
+echo [3/5] Kontrollerer AI Agent...
 netstat -ano -p tcp | find ":2000 " | find "LISTENING" >nul
 if errorlevel 1 (
     echo       Starter AI Agent [port 2000]...
@@ -112,7 +112,7 @@ echo.
 :: -----------------------------------------------------------
 :: 4. Web Application [Port 3100]
 :: -----------------------------------------------------------
-echo [4/4] Kontrollerer Web App...
+echo [4/5] Kontrollerer Web App...
 netstat -ano -p tcp | find ":3100 " | find "LISTENING" >nul
 if errorlevel 1 (
     echo       Starter Web App [port 3100]...
@@ -138,17 +138,59 @@ if "%WEB_OK%"=="1" (
 )
 
 echo.
+
+:: -----------------------------------------------------------
+:: 5. Cloudflare Tunnel [https://tech-ai.tech -> localhost:3100]
+:: -----------------------------------------------------------
+echo [5/5] Kontrollerer Cloudflare Tunnel [tech-ai.tech]...
+
+:: Les CLOUDFLARE_TUNNEL_TOKEN fra .env hvis satt
+set "CF_TOKEN="
+if exist "%~dp0.env" (
+    for /f "usebackq tokens=1,* delims==" %%A in ("%~dp0.env") do (
+        if /i "%%A"=="CLOUDFLARE_TUNNEL_TOKEN" set "CF_TOKEN=%%B"
+    )
+)
+
+:: Finn cloudflared.exe (PATH eller Program Files)
+set "CFD_EXE="
+for /f "delims=" %%C in ('where cloudflared 2^>nul') do if not defined CFD_EXE set "CFD_EXE=%%C"
+if not defined CFD_EXE if exist "C:\Program Files (x86)\cloudflared\cloudflared.exe" set "CFD_EXE=C:\Program Files (x86)\cloudflared\cloudflared.exe"
+if not defined CFD_EXE if exist "C:\Program Files\cloudflared\cloudflared.exe" set "CFD_EXE=C:\Program Files\cloudflared\cloudflared.exe"
+
+tasklist /FI "IMAGENAME eq cloudflared.exe" 2>nul | find /I "cloudflared.exe" >nul
+if not errorlevel 1 (
+    echo       [OK] Cloudflare Tunnel [cloudflared] kjorer allerede.
+) else (
+    if not defined CFD_EXE (
+        echo       [ADVARSEL] cloudflared.exe er ikke installert pa denne PC-en!
+        echo       Installer med:  winget install --id Cloudflare.cloudflared
+        echo       Og legg inn CLOUDFLARE_TUNNEL_TOKEN=... i .env eller kjor: cloudflared tunnel login
+    ) else (
+        if defined CF_TOKEN (
+            echo       Starter Cloudflare Tunnel med CLOUDFLARE_TUNNEL_TOKEN fra .env...
+            start "Tech AI Monkey - Cloudflare Tunnel" /min "%CFD_EXE%" tunnel --no-autoupdate run --token %CF_TOKEN%
+            echo       [OK] Cloudflare Tunnel startet [https://tech-ai.tech].
+        ) else if exist "%USERPROFILE%\.cloudflared\config.yml" (
+            echo       Starter Cloudflare Tunnel med %USERPROFILE%\.cloudflared\config.yml...
+            start "Tech AI Monkey - Cloudflare Tunnel" /min "%CFD_EXE%" tunnel --no-autoupdate --config "%USERPROFILE%\.cloudflared\config.yml" run
+            echo       [OK] Cloudflare Tunnel startet [https://tech-ai.tech].
+        ) else (
+            echo       [ADVARSEL] Fant verken CLOUDFLARE_TUNNEL_TOKEN i .env eller %USERPROFILE%\.cloudflared\config.yml!
+            echo       Legg til CLOUDFLARE_TUNNEL_TOKEN=din-token i .env og kjor dette scriptet pa nytt.
+        )
+    )
+)
+
+echo.
 echo ==========================================================
-echo        ALT ER STARTET OG KJORER LOKALT:
+echo        ALT ER STARTET OG KJORER:
 echo ==========================================================
-echo  - Nettside / Dashboard: http://localhost:3100
+echo  - Offentlig nettside:   https://tech-ai.tech
+echo  - Lokal Dashboard:      http://localhost:3100
 echo  - AI Agent:             http://localhost:2000
 echo  - Llama Engine (GPU):   http://localhost:8080
 echo  - Database (Postgres):  localhost:5432
-echo.
-echo Innlogging:
-echo  E-post:  riveroosx7@gmail.com
-echo  Passord: zzMy7-68F()07
 echo ==========================================================
 echo.
 echo Apner http://localhost:3100 i nettleseren...

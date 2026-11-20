@@ -1,7 +1,8 @@
 import postgres from "../web/node_modules/postgres/src/index.js";
 import crypto from "node:crypto";
 
-const sql = postgres("postgresql://postgres:postgres@localhost:5432/tech_ai_monkey");
+const dbUrl = process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/tech_ai_monkey";
+const sql = postgres(dbUrl);
 
 async function run() {
   const userId = crypto.randomUUID();
