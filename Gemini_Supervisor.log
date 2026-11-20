@@ -1,0 +1,24 @@
+================================================================================
+GEMINI SUPERVISOR LOG — Tech AI Monkey v2.1 (https://tech-ai.tech)
+File: C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey\Gemini_Supervisor.log
+Counterpart: C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey\Deepseek_Supervisor.log
+Manual: C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey\FOR_DEEPSEEK_AA_LESES.md
+================================================================================
+
+[STATUS — 2026-11-20 14:48 CET — Opprettet av Gemini Supervisor]
+Repo-sti (lokal) : C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey
+GitHub (PUBLIC!) : https://github.com/Salazar-Rivero-Smart-Things/tech-ai-monkey (main)
+Railway Prosjekt : Tech-AI-Monkey (70f191b0-9b7d-4655-92d3-3e6bd53e5747) / production (europe-west4)
+Tjenester (4/4)  : Postgres (Online) | qwen-mcp-server (Online) | agent (Online) | web (Online)
+AI-motor & MCP   : Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf på Railway Volume (/models, 5 GB) + Streamable HTTP MCP (/mcp)
+
+[ENDRINGSLOGG]
+[2026-11-20 14:48 CET] [Gemini Supervisor]
+- Fullført full migrering av Tech AI Monkey v2.1 til Railway (4/4 tjenester Online):
+  - Lagt til deploy/Dockerfile.llama, deploy/start-llama-railway.sh, deploy/qwen-mcp-gateway.mjs (Qwen2.5-Coder-7B + MCP Server).
+  - Lagt til deploy/Dockerfile.agent, deploy/Dockerfile.web, deploy/start-web-railway.sh og .dockerignore.
+  - Oppdatert scripts/seed-admin.mjs til å lese DATABASE_URL fra miljøvariabler.
+  - Verifisert live MCP Server (GET /mcp -> engine_status: ready, POST /mcp initialize & tools/list -> HTTP 200).
+  - Verifisert Drizzle SQL push + admin-seed + Next.js 16 startup (Ready in 85ms) på Railway web-tjenesten.
+  - Tilknyttet custom domains tech-ai.tech & www.tech-ai.tech på Railway web-tjenesten.
+  - Opprettet FOR_DEEPSEEK_AA_LESES.md, Deepseek_Supervisor.log og Gemini_Supervisor.log.

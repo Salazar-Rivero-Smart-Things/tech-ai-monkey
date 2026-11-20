@@ -1,6 +1,8 @@
 node_modules/
 .env
 *.log
+!Deepseek_Supervisor.log
+!Gemini_Supervisor.log
 .DS_Store
 .next/
 dist/

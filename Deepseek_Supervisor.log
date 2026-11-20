@@ -1,0 +1,28 @@
+================================================================================
+DEEPSEEK SUPERVISOR LOG — Tech AI Monkey v2.1 (https://tech-ai.tech)
+File: C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey\Deepseek_Supervisor.log
+Counterpart: C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey\Gemini_Supervisor.log
+Manual: C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey\FOR_DEEPSEEK_AA_LESES.md
+================================================================================
+
+[STATUS — 2026-11-20 14:48 CET — Opprettet av Gemini Supervisor]
+Repo-sti (lokal) : C:\Users\Pepito Liindo\Documents\MyGits\Tech-AI-Monkey\tech-ai-monkey
+GitHub (PUBLIC!) : https://github.com/Salazar-Rivero-Smart-Things/tech-ai-monkey (main)
+Railway Prosjekt : Tech-AI-Monkey (europe-west4, production)
+Tjenester (4/4)  : Postgres (Online) | qwen-mcp-server (Online, Qwen2.5-Coder-7B + MCP /mcp) | agent (Online) | web (Online)
+Custom Domains   : tech-ai.tech & www.tech-ai.tech (venter på Cloudflare DNS CNAME + TXT verifisering)
+MCP Server URL   : https://qwen-mcp-server-production.up.railway.app/mcp (Bearer MCP_API_KEY i Railway Variables)
+
+[SIKKERHETSREGEL]
+- Dette GitHub-repoet er OFFENTLIG (public). ALDRI legg inn hemmelige nøkler, passord eller tokens i loggene eller i koden!
+
+[ENDRINGSLOGG]
+[2026-11-20 14:48 CET] [Gemini Supervisor]
+- Deployet komplett Tech AI Monkey v2.1 24/7 på Railway (4/4 tjenester grønne & Online):
+  1) Postgres (managed Railway PostgreSQL, tabeller opprettet automatisk via Drizzle + admin riveroosx7@gmail.com seedet).
+  2) qwen-mcp-server (deploy/Dockerfile.llama + deploy/qwen-mcp-gateway.mjs + 5 GB Volume /models):
+     Kjører Qwen2.5-Coder-7B-Instruct-Q4_K_M.gguf både som intern OpenAI-API motor for agenten OG som full Remote MCP Server (/mcp).
+  3) agent (deploy/Dockerfile.agent): Eve AI-agent på port 2000 koblet direkte til qwen-mcp-server.railway.internal:8080/v1.
+  4) web (deploy/Dockerfile.web + deploy/start-web-railway.sh): Next.js 16 med automatisk drizzle-kit push og admin-seed.
+- Oppdatert start-tech-ai-monkey.bat og stop-tech-ai-monkey.bat med steg [5/5] Cloudflare Tunnel støtte for lokal Windows-kjøring.
+- Opprettet FOR_DEEPSEEK_AA_LESES.md, Deepseek_Supervisor.log og Gemini_Supervisor.log (uten hemmelige nøkler).
