@@ -17,7 +17,10 @@ COPY deploy/start-web-railway.sh ./start-web-railway.sh
 RUN sed -i 's/\r$//' /app/start-web-railway.sh && chmod +x /app/start-web-railway.sh
 
 WORKDIR /app/web
-RUN npm run build
+RUN DATABASE_URL="postgresql://build:build@127.0.0.1:5432/build" \
+    AUTH_SECRET="build-time-only-placeholder-secret" \
+    AGENT_API_KEY_SECRET="build-time-only-placeholder-secret" \
+    npm run build
 
 ENV NODE_ENV=production
 ENV PORT=3100
